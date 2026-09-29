@@ -49,6 +49,18 @@
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-moss px-4 py-2 font-semibold text-void transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  .input {
+    @apply w-full rounded-lg border border-rune bg-void px-3 py-2 text-sm text-bone outline-none transition placeholder:text-mist/60 focus:border-moss disabled:opacity-50;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-medium text-mist;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-blood/50 px-3 py-1.5 text-sm font-medium text-blood transition hover:bg-blood/10;
+  }
+
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-lg border border-rune px-4 py-2 font-medium text-bone transition hover:bg-stone;
   }
@@ -56,4 +68,55 @@
 
 .pixelated {
   image-rendering: pixelated;
+}
+
+/* Golpe al jefe: sacudida + destello */
+@keyframes hit {
+  0% {
+    transform: translateX(0);
+    filter: brightness(2.5);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+}
+
+.animate-hit {
+  animation: hit 400ms ease-out;
+}
+
+/* Número de daño flotante */
+@keyframes float-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+}
+
+.animate-float-up {
+  animation: float-up 900ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hit,
+  .animate-float-up {
+    animation: none;
+  }
+  .animate-float-up {
+    opacity: 0;
+  }
 }
