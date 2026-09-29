@@ -1,14 +1,22 @@
 /**
  * Backend simulado para el modo demo (sin Supabase). Replica las reglas de
- * supabase/schema.sql usando los datos semilla y guarda el progreso en
- * localStorage, para poder probar el juego completo sin servidor.
+ * supabase/schema.sql y guarda contenido y progreso en localStorage, para
+ * poder probar el juego y el panel admin completos sin servidor.
  */
 import type { RpgClassId } from '../../data/classes'
-import { BADGES, MODULES, getModule } from '../../data/seed'
-import type { Question } from '../../data/types'
-import type { AnswerResult, BossState, GameApi, LeaderboardRow } from './types'
+import { BADGES, MODULES } from '../../data/seed'
+import type {
+  AdminApi,
+  AdminBoss,
+  AdminModule,
+  AdminQuestion,
+  AnswerResult,
+  BossState,
+  GameApi,
+  LeaderboardRow,
+} from './types'
 
-const STORAGE_KEY = 'pachapp-demo-v1'
+const STORAGE_KEY = 'pachapp-demo-v2'
 const DEMO_USER_ID = 'demo-user'
 
 /**
@@ -16,6 +24,8 @@ const DEMO_USER_ID = 'demo-user'
  * simulada: con los aciertos de un módulo alcanza para derrotarlo.
  */
 const DEMO_START_HP = 120
+
+type DemoModule = Omit<AdminModule, 'unlocked'>
 
 interface DemoAnswer {
   questionId: string
@@ -28,24 +38,71 @@ interface DemoAnswer {
 }
 
 interface DemoState {
+  modules: DemoModule[]
+  questions: AdminQuestion[]
+  bosses: AdminBoss[]
+  /** Módulos abiertos por la comunidad (o por el admin). */
+  unlockedModules: number[]
   rpgClass: RpgClassId | null
   totalXp: number
   codexReads: number[]
   answers: DemoAnswer[]
-  bossHp: Record<string, number>
-  unlockedModules: number[]
   badges: { badgeId: string; earnedAt: string }[]
 }
 
-const initialState = (): DemoState => ({
-  rpgClass: null,
-  totalXp: 0,
-  codexReads: [],
-  answers: [],
-  bossHp: Object.fromEntries(MODULES.map((m) => [m.boss.id, DEMO_START_HP])),
-  unlockedModules: MODULES.filter((m) => m.initiallyUnlocked).map((m) => m.id),
-  badges: [],
-})
+function initialState(): DemoState {
+  return {
+    modules: MODULES.map((m) => ({
+      id: m.id,
+      slug: m.slug,
+      title: m.title,
+      summary: m.summary,
+      initiallyUnlocked: m.initiallyUnlocked,
+      codex: m.codex,
+    })),
+    questions: MODULES.flatMap((m) => [
+      ...m.questions.map((q, i) => ({
+        id: q.id,
+        moduleId: m.id,
+        prompt: q.prompt,
+        correct: q.correct,
+        distractors: q.distractors,
+        isBossFinal: false,
+        sortOrder: i + 1,
+      })),
+      ...(m.boss.finalQuestion
+        ? [
+            {
+              id: m.boss.finalQuestion.id,
+              moduleId: m.id,
+              prompt: m.boss.finalQuestion.prompt,
+              correct: m.boss.finalQuestion.correct,
+              distractors: m.boss.finalQuestion.distractors,
+              isBossFinal: true,
+              sortOrder: 999,
+            },
+          ]
+        : []),
+    ]),
+    bosses: MODULES.map((m) => ({
+      id: m.boss.id,
+      moduleId: m.id,
+      name: m.boss.name,
+      title: m.boss.title,
+      maxHp: m.boss.maxHp,
+      currentHp: Math.min(DEMO_START_HP, m.boss.maxHp),
+      damagePerHit: m.boss.damagePerHit,
+      unlocksModuleId: m.boss.unlocksModuleId,
+      defeatedAt: null,
+    })),
+    unlockedModules: [],
+    rpgClass: null,
+    totalXp: 0,
+    codexReads: [],
+    answers: [],
+    badges: [],
+  }
+}
 
 let memoryState: DemoState | null = null
 
@@ -71,6 +128,10 @@ function save(state: DemoState) {
 
 const bossListeners = new Map<string, Set<(b: Pick<BossState, 'currentHp' | 'defeated'>) => void>>()
 
+function notifyBoss(boss: AdminBoss) {
+  bossListeners.get(boss.id)?.forEach((cb) => cb({ currentHp: boss.currentHp, defeated: boss.defeatedAt !== null }))
+}
+
 function shuffle<T>(items: T[]): T[] {
   const a = [...items]
   for (let i = a.length - 1; i > 0; i--) {
@@ -80,24 +141,29 @@ function shuffle<T>(items: T[]): T[] {
   return a
 }
 
-function allQuestions(moduleId: number): Question[] {
-  const m = getModule(moduleId)
-  if (!m) return []
-  return [...m.questions, ...(m.boss.finalQuestion ? [m.boss.finalQuestion] : [])]
-}
+const isUnlocked = (s: DemoState, moduleId: number) =>
+  s.modules.some((m) => m.id === moduleId && (m.initiallyUnlocked || s.unlockedModules.includes(moduleId)))
 
-function findQuestion(questionId: string) {
-  for (const m of MODULES) {
-    const q = allQuestions(m.id).find((x) => x.id === questionId)
-    if (q) return { module: m, question: q, isBossFinal: q.id === m.boss.finalQuestion?.id }
-  }
-  return null
-}
+const moduleQuestions = (s: DemoState, moduleId: number) =>
+  s.questions
+    .filter((q) => q.moduleId === moduleId)
+    .sort((a, b) => Number(a.isBossFinal) - Number(b.isBossFinal) || a.sortOrder - b.sortOrder)
 
-function evaluateBadges(state: DemoState): string[] {
-  const earned = new Set(state.badges.map((b) => b.badgeId))
+const toBossState = (b: AdminBoss): BossState => ({
+  id: b.id,
+  moduleId: b.moduleId,
+  name: b.name,
+  title: b.title,
+  maxHp: b.maxHp,
+  currentHp: b.currentHp,
+  defeated: b.defeatedAt !== null,
+  unlocksModuleId: b.unlocksModuleId,
+})
+
+function evaluateBadges(s: DemoState): string[] {
+  const earned = new Set(s.badges.map((b) => b.badgeId))
   let streak = 0
-  for (const a of [...state.answers].reverse()) {
+  for (const a of [...s.answers].reverse()) {
     if (!a.awarded && a.correct) continue
     if (!a.correct) break
     streak++
@@ -110,22 +176,19 @@ function evaluateBadges(state: DemoState): string[] {
     let ok = false
     switch (c.type) {
       case 'codex_read':
-        ok = state.codexReads.length >= c.count
+        ok = s.codexReads.length >= c.count
         break
       case 'correct_streak':
         ok = streak >= c.count
         break
       case 'module_completed': {
-        const m = getModule(c.moduleId)
-        ok = !!m && m.questions.every((q) => state.answers.some((a) => a.questionId === q.id && a.awarded))
+        const qs = moduleQuestions(s, c.moduleId).filter((q) => !q.isBossFinal)
+        ok = qs.length > 0 && qs.every((q) => s.answers.some((a) => a.questionId === q.id && a.awarded))
         break
       }
       case 'boss_defeated': {
-        const m = getModule(c.moduleId)
-        ok =
-          !!m &&
-          state.bossHp[m.boss.id] === 0 &&
-          state.answers.some((a) => a.moduleId === m.id && a.damage > 0)
+        const boss = s.bosses.find((b) => b.moduleId === c.moduleId)
+        ok = !!boss?.defeatedAt && s.answers.some((a) => a.moduleId === c.moduleId && a.damage > 0)
         break
       }
       case 'final_blow':
@@ -135,7 +198,7 @@ function evaluateBadges(state: DemoState): string[] {
     if (ok) fresh.push(badge.id)
   }
   const now = new Date().toISOString()
-  state.badges.push(...fresh.map((badgeId) => ({ badgeId, earnedAt: now })))
+  s.badges.push(...fresh.map((badgeId) => ({ badgeId, earnedAt: now })))
   return fresh
 }
 
@@ -160,34 +223,27 @@ export function createDemoApi(): GameApi {
 
     async getCampaign() {
       const s = load()
-      return MODULES.map((m) => {
-        const hp = s.bossHp[m.boss.id] ?? DEMO_START_HP
-        return {
-          id: m.id,
-          title: m.title,
-          summary: m.summary,
-          codex: m.codex,
-          unlocked: s.unlockedModules.includes(m.id),
-          questionCount: allQuestions(m.id).length,
-          answeredCount: s.answers.filter((a) => a.moduleId === m.id && a.awarded).length,
-          codexRead: s.codexReads.includes(m.id),
-          boss: {
-            id: m.boss.id,
-            moduleId: m.id,
-            name: m.boss.name,
-            title: m.boss.title,
-            maxHp: m.boss.maxHp,
-            currentHp: hp,
-            defeated: hp === 0,
-            unlocksModuleId: m.boss.unlocksModuleId,
-          },
-        }
-      })
+      return [...s.modules]
+        .sort((a, b) => a.id - b.id)
+        .map((m) => {
+          const boss = s.bosses.find((b) => b.moduleId === m.id)
+          return {
+            id: m.id,
+            title: m.title,
+            summary: m.summary,
+            codex: m.codex,
+            unlocked: isUnlocked(s, m.id),
+            questionCount: moduleQuestions(s, m.id).length,
+            answeredCount: s.answers.filter((a) => a.moduleId === m.id && a.awarded).length,
+            codexRead: s.codexReads.includes(m.id),
+            boss: boss ? toBossState(boss) : null,
+          }
+        })
     },
 
     async markCodexRead(moduleId) {
       const s = load()
-      if (!s.unlockedModules.includes(moduleId)) throw new Error('Módulo bloqueado')
+      if (!isUnlocked(s, moduleId)) throw new Error('Módulo bloqueado')
       if (!s.codexReads.includes(moduleId)) s.codexReads.push(moduleId)
       const fresh = evaluateBadges(s)
       save(s)
@@ -196,43 +252,41 @@ export function createDemoApi(): GameApi {
 
     async getQuestions(moduleId) {
       const s = load()
-      if (!s.unlockedModules.includes(moduleId)) throw new Error('Módulo bloqueado')
-      const m = getModule(moduleId)!
-      return allQuestions(moduleId).map((q) => ({
+      if (!isUnlocked(s, moduleId)) throw new Error('Módulo bloqueado')
+      return moduleQuestions(s, moduleId).map((q) => ({
         id: q.id,
         prompt: q.prompt,
         options: shuffle([q.correct, ...q.distractors]),
-        isBossFinal: q.id === m.boss.finalQuestion?.id,
+        isBossFinal: q.isBossFinal,
         alreadyAnswered: s.answers.some((a) => a.questionId === q.id && a.awarded),
       }))
     },
 
     async answer(questionId, answer): Promise<AnswerResult> {
       const s = load()
-      const found = findQuestion(questionId)
-      if (!found) throw new Error('Pregunta no existe')
-      const { module: m, question: q, isBossFinal } = found
-      if (!s.unlockedModules.includes(m.id)) throw new Error('Módulo bloqueado')
-      if (!s.codexReads.includes(m.id)) throw new Error('Debes leer el Códice antes de jugar')
+      const q = s.questions.find((x) => x.id === questionId)
+      if (!q) throw new Error('Pregunta no existe')
+      if (!isUnlocked(s, q.moduleId)) throw new Error('Módulo bloqueado')
+      if (!s.codexReads.includes(q.moduleId)) throw new Error('Debes leer el Códice antes de jugar')
 
+      const boss = s.bosses.find((b) => b.moduleId === q.moduleId)
       const correct = answer.trim() === q.correct.trim()
       const firstCorrect = correct && !s.answers.some((a) => a.questionId === q.id && a.awarded)
-      let hp = s.bossHp[m.boss.id] ?? DEMO_START_HP
       let xp = 0
       let damage = 0
       let finalBlow = false
       const fresh: string[] = []
 
       if (firstCorrect) {
-        xp = isBossFinal ? 50 : 10
-        damage = hp > 0 ? (isBossFinal ? m.boss.damagePerHit * 5 : m.boss.damagePerHit) : 0
-        if (damage > 0) {
-          hp = Math.max(hp - damage, 0)
-          s.bossHp[m.boss.id] = hp
-          if (hp === 0) {
+        xp = q.isBossFinal ? 50 : 10
+        if (boss && !boss.defeatedAt) {
+          damage = q.isBossFinal ? boss.damagePerHit * 5 : boss.damagePerHit
+          boss.currentHp = Math.max(boss.currentHp - damage, 0)
+          if (boss.currentHp === 0) {
+            boss.defeatedAt = new Date().toISOString()
             finalBlow = true
             xp += 100
-            const next = m.boss.unlocksModuleId
+            const next = boss.unlocksModuleId
             if (next !== null && !s.unlockedModules.includes(next)) s.unlockedModules.push(next)
             for (const badge of BADGES.filter((b) => b.criterion.type === 'final_blow')) {
               if (s.badges.some((b) => b.badgeId === badge.id)) continue
@@ -246,7 +300,7 @@ export function createDemoApi(): GameApi {
 
       s.answers.push({
         questionId: q.id,
-        moduleId: m.id,
+        moduleId: q.moduleId,
         correct,
         awarded: firstCorrect,
         xp,
@@ -255,10 +309,7 @@ export function createDemoApi(): GameApi {
       })
       fresh.push(...evaluateBadges(s))
       save(s)
-
-      if (damage > 0) {
-        bossListeners.get(m.boss.id)?.forEach((cb) => cb({ currentHp: hp, defeated: hp === 0 }))
-      }
+      if (boss && damage > 0) notifyBoss(boss)
 
       return {
         correct,
@@ -266,11 +317,11 @@ export function createDemoApi(): GameApi {
         awarded: firstCorrect,
         xpGained: xp,
         damageDealt: damage,
-        bossHp: hp,
-        bossMaxHp: m.boss.maxHp,
-        bossDefeated: hp === 0,
+        bossHp: boss?.currentHp ?? 0,
+        bossMaxHp: boss?.maxHp ?? 0,
+        bossDefeated: Boolean(boss?.defeatedAt),
         finalBlow,
-        unlockedModuleId: finalBlow ? m.boss.unlocksModuleId : null,
+        unlockedModuleId: finalBlow ? (boss?.unlocksModuleId ?? null) : null,
         newBadges: fresh,
       }
     },
@@ -303,7 +354,119 @@ export function createDemoApi(): GameApi {
   }
 }
 
-/** Borra el progreso de la demo (útil para volver a probar desde cero). */
+export function createDemoAdminApi(): AdminApi {
+  return {
+    async getOverview() {
+      const s = load()
+      return {
+        players: 1,
+        answers: s.answers.length,
+        correctAnswers: s.answers.filter((a) => a.correct).length,
+        bossesDefeated: s.bosses.filter((b) => b.defeatedAt).length,
+        bossesTotal: s.bosses.length,
+      }
+    },
+
+    async getQuestionStats() {
+      const s = load()
+      return [...s.questions]
+        .sort((a, b) => a.moduleId - b.moduleId || a.id.localeCompare(b.id))
+        .map((q) => {
+          const attempts = s.answers.filter((a) => a.questionId === q.id)
+          return {
+            questionId: q.id,
+            moduleId: q.moduleId,
+            prompt: q.prompt,
+            attempts: attempts.length,
+            correct: attempts.filter((a) => a.correct).length,
+          }
+        })
+    },
+
+    async listModules() {
+      const s = load()
+      return [...s.modules].sort((a, b) => a.id - b.id).map((m) => ({ ...m, unlocked: isUnlocked(s, m.id) }))
+    },
+
+    async saveModule({ unlocked, ...module }) {
+      const s = load()
+      if (s.modules.some((m) => m.slug === module.slug && m.id !== module.id)) {
+        throw new Error(`El slug "${module.slug}" ya existe`)
+      }
+      s.modules = [...s.modules.filter((m) => m.id !== module.id), module]
+      s.unlockedModules = s.unlockedModules.filter((id) => id !== module.id)
+      if (unlocked && !module.initiallyUnlocked) s.unlockedModules.push(module.id)
+      save(s)
+    },
+
+    async deleteModule(id) {
+      const s = load()
+      const questionIds = new Set(s.questions.filter((q) => q.moduleId === id).map((q) => q.id))
+      s.modules = s.modules.filter((m) => m.id !== id)
+      s.questions = s.questions.filter((q) => q.moduleId !== id)
+      s.bosses = s.bosses
+        .filter((b) => b.moduleId !== id)
+        .map((b) => (b.unlocksModuleId === id ? { ...b, unlocksModuleId: null } : b))
+      s.answers = s.answers.filter((a) => !questionIds.has(a.questionId))
+      s.codexReads = s.codexReads.filter((m) => m !== id)
+      s.unlockedModules = s.unlockedModules.filter((m) => m !== id)
+      save(s)
+    },
+
+    async listQuestions(moduleId) {
+      return moduleQuestions(load(), moduleId)
+    },
+
+    async saveQuestion(question) {
+      const s = load()
+      s.questions = [...s.questions.filter((q) => q.id !== question.id), question]
+      save(s)
+    },
+
+    async deleteQuestion(id) {
+      const s = load()
+      s.questions = s.questions.filter((q) => q.id !== id)
+      s.answers = s.answers.filter((a) => a.questionId !== id)
+      save(s)
+    },
+
+    async listBosses() {
+      return [...load().bosses].sort((a, b) => a.moduleId - b.moduleId)
+    },
+
+    async saveBoss(boss) {
+      const s = load()
+      if (s.bosses.some((b) => b.moduleId === boss.moduleId && b.id !== boss.id)) {
+        throw new Error('Ese módulo ya tiene un jefe')
+      }
+      const saved = {
+        ...boss,
+        defeatedAt: boss.currentHp === 0 ? (boss.defeatedAt ?? new Date().toISOString()) : null,
+      }
+      s.bosses = [...s.bosses.filter((b) => b.id !== boss.id), saved]
+      save(s)
+      notifyBoss(saved)
+    },
+
+    async deleteBoss(id) {
+      const s = load()
+      s.bosses = s.bosses.filter((b) => b.id !== id)
+      save(s)
+    },
+
+    async resetBoss(id) {
+      const s = load()
+      const boss = s.bosses.find((b) => b.id === id)
+      if (!boss) return
+      boss.currentHp = boss.maxHp
+      boss.defeatedAt = null
+      save(s)
+      notifyBoss(boss)
+    },
+  }
+}
+
+/** Borra el progreso y el contenido editado de la demo. */
 export function resetDemo() {
   memoryState = null
   try {

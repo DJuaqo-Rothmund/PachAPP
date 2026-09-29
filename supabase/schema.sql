@@ -518,6 +518,61 @@ as $$
   limit least(greatest(p_limit, 1), 200);
 $$;
 
+-- Admin: métricas globales del juego.
+create or replace function public.admin_overview()
+returns table (
+  players bigint,
+  answers bigint,
+  correct_answers bigint,
+  bosses_defeated bigint,
+  bosses_total bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Solo admin' using errcode = '42501';
+  end if;
+  return query
+  select
+    (select count(*) from public.profiles),
+    (select count(*) from public.answers),
+    (select count(*) from public.answers where is_correct),
+    (select count(*) from public.bosses where defeated_at is not null),
+    (select count(*) from public.bosses);
+end;
+$$;
+
+-- Admin: tasa de acierto por pregunta (para detectar preguntas difíciles o mal redactadas).
+create or replace function public.admin_question_stats()
+returns table (
+  question_id text,
+  module_id integer,
+  prompt text,
+  attempts bigint,
+  correct bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Solo admin' using errcode = '42501';
+  end if;
+  return query
+  select q.id, q.module_id, q.prompt, count(a.id), count(a.id) filter (where a.is_correct)
+  from public.questions q
+  left join public.answers a on a.question_id = q.id
+  group by q.id, q.module_id, q.prompt
+  order by q.module_id, q.id;
+end;
+$$;
+
 -- Admin: reinicia el HP de un jefe. El módulo que ya desbloqueó sigue abierto.
 create or replace function public.admin_reset_boss(p_boss_id text)
 returns void
@@ -620,6 +675,8 @@ revoke execute on function public.answer_question(text, text) from public, anon;
 revoke execute on function public.get_monthly_leaderboard(integer) from public, anon;
 revoke execute on function public.get_campaign() from public, anon;
 revoke execute on function public.admin_reset_boss(text) from public, anon;
+revoke execute on function public.admin_overview() from public, anon;
+revoke execute on function public.admin_question_stats() from public, anon;
 
 grant execute on function public.mark_codex_read(integer) to authenticated;
 grant execute on function public.get_module_questions(integer) to authenticated;
@@ -627,6 +684,8 @@ grant execute on function public.answer_question(text, text) to authenticated;
 grant execute on function public.get_monthly_leaderboard(integer) to authenticated;
 grant execute on function public.get_campaign() to authenticated;
 grant execute on function public.admin_reset_boss(text) to authenticated;
+grant execute on function public.admin_overview() to authenticated;
+grant execute on function public.admin_question_stats() to authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.is_module_unlocked(integer) to authenticated;
 grant select on public.module_status to authenticated;

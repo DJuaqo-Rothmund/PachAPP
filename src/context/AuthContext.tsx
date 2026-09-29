@@ -39,7 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       session,
       user,
-      isAdmin: isAdminEmail(user?.email),
+      // En modo demo el usuario local es admin para poder explorar el panel.
+      isAdmin: !isSupabaseConfigured || isAdminEmail(user?.email),
       loading,
       demoMode: !isSupabaseConfigured,
       signInWithGoogle: async () => {

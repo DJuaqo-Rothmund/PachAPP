@@ -59,6 +59,17 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 - Quien deja al jefe en 0 HP da el **golpe final** (+100 XP) y la comunidad desbloquea el siguiente módulo de forma permanente.
 - Ranking mensual: `get_monthly_leaderboard()` (mes calendario, hora de Chile).
 
+## Panel admin (`/admin`)
+
+Solo visible para los correos en `admin_emails` (acceso desde **Perfil → Panel Admin**). En modo demo, el usuario local es admin.
+
+- **Resumen:** jugadores, respuestas, % de acierto, jefes derrotados y las preguntas con menor tasa de acierto.
+- **Módulos:** crear, editar y borrar; editor del Códice por secciones; desbloqueo manual.
+- **Preguntas:** por módulo, con búsqueda; valida 4 alternativas distintas; marca la pregunta del jefe.
+- **Jefes:** HP, daño por acierto, módulo que desbloquean, reiniciar HP y crear jefes para módulos nuevos.
+
+Las escrituras las protege RLS en Supabase (`is_admin()`): aunque alguien llame a la API directamente, un jugador no puede modificar contenido.
+
 ## Rutas
 
 | Ruta                        | Descripción                          |

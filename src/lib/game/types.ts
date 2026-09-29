@@ -80,3 +80,71 @@ export interface GameApi {
   /** Escucha cambios de HP del jefe en vivo. Devuelve la función para desuscribirse. */
   subscribeBoss(bossId: string, onChange: (boss: Pick<BossState, 'currentHp' | 'defeated'>) => void): () => void
 }
+
+// -----------------------------------------------------------------------------
+// Administración
+// -----------------------------------------------------------------------------
+
+export interface AdminModule {
+  id: number
+  slug: string
+  title: string
+  summary: string
+  initiallyUnlocked: boolean
+  /** Desbloqueado por la comunidad (o manualmente por el admin). */
+  unlocked: boolean
+  codex: CodexSection[]
+}
+
+export interface AdminQuestion {
+  id: string
+  moduleId: number
+  prompt: string
+  correct: string
+  distractors: [string, string, string]
+  isBossFinal: boolean
+  sortOrder: number
+}
+
+export interface AdminBoss {
+  id: string
+  moduleId: number
+  name: string
+  title: string
+  maxHp: number
+  currentHp: number
+  damagePerHit: number
+  unlocksModuleId: number | null
+  defeatedAt: string | null
+}
+
+export interface AdminOverview {
+  players: number
+  answers: number
+  correctAnswers: number
+  bossesDefeated: number
+  bossesTotal: number
+}
+
+export interface QuestionStat {
+  questionId: string
+  moduleId: number
+  prompt: string
+  attempts: number
+  correct: number
+}
+
+export interface AdminApi {
+  getOverview(): Promise<AdminOverview>
+  getQuestionStats(): Promise<QuestionStat[]>
+  listModules(): Promise<AdminModule[]>
+  saveModule(module: AdminModule): Promise<void>
+  deleteModule(id: number): Promise<void>
+  listQuestions(moduleId: number): Promise<AdminQuestion[]>
+  saveQuestion(question: AdminQuestion): Promise<void>
+  deleteQuestion(id: string): Promise<void>
+  listBosses(): Promise<AdminBoss[]>
+  saveBoss(boss: AdminBoss): Promise<void>
+  deleteBoss(id: string): Promise<void>
+  resetBoss(id: string): Promise<void>
+}

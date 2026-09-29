@@ -13,7 +13,7 @@ import { resetDemo } from '../lib/game/demoApi'
 import { levelFromXp } from '../lib/game/level'
 
 export default function ProfilePage() {
-  const { user, demoMode } = useAuth()
+  const { user, demoMode, isAdmin } = useAuth()
   const { profile } = useProfile()
   const { data: earned, error, reload } = useAsync(() => gameApi.getMyBadges(), [])
 
@@ -57,6 +57,11 @@ export default function ProfilePage() {
             <Link to="/onboarding" className="btn-ghost text-sm">
               Cambiar clase
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="btn-ghost text-sm text-gold">
+                Panel Admin
+              </Link>
+            )}
             {demoMode && (
               <button type="button" onClick={handleResetDemo} className="btn-ghost text-sm text-blood">
                 Reiniciar demo
