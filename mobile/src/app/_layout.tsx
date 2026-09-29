@@ -71,6 +71,7 @@ function RootNavigator() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modulo/[id]/codice" options={{ title: 'El Códice' }} />
             <Stack.Screen name="modulo/[id]/raid" options={{ title: 'Boss Raid' }} />
+            <Stack.Screen name="modulo/[id]/entrenar" options={{ title: 'Entrenamiento' }} />
           </Stack.Protected>
           <Stack.Screen name="onboarding" options={{ title: 'Elige tu clase' }} />
         </Stack.Protected>

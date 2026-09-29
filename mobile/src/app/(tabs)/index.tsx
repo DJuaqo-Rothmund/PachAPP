@@ -6,6 +6,7 @@ import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components
 import { useProfile } from '@/context/ProfileContext'
 import { useAsync } from '@/hooks/useAsync'
 import { gameApi, levelFromXp, type CampaignModule } from '@/lib/game'
+import { formatRaidReset } from '@shared/lib/game/raid'
 import { colors, radius, space } from '@/theme'
 
 export default function MapScreen() {
@@ -122,10 +123,18 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
           <View style={styles.progressTrack}>
             <View style={{ width: `${progress}%`, height: '100%', backgroundColor: colors.moss }} />
           </View>
+          {boss && <RaidStatusLine module={m} />}
           <View style={[styles.row, { gap: space.sm, marginTop: space.md }]}>
             <Button label="Códice" variant="ghost" style={{ flex: 1 }} onPress={() => router.push(`/modulo/${m.id}/codice`)} />
-            <Button label="Boss Raid" style={{ flex: 1 }} onPress={() => router.push(`/modulo/${m.id}/raid`)} />
+            <Button label="Entrenar" variant="ghost" style={{ flex: 1 }} onPress={() => router.push(`/modulo/${m.id}/entrenar`)} />
           </View>
+          {(m.raid.status === 'available' || m.raid.status === 'in_progress') && (
+            <Button
+              label={m.raid.status === 'in_progress' ? 'Continuar raid' : 'Boss Raid semanal'}
+              style={{ marginTop: space.sm }}
+              onPress={() => router.push(`/modulo/${m.id}/raid`)}
+            />
+          )}
         </>
       ) : (
         <Body tone="mist" size={13} style={{ marginTop: space.md }}>
@@ -133,6 +142,22 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
         </Body>
       )}
     </Panel>
+  )
+}
+
+function RaidStatusLine({ module: m }: { module: CampaignModule }) {
+  const { status, answered, total, nextResetAt } = m.raid
+  const text: Record<typeof status, string> = {
+    available: `⚔ Batalla semanal disponible · ${total} preguntas`,
+    in_progress: `⚔ Batalla en curso · ${answered}/${total} respondidas`,
+    done: `⏳ Ya combatiste esta semana · vuelve el ${formatRaidReset(nextResetAt)}`,
+    defeated: '🏆 La comunidad derrotó a este jefe',
+    none: '',
+  }
+  return (
+    <Body tone={status === 'done' ? 'mist' : 'gold'} size={12} style={{ marginTop: space.md }}>
+      {text[status]}
+    </Body>
   )
 }
 
