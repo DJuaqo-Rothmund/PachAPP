@@ -8,6 +8,7 @@ import { useProfile } from '../context/ProfileContext'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi, type CampaignModule } from '../lib/game'
 import { levelFromXp } from '../lib/game/level'
+import { formatRaidReset } from '../lib/game/raid'
 
 export default function DashboardPage() {
   const { profile } = useProfile()
@@ -100,7 +101,9 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
         </div>
       )}
 
-      <div className="mt-4 flex gap-2">
+      {m.unlocked && boss && <RaidStatusLine module={m} />}
+
+      <div className="mt-4 flex flex-wrap gap-2">
         {!m.unlocked ? (
           <span className="text-sm text-mist">🔒 Derrota al jefe anterior para desbloquear</span>
         ) : (
@@ -108,12 +111,30 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
             <Link to={`/modulos/${m.id}/codice`} className="btn-ghost text-sm">
               Códice
             </Link>
-            <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
-              Boss Raid
+            <Link to={`/modulos/${m.id}/entrenar`} className="btn-ghost text-sm">
+              Entrenar
             </Link>
+            {(m.raid.status === 'available' || m.raid.status === 'in_progress') && (
+              <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
+                {m.raid.status === 'in_progress' ? 'Continuar raid' : 'Boss Raid'}
+              </Link>
+            )}
           </>
         )}
       </div>
     </div>
   )
+}
+
+function RaidStatusLine({ module: m }: { module: CampaignModule }) {
+  const { status, answered, total, nextResetAt } = m.raid
+  const text: Record<typeof status, string> = {
+    available: `⚔ Batalla semanal disponible · ${total} preguntas`,
+    in_progress: `⚔ Batalla en curso · ${answered}/${total} respondidas`,
+    done: `⏳ Ya combatiste esta semana · vuelve el ${formatRaidReset(nextResetAt)}`,
+    defeated: '🏆 La comunidad derrotó a este jefe',
+    none: '',
+  }
+  const tone = status === 'done' || status === 'none' ? 'text-mist' : 'text-gold'
+  return <p className={`mt-3 text-xs ${tone}`}>{text[status]}</p>
 }

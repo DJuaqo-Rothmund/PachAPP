@@ -1,7 +1,19 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { RpgClassId } from '../../data/classes'
 import type { Badge, CodexSection } from '../../data/types'
-import type { AnswerResult, BossState, GameApi } from './types'
+import type { AnswerResult, BossState, GameApi, RaidStatusCode } from './types'
+
+interface CampaignRow {
+  module_id: number
+  unlocked: boolean
+  question_count: number
+  answered_count: number
+  codex_read: boolean
+  raid_status: RaidStatusCode
+  raid_answered: number
+  raid_total: number
+  raid_next_reset: string
+}
 
 interface BossRow {
   id: string
@@ -67,9 +79,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       if (bosses.error) throw bosses.error
       if (campaign.error) throw campaign.error
 
-      const status = new Map<number, { unlocked: boolean; question_count: number; answered_count: number; codex_read: boolean }>(
-        campaign.data.map((c: { module_id: number }) => [c.module_id, c]),
-      )
+      const status = new Map<number, CampaignRow>((campaign.data as CampaignRow[]).map((c) => [c.module_id, c]))
       const bossByModule = new Map((bosses.data as BossRow[]).map((b) => [b.module_id, toBoss(b)]))
 
       return modules.data.map((m: { id: number; title: string; summary: string; codex: CodexSection[] }) => {
@@ -84,6 +94,12 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
           answeredCount: s?.answered_count ?? 0,
           codexRead: s?.codex_read ?? false,
           boss: bossByModule.get(m.id) ?? null,
+          raid: {
+            status: s?.raid_status ?? 'none',
+            answered: s?.raid_answered ?? 0,
+            total: s?.raid_total ?? 0,
+            nextResetAt: s?.raid_next_reset ?? new Date().toISOString(),
+          },
         }
       })
     },
@@ -108,8 +124,39 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       )
     },
 
-    async answer(questionId, answer) {
-      const { data, error } = await sb.rpc('answer_question', { p_question_id: questionId, p_answer: answer })
+    async startRaid(moduleId) {
+      const { data, error } = await sb.rpc('start_raid', { p_module_id: moduleId })
+      if (error) throw error
+      const r = data as {
+        session_id: number
+        total: number
+        answered: number
+        correct: number
+        damage: number
+        questions: { id: string; prompt: string; options: string[]; is_boss_final: boolean }[]
+      }
+      return {
+        id: Number(r.session_id),
+        total: r.total,
+        answered: r.answered,
+        correct: r.correct,
+        damage: r.damage,
+        questions: r.questions.map((q) => ({
+          id: q.id,
+          prompt: q.prompt,
+          options: q.options,
+          isBossFinal: q.is_boss_final,
+          alreadyAnswered: false,
+        })),
+      }
+    },
+
+    async answer(questionId, answer, raidSessionId) {
+      const { data, error } = await sb.rpc('answer_question', {
+        p_question_id: questionId,
+        p_answer: answer,
+        p_raid_session_id: raidSessionId ?? null,
+      })
       if (error) throw error
       const r = data as Record<string, unknown>
       return {
@@ -123,6 +170,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         bossDefeated: r.boss_defeated as boolean,
         finalBlow: r.final_blow as boolean,
         unlockedModuleId: (r.unlocked_module_id as number | null) ?? null,
+        raidFinished: Boolean(r.raid_finished),
         newBadges: (r.new_badges as string[]) ?? [],
       } satisfies AnswerResult
     },

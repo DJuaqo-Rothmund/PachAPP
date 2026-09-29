@@ -9,12 +9,16 @@ import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
 import { useToast } from '../context/ToastContext'
 import { useAsync } from '../hooks/useAsync'
-import { gameApi, type AnswerResult, type BossState, type CampaignModule } from '../lib/game'
+import { gameApi, type AnswerResult, type BossState, type CampaignModule, type PlayQuestion } from '../lib/game'
+import { formatRaidReset } from '../lib/game/raid'
 import NotFoundPage from './NotFoundPage'
 
-export default function BossRaidPage() {
+/** raid: batalla semanal (máx. 15 preguntas, daña al jefe). training: todas las preguntas, solo XP. */
+type Mode = 'raid' | 'training'
+
+export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
   const moduleId = Number(useParams().moduleId)
-  const { data: campaign, error, loading, reload } = useAsync(() => gameApi.getCampaign(), [moduleId])
+  const { data: campaign, error, loading, reload } = useAsync(() => gameApi.getCampaign(), [moduleId, mode])
 
   if (loading) return <FullScreenLoader />
   if (error) return <ErrorPanel error={error} onRetry={reload} />
@@ -42,7 +46,36 @@ export default function BossRaidPage() {
     )
   }
 
-  return <Raid key={module.id} module={module} boss={module.boss} campaign={campaign!} />
+  if (mode === 'raid' && module.raid.status === 'done') {
+    return (
+      <Gate
+        title="⏳ Ya combatiste esta semana"
+        text={`Cada aventurero tiene una batalla semanal contra ${module.boss.name}. Vuelve el ${formatRaidReset(module.raid.nextResetAt)}. Mientras tanto, entrena para llegar preparado.`}
+      >
+        <TrainingLinks moduleId={module.id} />
+      </Gate>
+    )
+  }
+
+  if (mode === 'raid' && module.raid.status === 'defeated') {
+    const next = campaign!.find((m) => m.id === module.boss!.unlocksModuleId)
+    return (
+      <Gate title="🏆 Jefe derrotado" text={`La comunidad ya derrotó a ${module.boss.name}. Puedes seguir entrenando este módulo para ganar XP.`}>
+        <div className="flex flex-wrap justify-center gap-3">
+          {next && (
+            <Link to={`/modulos/${next.id}/codice`} className="btn-primary">
+              Ir al Módulo {next.id}: {next.title}
+            </Link>
+          )}
+          <Link to={`/modulos/${module.id}/entrenar`} className="btn-ghost">
+            Entrenar
+          </Link>
+        </div>
+      </Gate>
+    )
+  }
+
+  return <Raid key={`${module.id}-${mode}`} module={module} boss={module.boss} campaign={campaign!} mode={mode} />
 }
 
 function Gate({ title, text, children }: { title: string; text: string; children: ReactNode }) {
@@ -55,16 +88,37 @@ function Gate({ title, text, children }: { title: string; text: string; children
   )
 }
 
+function TrainingLinks({ moduleId }: { moduleId: number }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-3">
+      <Link to={`/modulos/${moduleId}/entrenar`} className="btn-primary">
+        Entrenar
+      </Link>
+      <Link to="/" className="btn-ghost">
+        Volver al mapa
+      </Link>
+    </div>
+  )
+}
+
 interface RaidProps {
   module: CampaignModule
   boss: BossState
   campaign: CampaignModule[]
+  mode: Mode
 }
 
-function Raid({ module, boss, campaign }: RaidProps) {
+interface QuestionSet {
+  questions: PlayQuestion[]
+  /** Solo en batalla: id, total de preguntas y cuántas se respondieron antes de esta visita. */
+  raid: { id: number; total: number; answeredBefore: number } | null
+}
+
+function Raid({ module, boss, campaign, mode }: RaidProps) {
   const { refresh } = useProfile()
   const { demoMode } = useAuth()
   const { announceBadges } = useToast()
+  const isRaid = mode === 'raid'
 
   const [hp, setHp] = useState(boss.currentHp)
   const [defeated, setDefeated] = useState(boss.defeated)
@@ -83,12 +137,18 @@ function Raid({ module, boss, campaign }: RaidProps) {
     [boss.id],
   )
 
+  // En entrenamiento, "practicar todas" vuelve a mostrar las ya acertadas.
   const [practice, setPractice] = useState(false)
-  const { data: questions, error, loading, reload } = useAsync(() => gameApi.getQuestions(module.id), [module.id, practice])
-  const queue = useMemo(
-    () => (questions ? (practice ? questions : questions.filter((q) => !q.alreadyAnswered)) : []),
-    [questions, practice],
-  )
+  const { data, error, loading, reload } = useAsync<QuestionSet>(async () => {
+    if (isRaid) {
+      const session = await gameApi.startRaid(module.id)
+      return { questions: session.questions, raid: { id: session.id, total: session.total, answeredBefore: session.answered } }
+    }
+    const questions = await gameApi.getQuestions(module.id)
+    return { questions: practice ? questions : questions.filter((q) => !q.alreadyAnswered), raid: null }
+  }, [module.id, isRaid, practice])
+  const queue = useMemo(() => data?.questions ?? [], [data])
+  const raid = data?.raid ?? null
 
   const [index, setIndex] = useState(0)
   const [picked, setPicked] = useState<string | null>(null)
@@ -98,7 +158,7 @@ function Raid({ module, boss, campaign }: RaidProps) {
   const [stats, setStats] = useState({ answered: 0, correct: 0, xp: 0, damage: 0 })
 
   const current = queue[index]
-  const finished = !loading && questions !== null && index >= queue.length
+  const finished = !loading && data !== null && index >= queue.length
 
   const submit = async (option: string) => {
     if (!current || result || submitting) return
@@ -106,7 +166,7 @@ function Raid({ module, boss, campaign }: RaidProps) {
     setSubmitting(true)
     setAnswerError(null)
     try {
-      const r = await gameApi.answer(current.id, option)
+      const r = await gameApi.answer(current.id, option, raid?.id)
       setResult(r)
       setStats((s) => ({
         answered: s.answered + 1,
@@ -145,13 +205,15 @@ function Raid({ module, boss, campaign }: RaidProps) {
   }
 
   const unlockedModule = campaign.find((m) => m.id === (unlockedModuleId ?? (defeated ? boss.unlocksModuleId : null)))
+  const questionNumber = (raid?.answeredBefore ?? 0) + index + 1
+  const questionTotal = raid?.total ?? queue.length
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       {/* Jefe */}
       <section className="panel h-fit">
         <p className="text-xs text-mist">
-          Boss Raid · Módulo {module.id} · {module.title}
+          {isRaid ? 'Boss Raid semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
         </p>
         {/* En móvil: sprite y nombre en fila para que la pregunta quede a la vista */}
         <div className="mt-4 flex items-center gap-4 lg:block">
@@ -180,9 +242,11 @@ function Raid({ module, boss, campaign }: RaidProps) {
           <HpBar current={hp} max={boss.maxHp} />
         </div>
         <p className="mt-3 hidden text-center text-xs text-mist sm:block">
-          Cada acierto de cualquier aventurero resta HP. Si llega a 0, la comunidad desbloquea el siguiente módulo.
+          {isRaid
+            ? `Una batalla por semana de ${questionTotal} preguntas. Cada acierto de cualquier aventurero resta HP; si llega a 0, la comunidad desbloquea el siguiente módulo.`
+            : 'El entrenamiento no daña al jefe, pero cada primer acierto suma XP. Tu batalla semanal está en Boss Raid.'}
         </p>
-        {demoMode && (
+        {demoMode && isRaid && (
           <p className="mt-2 text-center text-[11px] text-gold/80">
             Demo: una comunidad simulada ya dejó al jefe malherido, así que puedes derrotarlo tú solo.
           </p>
@@ -206,23 +270,23 @@ function Raid({ module, boss, campaign }: RaidProps) {
       <section className="panel">
         {error ? (
           <ErrorPanel error={error} onRetry={reload} />
-        ) : loading || !questions ? (
+        ) : loading || !data ? (
           <p className="animate-pulse text-sm text-mist">Invocando preguntas…</p>
         ) : finished ? (
-          <Summary
-            stats={stats}
-            nothingPending={stats.answered === 0 && !practice}
-            onPractice={startPractice}
-          />
+          isRaid ? (
+            <RaidSummary stats={stats} moduleId={module.id} nextResetAt={module.raid.nextResetAt} />
+          ) : (
+            <TrainingSummary stats={stats} nothingPending={stats.answered === 0 && !practice} onPractice={startPractice} />
+          )
         ) : current ? (
           <div>
             <div className="flex items-center justify-between gap-2 text-xs text-mist">
               <span>
-                Pregunta {index + 1} de {queue.length}
+                Pregunta {questionNumber} de {questionTotal}
                 {practice && ' · práctica'}
               </span>
               <span className="text-gold">
-                +{stats.xp} XP · −{stats.damage} HP
+                +{stats.xp} XP{isRaid && ` · −${stats.damage} HP`}
               </span>
             </div>
 
@@ -250,7 +314,7 @@ function Raid({ module, boss, campaign }: RaidProps) {
 
             {result && (
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-                <Feedback result={result} bossName={boss.name} />
+                <Feedback result={result} bossName={boss.name} isRaid={isRaid} />
                 <button type="button" onClick={next} className="btn-primary">
                   {index + 1 < queue.length ? 'Siguiente' : 'Ver resultado'}
                 </button>
@@ -308,7 +372,7 @@ function OptionButton({
   )
 }
 
-function Feedback({ result, bossName }: { result: AnswerResult; bossName: string }) {
+function Feedback({ result, bossName, isRaid }: { result: AnswerResult; bossName: string; isRaid: boolean }) {
   if (result.finalBlow) {
     return (
       <p className="text-sm text-gold">
@@ -319,46 +383,62 @@ function Feedback({ result, bossName }: { result: AnswerResult; bossName: string
   if (!result.correct) {
     return <p className="text-sm text-blood">Fallaste. La respuesta correcta está marcada en verde.</p>
   }
-  if (!result.awarded) {
-    return <p className="text-sm text-moss">Correcto. Ya la habías acertado antes, así que no suma XP.</p>
-  }
+  const parts = [
+    result.awarded ? `+${result.xpGained} XP` : 'sin XP (ya la habías acertado)',
+    ...(result.damageDealt > 0 ? [`−${result.damageDealt} HP al jefe`] : []),
+  ]
   return (
     <p className="text-sm text-moss">
-      ¡Golpe certero! +{result.xpGained} XP
-      {result.damageDealt > 0 && ` · −${result.damageDealt} HP al jefe`}
+      {isRaid ? '¡Golpe certero!' : '¡Correcto!'} {parts.join(' · ')}
     </p>
   )
 }
 
-function Summary({
-  stats,
-  nothingPending,
-  onPractice,
-}: {
-  stats: { answered: number; correct: number; xp: number; damage: number }
-  nothingPending: boolean
-  onPractice: () => void
-}) {
+type Stats = { answered: number; correct: number; xp: number; damage: number }
+
+function StatTiles({ stats, showDamage }: { stats: Stats; showDamage: boolean }) {
   return (
-    <div className="text-center">
-      <p className="pixel-title text-xs text-moss">{nothingPending ? 'Módulo dominado' : 'Batalla terminada'}</p>
-      <p className="mt-4 text-sm text-mist">
-        {nothingPending
-          ? 'Ya acertaste todas las preguntas de este módulo. Puedes practicar, pero no sumará XP ni daño.'
-          : `Acertaste ${stats.correct} de ${stats.answered} preguntas.`}
-      </p>
-      {!nothingPending && (
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-stone p-4">
-            <p className="text-xs text-mist">XP ganada</p>
-            <p className="pixel-title mt-2 text-lg text-gold">+{stats.xp}</p>
-          </div>
-          <div className="rounded-lg bg-stone p-4">
-            <p className="text-xs text-mist">Daño al jefe</p>
-            <p className="pixel-title mt-2 text-lg text-blood">−{stats.damage}</p>
-          </div>
+    <div className={`mt-6 grid gap-3 ${showDamage ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      <div className="rounded-lg bg-stone p-4">
+        <p className="text-xs text-mist">XP ganada</p>
+        <p className="pixel-title mt-2 text-lg text-gold">+{stats.xp}</p>
+      </div>
+      {showDamage && (
+        <div className="rounded-lg bg-stone p-4">
+          <p className="text-xs text-mist">Daño al jefe</p>
+          <p className="pixel-title mt-2 text-lg text-blood">−{stats.damage}</p>
         </div>
       )}
+    </div>
+  )
+}
+
+function RaidSummary({ stats, moduleId, nextResetAt }: { stats: Stats; moduleId: number; nextResetAt: string }) {
+  return (
+    <div className="text-center">
+      <p className="pixel-title text-xs text-moss">Batalla semanal terminada</p>
+      <p className="mt-4 text-sm text-mist">
+        {stats.answered > 0 ? `Acertaste ${stats.correct} de ${stats.answered} preguntas. ` : ''}
+        Tu próxima batalla estará disponible el {formatRaidReset(nextResetAt)}.
+      </p>
+      {stats.answered > 0 && <StatTiles stats={stats} showDamage />}
+      <div className="mt-6">
+        <TrainingLinks moduleId={moduleId} />
+      </div>
+    </div>
+  )
+}
+
+function TrainingSummary({ stats, nothingPending, onPractice }: { stats: Stats; nothingPending: boolean; onPractice: () => void }) {
+  return (
+    <div className="text-center">
+      <p className="pixel-title text-xs text-moss">{nothingPending ? 'Módulo dominado' : 'Entrenamiento terminado'}</p>
+      <p className="mt-4 text-sm text-mist">
+        {nothingPending
+          ? 'Ya acertaste todas las preguntas de este módulo. Puedes practicarlas de nuevo, pero no sumarán XP.'
+          : `Acertaste ${stats.correct} de ${stats.answered} preguntas.`}
+      </p>
+      {!nothingPending && <StatTiles stats={stats} showDamage={false} />}
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button type="button" onClick={onPractice} className="btn-ghost">
           Practicar todas
