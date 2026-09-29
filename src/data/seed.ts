@@ -64,7 +64,7 @@ const module0: Module = {
   ],
   boss: {
     id: 'boss-m0',
-    name: 'Archimago del Andisol',
+    name: 'Archimago de Terrones',
     title: 'Consultor de Panguipulli',
     maxHp: 1000,
     damagePerHit: 10,
@@ -121,7 +121,7 @@ const module1: Module = {
   ],
   boss: {
     id: 'boss-m1',
-    name: 'Reina de la Turbera',
+    name: 'Deformidad de los Verticales',
     title: 'Señora de los Floats',
     maxHp: 1000,
     damagePerHit: 10,
@@ -198,7 +198,7 @@ export const BADGES: Badge[] = [
   {
     id: 'sobreviviente-de-heladas',
     name: 'Sobreviviente de Heladas',
-    description: 'Participaste en la caída del Archimago del Andisol.',
+    description: 'Participaste en la caída del Archimago de Terrones.',
     icon: 'snowflake',
     criterion: { type: 'boss_defeated', moduleId: 0 },
   },
