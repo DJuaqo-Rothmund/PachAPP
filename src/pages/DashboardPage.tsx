@@ -1,12 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/ui/PageHeader'
-
-// Placeholder: en el hito de datos se reemplaza por los módulos del seed / Supabase.
-const PLACEHOLDER_MODULES = [
-  { id: 0, title: 'Fundamentos Agronómicos', locked: false },
-  { id: 1, title: 'Cranberry', locked: false },
-  { id: 2, title: 'Frambuesa', locked: true },
-]
+import { MODULES } from '../data/seed'
 
 export default function DashboardPage() {
   return (
@@ -26,27 +20,35 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* TODO(hito lógica): el estado de desbloqueo vendrá de los jefes derrotados en Supabase. */}
       <div className="grid gap-4 md:grid-cols-3">
-        {PLACEHOLDER_MODULES.map((m) => (
-          <div key={m.id} className={`panel ${m.locked ? 'opacity-50' : ''}`}>
-            <p className="text-xs text-mist">Módulo {m.id}</p>
-            <h2 className="mt-1 font-semibold">{m.title}</h2>
-            <div className="mt-4 flex gap-2">
-              {m.locked ? (
-                <span className="text-sm text-mist">🔒 Bloqueado</span>
-              ) : (
-                <>
-                  <Link to={`/modulos/${m.id}/codice`} className="btn-ghost text-sm">
-                    Códice
-                  </Link>
-                  <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
-                    Boss Raid
-                  </Link>
-                </>
-              )}
+        {MODULES.map((m) => {
+          const locked = !m.initiallyUnlocked
+          return (
+            <div key={m.id} className={`panel flex flex-col ${locked ? 'opacity-50' : ''}`}>
+              <p className="text-xs text-mist">Módulo {m.id}</p>
+              <h2 className="mt-1 font-semibold">{m.title}</h2>
+              <p className="mt-2 flex-1 text-sm text-mist">{m.summary}</p>
+              <p className="mt-3 text-xs text-mist">
+                {m.questions.length} preguntas · Jefe: <span className="text-blood">{m.boss.name}</span>
+              </p>
+              <div className="mt-4 flex gap-2">
+                {locked ? (
+                  <span className="text-sm text-mist">🔒 Derrota al jefe anterior para desbloquear</span>
+                ) : (
+                  <>
+                    <Link to={`/modulos/${m.id}/codice`} className="btn-ghost text-sm">
+                      Códice
+                    </Link>
+                    <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
+                      Boss Raid
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
