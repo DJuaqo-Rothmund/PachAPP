@@ -1,0 +1,216 @@
+/**
+ * Sprites pixel art como matrices de caracteres. Cada carácter es un color de
+ * PALETTE; '.' es transparente. Todas las filas de un sprite deben medir lo mismo.
+ */
+export const PALETTE: Record<string, string> = {
+  K: '#111827', // contorno
+  S: '#e0ac7e', // piel
+  W: '#f8fafc', // blanco
+  P: '#7c3aed', // púrpura
+  p: '#4c1d95',
+  Y: '#facc15', // oro
+  G: '#22c55e', // verde
+  g: '#15803d',
+  B: '#2563eb', // azul
+  b: '#1e3a8a',
+  L: '#cbd5e1', // metal
+  C: '#38bdf8', // agua
+  N: '#92400e', // tierra
+  n: '#78350f',
+  D: '#3f3f46', // capucha
+  d: '#27272a',
+  R: '#dc2626', // rojo
+  r: '#7f1d1d',
+  O: '#f97316', // naranjo
+  I: '#ec4899', // frambuesa
+  i: '#9d174d',
+  M: '#b91c1c', // jefe
+  m: '#7f1d1d',
+  E: '#fde047', // ojos del jefe
+  T: '#e7e5e4', // cuernos / dientes
+}
+
+export const CLASS_SPRITES: Record<string, string[]> = {
+  // Brujo Fitosanitario: sombrero arcano y poción verde
+  brujo: [
+    '......KK........',
+    '.....KPPK.......',
+    '....KPPPPK......',
+    '....KPPYPK......',
+    '...KPPPPPPK.....',
+    '..KKKKKKKKKK....',
+    '...KSSSSSSK.....',
+    '...KSKSSKSK.....',
+    '...KWSSSSWK.....',
+    '...KWWWWWWK..KK.',
+    '..KPPWWWWPPK.KGK',
+    '.KPPPPWWPPPPKKGK',
+    '.KPpPPPPPPpPKKgK',
+    '.KPpPPYPPPpPK.K.',
+    '..KPPPYPPPPK....',
+    '..KKK.KK.KKK....',
+  ],
+  // Paladín del Riego: yelmo y escudo con gota de agua
+  paladin: [
+    '.....KKKKK......',
+    '....KLLLLLK.....',
+    '...KLLLLLLLK....',
+    '...KLKKKKKLK....',
+    '...KLSKSKSLK....',
+    '...KLSSSSSLK....',
+    '....KKKKKKK.....',
+    '..KBBBBBBBBBK...',
+    'KKKKKKBBBBBBBK..',
+    'KCCCCKBBLBBBBK..',
+    'KCWCCKBBBBBBBK..',
+    'KCCCCKBbBBBbBK..',
+    '.KCCK.KBBBBBK...',
+    '..KK..KBBKBBK...',
+    '......KbbKbbK...',
+    '......KKK.KKK...',
+  ],
+  // Druida de Suelos: capucha de hojas y bastón
+  druida: [
+    '................',
+    '.....KKKKK......',
+    '....KGGGGGK.....',
+    '...KGgGGGgGK....',
+    '...KNNNNNNNK....',
+    '..KNKSSSSSKNK...',
+    '..KNSKSSKSNK....',
+    '..KNSSSSSSNK....',
+    '..KNNKSSKNNK..KK',
+    '.KNNNNKKNNNNK.KN',
+    '.KNnNNGGNNnNK.KN',
+    '.KNnNNNNNNnNKKNK',
+    '.KNNNNGNNNNNK.KN',
+    '..KNNNNNNNNK..KN',
+    '..KnnnKKnnnK..KN',
+    '..KKKK..KKKK..KK',
+  ],
+  // Pícaro de Cosecha: capucha, ojos dorados y canasto de fruta
+  picaro: [
+    '......KKKK......',
+    '.....KDDDDK.....',
+    '....KDDDDDDK....',
+    '...KDDDDDDDDK...',
+    '...KDKKKKKKDK...',
+    '...KDKSYSYSKDK..',
+    '...KDKSSSSSKDK..',
+    '....KDKKKKKDK...',
+    '...KDDDDDDDDDK..',
+    '..KDDdDDDDDdDDK.',
+    '..KDdDYYYYDdDK..',
+    'KKKKKDDDDDDDDK..',
+    'KRRRKDDdDDdDDK..',
+    'KNRRKKDDDDDDK...',
+    'KNNNK.KddKddK...',
+    '.KKK..KKK.KKK...',
+  ],
+}
+
+export const BOSS_SPRITE: string[] = [
+  '..T..........T..',
+  '..TT........TT..',
+  '...TKKKKKKKKT...',
+  '...KMMMMMMMMK...',
+  '..KMMMMMMMMMMK..',
+  '..KMKEKMMKEKMK..',
+  '..KMMKMMMMKMMK..',
+  '..KMMMMMMMMMMK..',
+  '..KMKTKTTKTKMK..',
+  '..KMMKKKKKKMMK..',
+  '.KMMMMMMMMMMMMK.',
+  'KMmMMMMMMMMMMmMK',
+  'KMmMMmMMMMmMMmMK',
+  'KK.KMMMMMMMMK.KK',
+  '...KMMmKKmMMK...',
+  '...KKKK..KKKK...',
+]
+
+export const BADGE_SPRITES: Record<string, string[]> = {
+  book: [
+    '............',
+    '............',
+    '.KKKK..KKKK.',
+    'KWWWWKKWWWWK',
+    'KWKKWKKWKKWK',
+    'KWWWWKKWWWWK',
+    'KWKKWKKWKKWK',
+    'KWWWWKKWWWWK',
+    'KWWWWKKWWWWK',
+    'KNNNNNNNNNNK',
+    '.KKKKKKKKKK.',
+    '............',
+  ],
+  snowflake: [
+    '.....CC.....',
+    '..C..CC..C..',
+    '...C.CC.C...',
+    '....CWWC....',
+    '.C..CWWC..C.',
+    'CCCCWWWWCCCC',
+    'CCCCWWWWCCCC',
+    '.C..CWWC..C.',
+    '....CWWC....',
+    '...C.CC.C...',
+    '..C..CC..C..',
+    '.....CC.....',
+  ],
+  'berry-red': [
+    '............',
+    '.....GGG....',
+    '....GG.G....',
+    '..KKKK.KKKK.',
+    '.KRRWRKRRWRK',
+    '.KRRRRKRRRRK',
+    '.KrRRRKrRRRK',
+    '..KKKKKKKKK.',
+    '....KRWRRK..',
+    '....KRRRRK..',
+    '....KrRRRK..',
+    '.....KKKK...',
+  ],
+  'berry-pink': [
+    '....GGGG....',
+    '...GG..GG...',
+    '..KKKKKKKK..',
+    '.KIiIIiIIiK.',
+    '.KIIiIIiIIK.',
+    '.KiIIiIIiIK.',
+    '.KIIiIIiIIK.',
+    '..KIIiIIiK..',
+    '..KiIIiIIK..',
+    '...KIIiIK...',
+    '....KKKK....',
+    '............',
+  ],
+  flame: [
+    '.....R......',
+    '.....RR.....',
+    '....RRR.....',
+    '...RROR..R..',
+    '..RROOR.RR..',
+    '..ROOORRRR..',
+    '.RROOYOORR..',
+    '.ROOYYYOOR..',
+    '.ROYYWYYOR..',
+    '.ROYYWWYOR..',
+    '..ROYYYYOR..',
+    '...RRRRRR...',
+  ],
+  sword: [
+    '..........KK',
+    '.........KLK',
+    '........KLK.',
+    '.......KLK..',
+    '......KLK...',
+    '.....KLK....',
+    '..K.KLK.....',
+    '..KYLK......',
+    '...YYK......',
+    '..NKYYK.....',
+    '.NNK..K.....',
+    'KNK.........',
+  ],
+}

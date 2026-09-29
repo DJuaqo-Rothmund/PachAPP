@@ -19,7 +19,10 @@ cp .env.example .env.local   # completa URL y anon key de Supabase
 npm run dev
 ```
 
-Sin variables de Supabase la app corre en **modo demo** (sin login) para poder revisar la UI.
+Sin variables de Supabase la app corre en **modo demo**: sin login, con un backend simulado en el navegador
+(`src/lib/game/demoApi.ts`) que aplica las mismas reglas que el servidor y guarda el progreso en `localStorage`.
+En la demo los jefes parten con 120 HP (la "comunidad simulada" ya los hirió) para poder derrotarlos jugando solo.
+El progreso se borra desde **Perfil → Reiniciar demo**.
 
 ## Base de datos (Supabase)
 
@@ -73,9 +76,10 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 
 ```
 src/
-  components/   layout, routing guards y UI base
-  context/      AuthContext (sesión Supabase)
+  components/   layout, guards de rutas, UI base, componentes de juego y sprites pixel art
+  context/      Auth, Profile (perfil/XP) y Toast (loot obtenido)
   data/         clases RPG y datos semilla
-  lib/          cliente Supabase
+  hooks/        useAsync
+  lib/          cliente Supabase y capa de juego (lib/game: API Supabase + API demo)
   pages/        una página por ruta
 ```

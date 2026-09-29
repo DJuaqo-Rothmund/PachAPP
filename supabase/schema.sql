@@ -458,6 +458,31 @@ begin
 end;
 $$;
 
+-- Estado de la campaña para el usuario actual: desbloqueo, progreso y Códice.
+create or replace function public.get_campaign()
+returns table (
+  module_id integer,
+  unlocked boolean,
+  question_count integer,
+  answered_count integer,
+  codex_read boolean
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    m.id,
+    (m.initially_unlocked or m.unlocked_at is not null),
+    (select count(*)::integer from public.questions q where q.module_id = m.id),
+    (select count(*)::integer from public.answers a
+      where a.module_id = m.id and a.user_id = auth.uid() and a.awarded),
+    exists (select 1 from public.codex_reads c where c.module_id = m.id and c.user_id = auth.uid())
+  from public.modules m
+  order by m.id;
+$$;
+
 -- Ranking de XP del mes calendario actual (zona horaria de Chile).
 create or replace function public.get_monthly_leaderboard(p_limit integer default 50)
 returns table (
@@ -593,12 +618,14 @@ revoke execute on function public.mark_codex_read(integer) from public, anon;
 revoke execute on function public.get_module_questions(integer) from public, anon;
 revoke execute on function public.answer_question(text, text) from public, anon;
 revoke execute on function public.get_monthly_leaderboard(integer) from public, anon;
+revoke execute on function public.get_campaign() from public, anon;
 revoke execute on function public.admin_reset_boss(text) from public, anon;
 
 grant execute on function public.mark_codex_read(integer) to authenticated;
 grant execute on function public.get_module_questions(integer) to authenticated;
 grant execute on function public.answer_question(text, text) to authenticated;
 grant execute on function public.get_monthly_leaderboard(integer) to authenticated;
+grant execute on function public.get_campaign() to authenticated;
 grant execute on function public.admin_reset_boss(text) to authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.is_module_unlocked(integer) to authenticated;

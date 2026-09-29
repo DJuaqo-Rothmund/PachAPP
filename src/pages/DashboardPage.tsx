@@ -1,54 +1,118 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/ui/PageHeader'
-import { MODULES } from '../data/seed'
+import { ErrorPanel } from '../components/ui/ErrorPanel'
+import { HpBar } from '../components/game/HpBar'
+import { PixelSprite } from '../components/pixel/PixelSprite'
+import { BOSS_SPRITE } from '../components/pixel/sprites'
+import { useProfile } from '../context/ProfileContext'
+import { useAsync } from '../hooks/useAsync'
+import { gameApi, type CampaignModule } from '../lib/game'
+import { levelFromXp } from '../lib/game/level'
 
 export default function DashboardPage() {
+  const { profile } = useProfile()
+  const { data, error, loading, reload } = useAsync(
+    () => Promise.all([gameApi.getCampaign(), gameApi.getLeaderboard(), gameApi.getMyBadges()]),
+    [],
+  )
+
+  if (error) return <ErrorPanel error={error} onRetry={reload} />
+
+  const [campaign, leaderboard, badges] = data ?? [null, null, null]
+  const myRow = leaderboard?.find((r) => r.userId === profile?.id)
+  const level = levelFromXp(profile?.totalXp ?? 0)
+
+  const kpis = [
+    { label: 'XP del mes', value: myRow ? String(myRow.monthlyXp) : '0' },
+    { label: 'Nivel', value: String(level.level), hint: `${level.toNext} XP para subir` },
+    { label: 'Emblemas', value: badges ? String(badges.length) : '—' },
+    { label: 'Ranking', value: myRow ? `#${myRow.rank}` : '—' },
+  ]
+
   return (
     <div>
       <PageHeader title="Mapa de campaña" subtitle="Lee el Códice, responde y derrota al jefe para avanzar." />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          { label: 'XP del mes', value: '0' },
-          { label: 'Emblemas', value: '0' },
-          { label: 'Ranking', value: '—' },
-        ].map((kpi) => (
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {kpis.map((kpi) => (
           <div key={kpi.label} className="panel">
             <p className="text-xs uppercase tracking-wide text-mist">{kpi.label}</p>
-            <p className="pixel-title mt-3 text-xl text-gold">{kpi.value}</p>
+            <p className="pixel-title mt-3 text-xl text-gold">{loading ? '…' : kpi.value}</p>
+            {kpi.hint && <p className="mt-2 text-xs text-mist">{kpi.hint}</p>}
           </div>
         ))}
       </div>
 
-      {/* TODO(hito lógica): el estado de desbloqueo vendrá de los jefes derrotados en Supabase. */}
       <div className="grid gap-4 md:grid-cols-3">
-        {MODULES.map((m) => {
-          const locked = !m.initiallyUnlocked
-          return (
-            <div key={m.id} className={`panel flex flex-col ${locked ? 'opacity-50' : ''}`}>
-              <p className="text-xs text-mist">Módulo {m.id}</p>
-              <h2 className="mt-1 font-semibold">{m.title}</h2>
-              <p className="mt-2 flex-1 text-sm text-mist">{m.summary}</p>
-              <p className="mt-3 text-xs text-mist">
-                {m.questions.length} preguntas · Jefe: <span className="text-blood">{m.boss.name}</span>
-              </p>
-              <div className="mt-4 flex gap-2">
-                {locked ? (
-                  <span className="text-sm text-mist">🔒 Derrota al jefe anterior para desbloquear</span>
-                ) : (
-                  <>
-                    <Link to={`/modulos/${m.id}/codice`} className="btn-ghost text-sm">
-                      Códice
-                    </Link>
-                    <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
-                      Boss Raid
-                    </Link>
-                  </>
-                )}
+        {loading || !campaign
+          ? [0, 1, 2].map((i) => <div key={i} className="panel h-64 animate-pulse" />)
+          : campaign.map((m) => <ModuleCard key={m.id} module={m} />)}
+      </div>
+    </div>
+  )
+}
+
+function ModuleCard({ module: m }: { module: CampaignModule }) {
+  const boss = m.boss
+  const progress = m.questionCount > 0 ? (m.answeredCount / m.questionCount) * 100 : 0
+
+  return (
+    <div className={`panel flex flex-col ${m.unlocked ? '' : 'opacity-50'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-mist">Módulo {m.id}</p>
+          <h2 className="mt-1 font-semibold">{m.title}</h2>
+        </div>
+        {m.codexRead && <span className="shrink-0 whitespace-nowrap rounded bg-moss/15 px-2 py-0.5 text-[11px] text-moss">Códice leído</span>}
+      </div>
+      <p className="mt-2 flex-1 text-sm text-mist">{m.summary}</p>
+
+      {boss && (
+        <div className="mt-4 flex items-center gap-3 rounded-lg bg-stone p-3">
+          <PixelSprite rows={BOSS_SPRITE} className={`h-10 w-10 shrink-0 ${boss.defeated ? 'opacity-40 grayscale' : ''}`} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-blood">{boss.name}</p>
+            {boss.defeated ? (
+              <p className="pixel-title mt-1 text-[9px] text-gold">Derrotado</p>
+            ) : (
+              <div className="mt-1.5">
+                <HpBar current={boss.currentHp} max={boss.maxHp} size="sm" />
+                <p className="mt-1 text-[11px] text-mist">
+                  {boss.currentHp} / {boss.maxHp} HP
+                </p>
               </div>
-            </div>
-          )
-        })}
+            )}
+          </div>
+        </div>
+      )}
+
+      {m.unlocked && (
+        <div className="mt-3">
+          <div className="flex justify-between text-[11px] text-mist">
+            <span>Tu progreso</span>
+            <span>
+              {m.answeredCount}/{m.questionCount}
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded bg-stone">
+            <div className="h-full bg-moss" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 flex gap-2">
+        {!m.unlocked ? (
+          <span className="text-sm text-mist">🔒 Derrota al jefe anterior para desbloquear</span>
+        ) : (
+          <>
+            <Link to={`/modulos/${m.id}/codice`} className="btn-ghost text-sm">
+              Códice
+            </Link>
+            <Link to={`/modulos/${m.id}/raid`} className="btn-primary text-sm">
+              Boss Raid
+            </Link>
+          </>
+        )}
       </div>
     </div>
   )

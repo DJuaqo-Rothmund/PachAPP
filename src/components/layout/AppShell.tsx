@@ -1,5 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useProfile } from '../../context/ProfileContext'
+import { levelFromXp } from '../../lib/game/level'
+import { ClassAvatar } from '../game/ClassAvatar'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Mapa', end: true },
@@ -9,6 +12,7 @@ const NAV_ITEMS = [
 
 export function AppShell() {
   const { user, demoMode, signOut } = useAuth()
+  const { profile } = useProfile()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -43,11 +47,22 @@ export function AppShell() {
             ))}
           </nav>
 
-          {user && (
-            <button type="button" onClick={signOut} className="btn-ghost text-sm">
-              Salir
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {profile && (
+              <NavLink to="/perfil" className="flex items-center gap-2" aria-label="Mi perfil">
+                <div className="text-right leading-tight">
+                  <p className="pixel-title text-[9px] text-gold">Nv {levelFromXp(profile.totalXp).level}</p>
+                  <p className="text-xs text-mist">{profile.totalXp} XP</p>
+                </div>
+                <ClassAvatar rpgClass={profile.rpgClass} className="h-9 w-9" />
+              </NavLink>
+            )}
+            {user && (
+              <button type="button" onClick={signOut} className="btn-ghost px-3 py-1.5 text-sm">
+                Salir
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
