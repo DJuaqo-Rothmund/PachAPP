@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import { BOSS_SPRITE, CLASS_SPRITES } from '@shared/components/pixel/sprites'
+import { BADGE_SPRITES, BOSS_SPRITE, CLASS_SPRITES } from '@shared/components/pixel/sprites'
 import type { RpgClassId } from '@shared/data/classes'
 import { PixelSprite } from './PixelSprite'
 import { PixelText } from './ui'
@@ -12,6 +12,10 @@ export function ClassAvatar({ rpgClass, size }: { rpgClass: RpgClassId | null; s
 
 export function BossSprite({ size, defeated = false }: { size: number; defeated?: boolean }) {
   return <PixelSprite rows={BOSS_SPRITE} size={size} muted={defeated} />
+}
+
+export function BadgeIcon({ icon, size, locked = false }: { icon: string; size: number; locked?: boolean }) {
+  return <PixelSprite rows={BADGE_SPRITES[icon] ?? BADGE_SPRITES.book} size={size} muted={locked} />
 }
 
 export function HpBar({ current, max, compact = false }: { current: number; max: number; compact?: boolean }) {

@@ -6,6 +6,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ProfileProvider, useProfile } from '@/context/ProfileContext'
+import { ToastProvider } from '@/context/ToastContext'
 import { Loader } from '@/components/ui'
 import { hydrateDemoStorage } from '@/lib/demoStorage'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -31,7 +32,9 @@ export default function RootLayout() {
       {fontsLoaded && storageReady ? (
         <AuthProvider>
           <ProfileProvider>
-            <RootNavigator />
+            <ToastProvider>
+              <RootNavigator />
+            </ToastProvider>
           </ProfileProvider>
         </AuthProvider>
       ) : (

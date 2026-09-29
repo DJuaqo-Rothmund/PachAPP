@@ -1,18 +1,25 @@
+import { useCallback } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { RPG_CLASSES } from '@shared/data/classes'
-import { ClassAvatar } from '@/components/game'
-import { Body, Button, Panel, PixelText, Screen } from '@/components/ui'
+import { BadgeIcon, ClassAvatar } from '@/components/game'
+import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
-import { levelFromXp, resetDemo } from '@/lib/game'
+import { useAsync } from '@/hooks/useAsync'
+import { loadBadgeCatalog } from '@/lib/badgeCatalog'
+import { gameApi, levelFromXp, resetDemo } from '@/lib/game'
 import { colors, radius, space } from '@/theme'
 
-// La colección de emblemas se agrega en el hito 2.
 export default function ProfileScreen() {
   const { demoMode, user, signOut } = useAuth()
   const { profile, refresh } = useProfile()
+  const badges = useAsync(() => Promise.all([loadBadgeCatalog(), gameApi.getMyBadges()]), [])
+  useFocusEffect(useCallback(() => badges.reload(), [badges.reload]))
   if (!profile) return null
+
+  const [catalog, earned] = badges.data ?? [[], []]
+  const earnedMap = new Map(earned.map((b) => [b.badgeId, b.earnedAt]))
 
   const cls = RPG_CLASSES.find((c) => c.id === profile.rpgClass)
   const level = levelFromXp(profile.totalXp)
@@ -62,6 +69,42 @@ export default function ProfileScreen() {
         </View>
       </Panel>
 
+      <Panel>
+        <View style={styles.row}>
+          <PixelText size={10}>Emblemas</PixelText>
+          <Body tone="mist" size={12}>
+            {earnedMap.size} / {catalog.length}
+          </Body>
+        </View>
+        {badges.error ? (
+          <View style={{ marginTop: space.md }}>
+            <ErrorPanel error={badges.error} onRetry={badges.reload} />
+          </View>
+        ) : (
+          <View style={styles.badgeGrid}>
+            {catalog.map((badge) => {
+              const earnedAt = earnedMap.get(badge.id)
+              return (
+                <View key={badge.id} style={[styles.badge, earnedAt ? styles.badgeEarned : null]}>
+                  <BadgeIcon icon={badge.icon} size={40} locked={!earnedAt} />
+                  <Body weight="medium" size={13} tone={earnedAt ? 'bone' : 'mist'} style={styles.center}>
+                    {badge.name}
+                  </Body>
+                  <Body tone="mist" size={11} style={styles.center}>
+                    {badge.description}
+                  </Body>
+                  {earnedAt && (
+                    <Body tone="gold" size={10} style={styles.center}>
+                      {new Date(earnedAt).toLocaleDateString('es-CL')}
+                    </Body>
+                  )}
+                </View>
+              )
+            })}
+          </View>
+        )}
+      </Panel>
+
       <Button label="Cambiar clase" variant="ghost" onPress={() => router.push('/onboarding')} />
       {demoMode ? (
         <Button label="Reiniciar demo" variant="ghost" onPress={confirmReset} />
@@ -82,5 +125,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.md },
+  badge: {
+    width: '48%',
+    flexGrow: 1,
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.rune,
+    borderRadius: radius.md,
+    padding: space.md,
+  },
+  badgeEarned: { borderColor: 'rgba(250, 204, 21, 0.4)', backgroundColor: 'rgba(250, 204, 21, 0.05)' },
+  center: { textAlign: 'center' },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.stone, overflow: 'hidden', marginTop: 6 },
 })
