@@ -107,12 +107,31 @@ function initialState(): DemoState {
   }
 }
 
+/** Almacenamiento clave-valor síncrono. En la web es localStorage; la app móvil inyecta el suyo. */
+export interface DemoStorage {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
+}
+
+let storage: DemoStorage = {
+  getItem: (key) => globalThis.localStorage?.getItem(key) ?? null,
+  setItem: (key, value) => globalThis.localStorage?.setItem(key, value),
+  removeItem: (key) => globalThis.localStorage?.removeItem(key),
+}
+
+/** Reemplaza el almacenamiento de la demo. Debe llamarse antes del primer uso de la API. */
+export function setDemoStorage(next: DemoStorage) {
+  storage = next
+  memoryState = null
+}
+
 let memoryState: DemoState | null = null
 
 function load(): DemoState {
   if (memoryState) return memoryState
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = storage.getItem(STORAGE_KEY)
     memoryState = raw ? { ...initialState(), ...JSON.parse(raw) } : initialState()
   } catch {
     memoryState = initialState()
@@ -123,7 +142,7 @@ function load(): DemoState {
 function save(state: DemoState) {
   memoryState = state
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    storage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
     // Sin storage (modo privado): el progreso vive solo en memoria.
   }
@@ -496,7 +515,7 @@ export function createDemoAdminApi(): AdminApi {
 export function resetDemo() {
   memoryState = null
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    storage.removeItem(STORAGE_KEY)
   } catch {
     // ignorar
   }

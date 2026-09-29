@@ -24,6 +24,26 @@ Sin variables de Supabase la app corre en **modo demo**: sin login, con un backe
 En la demo los jefes parten con 120 HP (la "comunidad simulada" ya los hirió) para poder derrotarlos jugando solo.
 El progreso se borra desde **Perfil → Reiniciar demo**.
 
+## App Android (`mobile/`)
+
+App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semilla, los tipos, las reglas del juego
+(backend demo y API de Supabase) y los sprites pixel art: los importa desde `../src` con el alias `@shared/*`.
+
+- **Descargar el APK:** en GitHub → pestaña **Actions** → workflow **Android APK** → la última ejecución → artefacto
+  `pachapp-android-apk`. Descomprime el zip e instala el `.apk` en tu Android (permite "instalar apps desconocidas").
+  El APK está firmado con la llave de depuración: sirve para probar, no para Google Play.
+- **Modo demo:** sin secretos de Supabase, el APK corre en modo demo con el progreso guardado en el teléfono.
+  Para datos reales, agrega los secretos `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+  en GitHub → Settings → Secrets and variables → Actions (el login con Google nativo llega en un próximo hito).
+- **Desarrollo:**
+
+  ```bash
+  cd mobile
+  npm install
+  npx expo start        # escanea el QR con un build de desarrollo, o usa --web para verla en el navegador
+  npx tsc --noEmit      # typecheck
+  ```
+
 ## Base de datos (Supabase)
 
 1. **SQL Editor** → ejecutar `supabase/schema.sql` (tablas, RLS, funciones del juego).
