@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens de diseño Pachapp: dashboard limpio (tipo Streamlit/Power BI)
+ * sobre una base "Dark RPG". La tipografía pixel se reserva para títulos,
+ * emblemas y números de juego (HP, XP).
+ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: 'Press Start 2P', ui-monospace, monospace;
+
+  --color-void: #0b0f0c;
+  --color-crypt: #121813;
+  --color-stone: #1b231d;
+  --color-rune: #2a352d;
+  --color-mist: #9aa89e;
+  --color-bone: #e8efe9;
+
+  --color-moss: #4ade80;
+  --color-moss-dim: #166534;
+  --color-gold: #facc15;
+  --color-blood: #ef4444;
+  --color-mana: #60a5fa;
+  --color-arcane: #a78bfa;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-void font-sans text-bone antialiased;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-rune bg-crypt p-5 shadow-lg shadow-black/30;
+  }
+
+  .pixel-title {
+    @apply font-pixel leading-relaxed tracking-tight;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-moss px-4 py-2 font-semibold text-void transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-rune px-4 py-2 font-medium text-bone transition hover:bg-stone;
+  }
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
