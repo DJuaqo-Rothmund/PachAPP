@@ -32,6 +32,8 @@ El progreso se borra desde **Perfil → Reiniciar demo**.
 4. **Authentication → URL Configuration**: agregar `http://localhost:5173` y tu dominio a *Redirect URLs*.
 
 Ambos archivos se pueden re-ejecutar sin perder el progreso de los jugadores.
+Ojo: re-ejecutar `seed.sql` restaura el contenido original de los módulos, preguntas, jefes y emblemas semilla
+(mismos IDs), pisando lo que hayas editado desde el panel admin. El contenido creado desde el panel no se toca.
 Si editas `src/data/seed.ts`, regenera el SQL con:
 
 ```bash
@@ -78,6 +80,9 @@ Solo visible para los correos en `admin_emails` (acceso desde **Perfil → Panel
 - **Módulos:** crear, editar y borrar; editor del Códice por secciones; desbloqueo manual.
 - **Preguntas:** por módulo, con búsqueda; valida 4 alternativas distintas; marca la pregunta del jefe.
 - **Jefes:** HP, daño por acierto, módulo que desbloquean, reiniciar HP y crear jefes para módulos nuevos.
+- **Emblemas:** nombre, descripción, ícono pixel art y regla para ganarlo (leer N Códices, racha de N aciertos,
+  completar un módulo, participar en la derrota de un jefe o dar el golpe final). Muestra cuántos jugadores tiene cada uno.
+  Los emblemas nuevos se otorgan en la siguiente acción del jugador que cumpla la regla.
 
 Las escrituras las protege RLS en Supabase (`is_admin()`): aunque alguien llame a la API directamente, un jugador no puede modificar contenido.
 

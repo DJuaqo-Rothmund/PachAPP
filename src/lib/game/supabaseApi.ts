@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { RpgClassId } from '../../data/classes'
-import type { CodexSection } from '../../data/types'
+import type { Badge, CodexSection } from '../../data/types'
 import type { AnswerResult, BossState, GameApi } from './types'
 
 interface BossRow {
@@ -154,6 +154,16 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       const { data, error } = await sb.from('user_badges').select('badge_id, earned_at').eq('user_id', id)
       if (error) throw error
       return data.map((b) => ({ badgeId: b.badge_id, earnedAt: b.earned_at }))
+    },
+
+    async getBadges() {
+      const { data, error } = await sb
+        .from('badges')
+        .select('id, name, description, icon, criterion')
+        .order('created_at')
+        .order('id')
+      if (error) throw error
+      return data as Badge[]
     },
 
     subscribeBoss(bossId, onChange) {

@@ -4,6 +4,7 @@ import { OverviewTab } from '../components/admin/OverviewTab'
 import { ModulesTab } from '../components/admin/ModulesTab'
 import { QuestionsTab } from '../components/admin/QuestionsTab'
 import { BossesTab } from '../components/admin/BossesTab'
+import { BadgesTab } from '../components/admin/BadgesTab'
 import { useAuth } from '../context/AuthContext'
 
 const TABS = [
@@ -11,6 +12,7 @@ const TABS = [
   { id: 'modulos', label: 'Módulos', Component: ModulesTab },
   { id: 'preguntas', label: 'Preguntas', Component: QuestionsTab },
   { id: 'jefes', label: 'Jefes', Component: BossesTab },
+  { id: 'emblemas', label: 'Emblemas', Component: BadgesTab },
 ] as const
 
 export default function AdminPage() {
