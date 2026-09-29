@@ -59,6 +59,17 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 - Quien deja al jefe en 0 HP da el **golpe final** (+100 XP) y la comunidad desbloquea el siguiente módulo de forma permanente.
 - Ranking mensual: `get_monthly_leaderboard()` (mes calendario, hora de Chile).
 
+## Despliegue en Vercel
+
+1. En [vercel.com/new](https://vercel.com/new) importa el repo `DJuaqo-Rothmund/PachAPP` (Vercel detecta Vite solo; `vercel.json` ya trae la configuración).
+2. En **Settings → Environment Variables** agrega `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_ADMIN_EMAILS`.
+   Sin ellas la app se publica en modo demo.
+3. Despliega. Luego, en Supabase → **Authentication → URL Configuration**, agrega tu dominio de Vercel
+   (por ejemplo `https://pachapp.vercel.app`) como *Site URL* y en *Redirect URLs*, para que funcione el login con Google.
+
+`vercel.json` redirige todas las rutas a `index.html` (para que `/perfil` o `/admin` funcionen al recargar)
+y evita que el navegador guarde en caché el service worker, para que las actualizaciones de la PWA lleguen.
+
 ## Panel admin (`/admin`)
 
 Solo visible para los correos en `admin_emails` (acceso desde **Perfil → Panel Admin**). En modo demo, el usuario local es admin.
