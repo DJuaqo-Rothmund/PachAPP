@@ -4,18 +4,19 @@ import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { ClassAvatar } from '../components/game/ClassAvatar'
 import { BadgeIcon } from '../components/game/BadgeIcon'
 import { RPG_CLASSES } from '../data/classes'
-import { BADGES } from '../data/seed'
 import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi } from '../lib/game'
 import { resetDemo } from '../lib/game/demoApi'
+import { loadBadgeCatalog } from '../lib/game/badgeCatalog'
 import { levelFromXp } from '../lib/game/level'
 
 export default function ProfilePage() {
   const { user, demoMode, isAdmin } = useAuth()
   const { profile } = useProfile()
-  const { data: earned, error, reload } = useAsync(() => gameApi.getMyBadges(), [])
+  const { data, error, reload } = useAsync(() => Promise.all([loadBadgeCatalog(), gameApi.getMyBadges()]), [])
+  const [catalog, earned] = data ?? [[], []]
 
   if (!profile) return null
 
@@ -74,7 +75,7 @@ export default function ProfilePage() {
           <div className="flex items-baseline justify-between">
             <h2 className="pixel-title text-xs text-bone">Emblemas</h2>
             <span className="text-xs text-mist">
-              {earnedMap.size} / {BADGES.length}
+              {earnedMap.size} / {catalog.length}
             </span>
           </div>
           {error ? (
@@ -83,7 +84,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {BADGES.map((badge) => {
+              {catalog.map((badge) => {
                 const earnedAt = earnedMap.get(badge.id)
                 return (
                   <li

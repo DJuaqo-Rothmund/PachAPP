@@ -5,6 +5,7 @@
  */
 import type { RpgClassId } from '../../data/classes'
 import { BADGES, MODULES } from '../../data/seed'
+import type { Badge } from '../../data/types'
 import type {
   AdminApi,
   AdminBoss,
@@ -41,6 +42,7 @@ interface DemoState {
   modules: DemoModule[]
   questions: AdminQuestion[]
   bosses: AdminBoss[]
+  badgeCatalog: Badge[]
   /** Módulos abiertos por la comunidad (o por el admin). */
   unlockedModules: number[]
   rpgClass: RpgClassId | null
@@ -95,6 +97,7 @@ function initialState(): DemoState {
       unlocksModuleId: m.boss.unlocksModuleId,
       defeatedAt: null,
     })),
+    badgeCatalog: BADGES,
     unlockedModules: [],
     rpgClass: null,
     totalXp: 0,
@@ -170,7 +173,7 @@ function evaluateBadges(s: DemoState): string[] {
   }
 
   const fresh: string[] = []
-  for (const badge of BADGES) {
+  for (const badge of s.badgeCatalog) {
     if (earned.has(badge.id)) continue
     const c = badge.criterion
     let ok = false
@@ -288,7 +291,7 @@ export function createDemoApi(): GameApi {
             xp += 100
             const next = boss.unlocksModuleId
             if (next !== null && !s.unlockedModules.includes(next)) s.unlockedModules.push(next)
-            for (const badge of BADGES.filter((b) => b.criterion.type === 'final_blow')) {
+            for (const badge of s.badgeCatalog.filter((b) => b.criterion.type === 'final_blow')) {
               if (s.badges.some((b) => b.badgeId === badge.id)) continue
               s.badges.push({ badgeId: badge.id, earnedAt: new Date().toISOString() })
               fresh.push(badge.id)
@@ -342,6 +345,10 @@ export function createDemoApi(): GameApi {
 
     async getMyBadges() {
       return load().badges
+    },
+
+    async getBadges() {
+      return load().badgeCatalog
     },
 
     subscribeBoss(bossId, onChange) {
@@ -462,6 +469,25 @@ export function createDemoAdminApi(): AdminApi {
       boss.defeatedAt = null
       save(s)
       notifyBoss(boss)
+    },
+
+    async listBadges() {
+      const s = load()
+      return s.badgeCatalog.map((b) => ({ ...b, holders: s.badges.some((e) => e.badgeId === b.id) ? 1 : 0 }))
+    },
+
+    async saveBadge(badge) {
+      const s = load()
+      const i = s.badgeCatalog.findIndex((b) => b.id === badge.id)
+      s.badgeCatalog = i === -1 ? [...s.badgeCatalog, badge] : s.badgeCatalog.map((b, j) => (j === i ? badge : b))
+      save(s)
+    },
+
+    async deleteBadge(id) {
+      const s = load()
+      s.badgeCatalog = s.badgeCatalog.filter((b) => b.id !== id)
+      s.badges = s.badges.filter((b) => b.badgeId !== id)
+      save(s)
     },
   }
 }

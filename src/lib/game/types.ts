@@ -1,5 +1,5 @@
 import type { RpgClassId } from '../../data/classes'
-import type { CodexSection } from '../../data/types'
+import type { Badge, CodexSection } from '../../data/types'
 
 export interface Profile {
   id: string
@@ -77,6 +77,8 @@ export interface GameApi {
   answer(questionId: string, answer: string): Promise<AnswerResult>
   getLeaderboard(): Promise<LeaderboardRow[]>
   getMyBadges(): Promise<EarnedBadge[]>
+  /** Catálogo completo de emblemas (editable desde el panel admin). */
+  getBadges(): Promise<Badge[]>
   /** Escucha cambios de HP del jefe en vivo. Devuelve la función para desuscribirse. */
   subscribeBoss(bossId: string, onChange: (boss: Pick<BossState, 'currentHp' | 'defeated'>) => void): () => void
 }
@@ -134,6 +136,11 @@ export interface QuestionStat {
   correct: number
 }
 
+export interface AdminBadge extends Badge {
+  /** Cuántos jugadores lo han ganado. */
+  holders: number
+}
+
 export interface AdminApi {
   getOverview(): Promise<AdminOverview>
   getQuestionStats(): Promise<QuestionStat[]>
@@ -147,4 +154,7 @@ export interface AdminApi {
   saveBoss(boss: AdminBoss): Promise<void>
   deleteBoss(id: string): Promise<void>
   resetBoss(id: string): Promise<void>
+  listBadges(): Promise<AdminBadge[]>
+  saveBadge(badge: Badge): Promise<void>
+  deleteBadge(id: string): Promise<void>
 }

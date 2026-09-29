@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { AdminApi, AdminBoss, AdminModule, AdminQuestion } from './types'
+import type { AdminApi, AdminBadge, AdminBoss, AdminModule, AdminQuestion } from './types'
 
 function check<T>(res: { data: T; error: unknown }): T {
   if (res.error) throw res.error
@@ -148,6 +148,42 @@ export function createSupabaseAdminApi(sb: SupabaseClient): AdminApi {
 
     async resetBoss(id) {
       check(await sb.rpc('admin_reset_boss', { p_boss_id: id }))
+    },
+
+    async listBadges() {
+      const rows = check(
+        await sb
+          .from('badges')
+          .select('id, name, description, icon, criterion, user_badges(count)')
+          .order('created_at')
+          .order('id'),
+      )
+      return (rows ?? []).map(
+        (b): AdminBadge => ({
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          icon: b.icon,
+          criterion: b.criterion,
+          holders: (b.user_badges as { count: number }[] | null)?.[0]?.count ?? 0,
+        }),
+      )
+    },
+
+    async saveBadge(b) {
+      check(
+        await sb.from('badges').upsert({
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          icon: b.icon,
+          criterion: b.criterion,
+        }),
+      )
+    },
+
+    async deleteBadge(id) {
+      check(await sb.from('badges').delete().eq('id', id))
     },
   }
 }
