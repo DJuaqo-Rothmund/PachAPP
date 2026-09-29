@@ -33,8 +33,12 @@ App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semi
   `pachapp-android-apk`. Descomprime el zip e instala el `.apk` en tu Android (permite "instalar apps desconocidas").
   El APK está firmado con la llave de depuración: sirve para probar, no para Google Play.
 - **Modo demo:** sin secretos de Supabase, el APK corre en modo demo con el progreso guardado en el teléfono.
-  Para datos reales, agrega los secretos `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-  en GitHub → Settings → Secrets and variables → Actions (el login con Google nativo llega en un próximo hito).
+- **Datos reales y login con Google:**
+  1. En GitHub → Settings → Secrets and variables → Actions, crea los secretos `EXPO_PUBLIC_SUPABASE_URL`
+     y `EXPO_PUBLIC_SUPABASE_ANON_KEY` (los mismos valores que la web). El próximo APK los incluye.
+  2. En Supabase → Authentication → URL Configuration → *Redirect URLs*, agrega `pachapp://auth-callback`.
+  3. Listo: el login abre Google en una pestaña segura de Chrome y vuelve a la app. Usa el mismo proveedor
+     Google de Supabase que la web, así que **no se necesitan credenciales de Android en Google Cloud**.
 - **Desarrollo:**
 
   ```bash
@@ -49,7 +53,8 @@ App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semi
 1. **SQL Editor** → ejecutar `supabase/schema.sql` (tablas, RLS, funciones del juego).
 2. **SQL Editor** → ejecutar `supabase/seed.sql` (módulos, preguntas, jefes, emblemas y correo admin).
 3. **Authentication → Providers → Google**: activar con tu Client ID/Secret de Google Cloud.
-4. **Authentication → URL Configuration**: agregar `http://localhost:5173` y tu dominio a *Redirect URLs*.
+4. **Authentication → URL Configuration**: agregar `http://localhost:5173`, tu dominio y `pachapp://auth-callback`
+   (app Android) a *Redirect URLs*.
 
 Ambos archivos se pueden re-ejecutar sin perder el progreso de los jugadores.
 Ojo: re-ejecutar `seed.sql` restaura el contenido original de los módulos, preguntas, jefes y emblemas semilla
