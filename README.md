@@ -57,6 +57,9 @@ App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semi
    (app Android) a *Redirect URLs*.
 
 Ambos archivos se pueden re-ejecutar sin perder el progreso de los jugadores.
+**Al actualizar desde una versión anterior** re-ejecuta los dos: `schema.sql` agrega la tabla `raid_sessions` y las
+funciones del raid semanal, y `seed.sql` carga los nuevos Códices y preguntas. Las preguntas semilla conservan sus IDs
+(`m0-q1`…), pero su contenido cambió: el historial de respuestas de esos IDs ahora apunta a las preguntas nuevas.
 Ojo: re-ejecutar `seed.sql` restaura el contenido original de los módulos, preguntas, jefes y emblemas semilla
 (mismos IDs), pisando lo que hayas editado desde el panel admin. El contenido creado desde el panel no se toca.
 Si editas `src/data/seed.ts`, regenera el SQL con:
@@ -75,16 +78,43 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 | `bosses`       | Jefe por módulo: HP actual/máximo, daño por acierto, módulo que desbloquea |
 | `codex_reads`  | Qué Códices leyó cada usuario                                       |
 | `answers`      | Historial de respuestas, XP y daño                                  |
+| `raid_sessions`| Batalla semanal de cada jugador: sus 15 preguntas, avance y daño    |
 | `badges` / `user_badges` | Emblemas y quién los ganó                                 |
 | `admin_emails` | Correos con rol admin                                               |
 
 ### Reglas del juego (en el servidor)
 
-- Los jugadores reciben preguntas vía `get_module_questions()` (alternativas barajadas, sin la correcta) y responden vía `answer_question()`.
 - Hay que leer el Códice (`mark_codex_read()`) antes de responder.
-- Solo el **primer acierto** de cada usuario por pregunta da XP (+10) y resta HP al jefe (−10). La pregunta final del jefe da +50 XP y pega ×5.
+- **Boss Raid semanal** (`start_raid()`): cada jugador combate **una vez por semana** contra cada jefe (lunes a domingo,
+  hora de Chile). La batalla tiene **máximo 15 preguntas**: 14 al azar del módulo y la pregunta final del jefe al cierre.
+  Si sales a mitad de camino, al volver retomas la misma batalla. Así el jefe se derrota en comunidad, semana a semana.
+- Solo los aciertos **dentro del raid** restan HP (−10; la pregunta final pega ×5).
+- **Entrenamiento** (`get_module_questions()`): todas las preguntas del módulo, sin límite; da XP pero no daña al jefe.
+- XP: solo el **primer acierto** de cada pregunta (raid o entrenamiento) da XP (+10; la final +50).
 - Quien deja al jefe en 0 HP da el **golpe final** (+100 XP) y la comunidad desbloquea el siguiente módulo de forma permanente.
+- Las alternativas llegan barajadas y sin la respuesta correcta; `answer_question()` la valida en el servidor.
 - Ranking mensual: `get_monthly_leaderboard()` (mes calendario, hora de Chile).
+
+## Generador de preguntas (API de Anthropic)
+
+`generate_questions.ts` pide a Claude lotes de preguntas nuevas sobre Fisiología, Riego de Precisión, Patología y
+Postcosecha, usando el Códice del módulo como contexto, y guarda cada lote en `src/data/db/<módulo>_batch_<n>.json`
+apenas llega. Descarta preguntas con alternativas repetidas o enunciados que ya existan en la semilla o en lotes anteriores.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+npm run generate:questions -- --module cranberry --count 20 --batches 3   # → cranberry_batch_1..3.json
+npm run generate:questions -- --module frambuesa --dry-run                # ver el prompt sin llamar a la API
+npm run db:batches-sql                                                    # lotes revisados → supabase/batches.sql
+```
+
+Opciones: `--module` (`0|fundamentos`, `1|cranberry`, `2|frambuesa`), `--count` (1–40, por defecto 20), `--batches`,
+`--effort` (`low`…`max`, por defecto `high`), `--out`, `--dry-run` y `--from-file` (usa un JSON guardado, para probar sin API).
+Usa el modelo `claude-opus-5-5` con salida JSON estructurada y `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`):
+si el modelo declina una solicitud, la API la reintenta sola con el modelo de respaldo recomendado.
+
+**Revisa cada lote antes de publicarlo** (edita o borra preguntas en el JSON) y luego ejecuta `supabase/batches.sql`
+en el SQL Editor. Las preguntas nuevas entran de inmediato al pool aleatorio del raid y al entrenamiento.
 
 ## Despliegue en Vercel
 
@@ -119,7 +149,8 @@ Las escrituras las protege RLS en Supabase (`is_admin()`): aunque alguien llame 
 | `/`                         | Mapa de campaña (dashboard)          |
 | `/onboarding`               | Elección de clase RPG                |
 | `/modulos/:id/codice`       | Texto de estudio del módulo          |
-| `/modulos/:id/raid`         | Boss Raid del módulo                 |
+| `/modulos/:id/raid`         | Boss Raid semanal (máx. 15 preguntas) |
+| `/modulos/:id/entrenar`     | Entrenamiento (XP sin daño al jefe)  |
 | `/leaderboard`              | Ranking mensual por XP               |
 | `/perfil`                   | Perfil y emblemas                    |
 | `/admin`                    | Panel CRUD (oculto, solo admin)      |
@@ -130,7 +161,7 @@ Las escrituras las protege RLS en Supabase (`is_admin()`): aunque alguien llame 
 src/
   components/   layout, guards de rutas, UI base, componentes de juego y sprites pixel art
   context/      Auth, Profile (perfil/XP) y Toast (loot obtenido)
-  data/         clases RPG y datos semilla
+  data/         clases RPG y datos semilla (data/db: lotes generados por generate_questions.ts)
   hooks/        useAsync
   lib/          cliente Supabase y capa de juego (lib/game: API Supabase + API demo)
   pages/        una página por ruta
