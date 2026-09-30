@@ -12,11 +12,14 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/context/AuthContext'
+import { useClassTheme } from '@/hooks/useClassTheme'
+import { ThemeBackdrop } from './ThemeBackdrop'
 import { colors, fonts, radius, space } from '@/theme'
 
 /** Pantalla con fondo oscuro, scroll y aviso de modo demo. */
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const { demoMode } = useAuth()
+  const theme = useClassTheme()
   const body = scroll ? (
     <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>
   ) : (
@@ -24,6 +27,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   )
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
+      <ThemeBackdrop motif={theme.motif} color={theme.motifColor} />
       {demoMode && (
         <View style={styles.demoBanner}>
           <Text style={styles.demoText}>Modo demo · progreso guardado en este teléfono</Text>
@@ -79,6 +83,7 @@ export function Button({
   style?: StyleProp<ViewStyle>
 }) {
   const primary = variant === 'primary'
+  const { accent } = useClassTheme()
   return (
     <Pressable
       accessibilityRole="button"
@@ -87,7 +92,7 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.button,
-        primary ? styles.buttonPrimary : styles.buttonGhost,
+        primary ? { backgroundColor: accent } : styles.buttonGhost,
         (disabled || loading) && { opacity: 0.5 },
         pressed && { opacity: 0.8 },
         style,
@@ -140,7 +145,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonPrimary: { backgroundColor: colors.moss },
   buttonGhost: { borderWidth: 1, borderColor: colors.rune },
   buttonLabel: { fontFamily: fonts.semibold, fontSize: 15 },
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.void },

@@ -58,8 +58,8 @@ App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semi
 
 Ambos archivos se pueden re-ejecutar sin perder el progreso de los jugadores.
 **Al actualizar desde una versión anterior** re-ejecuta los dos: `schema.sql` agrega la tabla `raid_sessions` y las
-funciones del raid semanal y habilita las clases Artífice de Precisión y Alquimista Fisiólogo, y `seed.sql` carga
-los nuevos Códices y preguntas. Las preguntas semilla conservan sus IDs
+funciones del raid semanal y habilita las clases nuevas (Artífice, Alquimista, Guerrero del Surco y Guardián Ambiental),
+y `seed.sql` carga los nuevos Códices y preguntas. Las preguntas semilla conservan sus IDs
 (`m0-q1`…), pero su contenido cambió: el historial de respuestas de esos IDs ahora apunta a las preguntas nuevas.
 Ojo: re-ejecutar `seed.sql` restaura el contenido original de los módulos, preguntas, jefes y emblemas semilla
 (mismos IDs), pisando lo que hayas editado desde el panel admin. El contenido creado desde el panel no se toca.
@@ -95,6 +95,17 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 - Quien deja al jefe en 0 HP da el **golpe final** (+100 XP) y la comunidad desbloquea el siguiente módulo de forma permanente.
 - Las alternativas llegan barajadas y sin la respuesta correcta; `answer_question()` la valida en el servidor.
 - Ranking mensual: `get_monthly_leaderboard()` (mes calendario, hora de Chile).
+
+## Clases, skins y desbloqueables
+
+Las clases viven en `src/data/classes.ts` (compartido con la app Android). Cada una define:
+
+- `theme`: la skin que toma la interfaz al elegirla (color de acento y fondo decorativo: olas para Riego, runas para el
+  Brujo, surcos para Cultivos, grilla de circuito para Precisión, etc.). En la web la aplica `ClassThemeController`
+  (tokens `--color-moss*` y `html[data-motif]` en `src/index.css`); en Android, `useClassTheme` y `ThemeBackdrop`.
+- `unlock`: la regla para ganarla (`starter`, `level` o `boss_defeated`). Hoy **no se exige**
+  (`CLASS_UNLOCKS_ENFORCED = false`): la pantalla de clases muestra la recompensa, pero todas se pueden elegir. Al
+  activarla hay que exigir la misma regla en el servidor.
 
 ## Generador de preguntas (API de Anthropic)
 

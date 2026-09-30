@@ -3,11 +3,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PixelSprite } from '@/components/PixelSprite'
 import { BADGE_SPRITES, CLASS_SPRITES } from '@shared/components/pixel/sprites'
 import { useProfile } from '@/context/ProfileContext'
+import { useClassTheme } from '@/hooks/useClassTheme'
 import { colors, fonts } from '@/theme'
 
 export default function TabsLayout() {
   const { profile } = useProfile()
   const avatar = CLASS_SPRITES[profile?.rpgClass ?? 'druida']
+  const { accent } = useClassTheme()
   // Altura explícita que incluye el margen de la barra de gestos de Android.
   const insets = useSafeAreaInsets()
 
@@ -22,7 +24,7 @@ export default function TabsLayout() {
           paddingTop: 4,
           paddingBottom: 4 + insets.bottom,
         },
-        tabBarActiveTintColor: colors.moss,
+        tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: colors.mist,
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
         sceneStyle: { backgroundColor: colors.void },

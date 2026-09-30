@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ProfileProvider } from './context/ProfileContext'
 import { ToastProvider } from './context/ToastContext'
 import { AppShell } from './components/layout/AppShell'
+import { ClassThemeController } from './components/layout/ClassThemeController'
 import { RequireAdmin, RequireAuth, RequireClass } from './components/routing/RequireAuth'
 import { FullScreenLoader } from './components/ui/FullScreenLoader'
 
@@ -22,6 +23,7 @@ export default function App() {
     <AuthProvider>
       <ProfileProvider>
         <ToastProvider>
+          <ClassThemeController />
           <BrowserRouter>
             <Suspense fallback={<FullScreenLoader />}>
               <Routes>

@@ -5,6 +5,7 @@ import { BossSprite, HpBar } from '@/components/game'
 import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components/ui'
 import { useProfile } from '@/context/ProfileContext'
 import { useAsync } from '@/hooks/useAsync'
+import { useClassTheme } from '@/hooks/useClassTheme'
 import { gameApi, levelFromXp, type CampaignModule } from '@/lib/game'
 import { formatRaidReset } from '@shared/lib/game/raid'
 import { colors, radius, space } from '@/theme'
@@ -61,6 +62,7 @@ export default function MapScreen() {
 }
 
 function ModuleCard({ module: m }: { module: CampaignModule }) {
+  const { accent } = useClassTheme()
   const progress = m.questionCount > 0 ? (m.answeredCount / m.questionCount) * 100 : 0
   const boss = m.boss
 
@@ -121,7 +123,7 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
             </Body>
           </View>
           <View style={styles.progressTrack}>
-            <View style={{ width: `${progress}%`, height: '100%', backgroundColor: colors.moss }} />
+            <View style={{ width: `${progress}%`, height: '100%', backgroundColor: accent }} />
           </View>
           {boss && <RaidStatusLine module={m} />}
           <View style={[styles.row, { gap: space.sm, marginTop: space.md }]}>

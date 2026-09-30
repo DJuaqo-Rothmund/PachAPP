@@ -27,15 +27,15 @@ create table if not exists public.profiles (
   email text,
   display_name text,
   avatar_url text,
-  rpg_class text check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista')),
+  rpg_class text check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista', 'cultivador', 'guardian')),
   total_xp integer not null default 0,
   created_at timestamptz not null default now()
 );
 
--- Bases creadas antes de las clases Artífice y Alquimista: se reemplaza el check.
+-- Bases creadas antes de las últimas clases: se reemplaza el check con la lista vigente.
 alter table public.profiles drop constraint if exists profiles_rpg_class_check;
 alter table public.profiles add constraint profiles_rpg_class_check
-  check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista'));
+  check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista', 'cultivador', 'guardian'));
 
 create table if not exists public.modules (
   id integer primary key,

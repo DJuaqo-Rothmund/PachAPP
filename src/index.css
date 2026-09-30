@@ -24,6 +24,11 @@
   --color-arcane: #a78bfa;
 }
 
+/* Color del fondo decorativo de la skin de clase (lo fija ClassThemeController). */
+:root {
+  --motif-color: #4ade80;
+}
+
 @layer base {
   html,
   body,
@@ -118,5 +123,159 @@
   }
   .animate-float-up {
     opacity: 0;
+  }
+}
+
+/* =============================================================================
+ * Skins de clase: fondo decorativo fijo detrás del contenido.
+ * html[data-motif] y --motif-color los fija ClassThemeController.
+ * ============================================================================= */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html {
+  --m-soft: color-mix(in srgb, var(--motif-color) 14%, transparent);
+  --m-faint: color-mix(in srgb, var(--motif-color) 7%, transparent);
+  --m-glow: color-mix(in srgb, var(--motif-color) 16%, transparent);
+}
+
+/* Suelo: motas de tierra */
+html[data-motif='soil'] body::before {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--m-faint), transparent 70%),
+    radial-gradient(circle, var(--m-soft) 1.5px, transparent 2px) 0 0 / 46px 46px,
+    radial-gradient(circle, var(--m-faint) 1px, transparent 1.5px) 23px 17px / 46px 46px;
+}
+
+/* Arcano: destellos y resplandor púrpura */
+html[data-motif='arcane'] body::before {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, var(--m-glow), transparent 70%),
+    radial-gradient(circle, var(--m-soft) 1.2px, transparent 2px) 0 0 / 70px 70px,
+    radial-gradient(circle, var(--m-soft) 1px, transparent 1.6px) 35px 48px / 90px 90px;
+  animation: motif-twinkle 6s ease-in-out infinite alternate;
+}
+
+/* Agua: dos capas de olas que fluyen a distinta velocidad */
+html[data-motif='water'] body::before,
+html[data-motif='water'] body::after {
+  background: var(--motif-color);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='48'%3E%3Cpath d='M0 24 Q20 12 40 24 T80 24 T120 24 T160 24' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") 0 0 / 160px 48px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='48'%3E%3Cpath d='M0 24 Q20 12 40 24 T80 24 T120 24 T160 24' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") 0 0 / 160px 48px;
+  opacity: 0.1;
+  animation: motif-flow 9s linear infinite;
+}
+html[data-motif='water'] body::after {
+  -webkit-mask-size: 240px 72px;
+  mask-size: 240px 72px;
+  -webkit-mask-position: 60px 30px;
+  mask-position: 60px 30px;
+  opacity: 0.07;
+  animation: motif-flow-slow 16s linear infinite;
+}
+html[data-motif='water'] body {
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--motif-color) 10%, transparent), transparent 45%);
+}
+
+/* Cosecha: frutos dispersos */
+html[data-motif='harvest'] body::before {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--m-faint), transparent 70%),
+    radial-gradient(circle, var(--m-soft) 3px, transparent 3.5px) 0 0 / 110px 110px,
+    radial-gradient(circle, var(--m-faint) 2px, transparent 2.5px) 55px 70px / 110px 110px;
+}
+
+/* Precisión: grilla tipo circuito y línea de escaneo */
+html[data-motif='circuit'] body::before {
+  background:
+    linear-gradient(var(--m-faint) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, var(--m-faint) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(circle, var(--m-soft) 2px, transparent 2.5px) 0 0 / 88px 88px;
+}
+html[data-motif='circuit'] body::after {
+  background: linear-gradient(180deg, transparent, var(--m-glow), transparent) 0 0 / 100% 140px no-repeat;
+  opacity: 0.6;
+  animation: motif-scan 7s linear infinite;
+}
+
+/* Alquimia: burbujas que suben */
+html[data-motif='bubbles'] body::before {
+  background:
+    radial-gradient(circle, transparent 4px, var(--m-soft) 4.5px, var(--m-soft) 5.5px, transparent 6px) 0 0 / 96px 120px,
+    radial-gradient(circle, transparent 2px, var(--m-faint) 2.5px, var(--m-faint) 3.5px, transparent 4px) 48px 60px / 96px 120px;
+  animation: motif-rise 14s linear infinite;
+}
+
+/* Surcos: líneas diagonales de siembra */
+html[data-motif='furrow'] body::before {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--m-faint), transparent 70%),
+    repeating-linear-gradient(135deg, var(--m-faint) 0 2px, transparent 2px 26px);
+}
+
+/* Bosque: hojas que caen lentamente */
+html[data-motif='forest'] body::before {
+  background: var(--motif-color);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M30 20 C40 10 52 14 54 26 C44 30 34 30 30 20Z M90 80 C98 70 110 74 110 86 C100 88 94 88 90 80Z' fill='white'/%3E%3C/svg%3E") 0 0 / 120px 120px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M30 20 C40 10 52 14 54 26 C44 30 34 30 30 20Z M90 80 C98 70 110 74 110 86 C100 88 94 88 90 80Z' fill='white'/%3E%3C/svg%3E") 0 0 / 120px 120px;
+  opacity: 0.08;
+  animation: motif-fall 24s linear infinite;
+}
+
+@keyframes motif-flow {
+  to {
+    -webkit-mask-position: 160px 0;
+    mask-position: 160px 0;
+  }
+}
+@keyframes motif-flow-slow {
+  to {
+    -webkit-mask-position: -180px 30px;
+    mask-position: -180px 30px;
+  }
+}
+@keyframes motif-twinkle {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes motif-scan {
+  from {
+    background-position: 0 -140px;
+  }
+  to {
+    background-position: 0 100vh;
+  }
+}
+@keyframes motif-rise {
+  to {
+    background-position: 0 -120px, 48px -60px;
+  }
+}
+@keyframes motif-fall {
+  to {
+    -webkit-mask-position: 40px 120px;
+    mask-position: 40px 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none !important;
   }
 }
