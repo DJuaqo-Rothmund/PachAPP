@@ -3,7 +3,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { HpBar } from '../components/game/HpBar'
 import { PixelSprite } from '../components/pixel/PixelSprite'
-import { BOSS_SPRITE } from '../components/pixel/sprites'
+import { bossSprite } from '../components/pixel/sprites'
 import { useProfile } from '../context/ProfileContext'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi, type CampaignModule } from '../lib/game'
@@ -70,7 +70,7 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
 
       {boss && (
         <div className="mt-4 flex items-center gap-3 rounded-lg bg-stone p-3">
-          <PixelSprite rows={BOSS_SPRITE} className={`h-10 w-10 shrink-0 ${boss.defeated ? 'opacity-40 grayscale' : ''}`} />
+          <PixelSprite rows={bossSprite(boss.id)} className={`h-10 w-10 shrink-0 ${boss.defeated ? 'opacity-40 grayscale' : ''}`} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-blood">{boss.name}</p>
             {boss.defeated ? (

@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import Svg, { Rect } from 'react-native-svg'
-import { PALETTE } from '@shared/components/pixel/sprites'
+import { PALETTE, spriteRuns } from '@shared/components/pixel/sprites'
 
 interface PixelSpriteProps {
   rows: string[]
@@ -16,13 +16,16 @@ export const PixelSprite = memo(function PixelSprite({ rows, size, muted = false
 
   return (
     <Svg width={size} height={(size * height) / Math.max(width, 1)} viewBox={`0 0 ${width} ${height}`} opacity={muted ? 0.35 : 1}>
-      {rows.flatMap((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '.' ? null : (
-            <Rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={muted ? '#6b7280' : (PALETTE[ch] ?? '#ff00ff')} />
-          ),
-        ),
-      )}
+      {spriteRuns(rows).map(({ x, y, length, ch }) => (
+        <Rect
+          key={`${x}-${y}`}
+          x={x}
+          y={y}
+          width={length + 0.02}
+          height={1.02}
+          fill={muted ? '#6b7280' : (PALETTE[ch] ?? '#ff00ff')}
+        />
+      ))}
     </Svg>
   )
 })

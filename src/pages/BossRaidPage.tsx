@@ -4,7 +4,7 @@ import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { FullScreenLoader } from '../components/ui/FullScreenLoader'
 import { HpBar } from '../components/game/HpBar'
 import { PixelSprite } from '../components/pixel/PixelSprite'
-import { BOSS_SPRITE } from '../components/pixel/sprites'
+import { bossSprite } from '../components/pixel/sprites'
 import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
 import { useToast } from '../context/ToastContext'
@@ -220,7 +220,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
           <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-stone lg:mx-auto lg:h-40 lg:w-40">
             <div key={hitKey} className={hitKey > 0 ? 'animate-hit' : ''}>
               <PixelSprite
-                rows={BOSS_SPRITE}
+                rows={bossSprite(boss.id)}
                 title={boss.name}
                 className={`h-20 w-20 lg:h-32 lg:w-32 ${defeated ? 'rotate-12 opacity-40 grayscale' : ''}`}
               />

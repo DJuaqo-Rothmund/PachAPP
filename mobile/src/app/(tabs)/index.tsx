@@ -89,7 +89,7 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
 
       {boss && (
         <View style={styles.bossRow}>
-          <BossSprite size={40} defeated={boss.defeated} />
+          <BossSprite bossId={boss.id} size={40} defeated={boss.defeated} />
           <View style={{ flex: 1 }}>
             <Body tone="blood" size={13} numberOfLines={1}>
               {boss.name}

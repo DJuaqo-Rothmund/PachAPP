@@ -1,115 +1,367 @@
 /**
  * Sprites pixel art como matrices de caracteres. Cada carácter es un color de
  * PALETTE; '.' es transparente. Todas las filas de un sprite deben medir lo mismo.
+ * Personajes en 24×24 y jefes en 32×32, con sombreado de tres tonos y contorno de color.
  */
 export const PALETTE: Record<string, string> = {
-  K: '#111827', // contorno
-  S: '#e0ac7e', // piel
+  '0': '#e879f9', // brillos y turquesa
+  '1': '#a3e635',
+  '2': '#14b8a6',
+  '3': '#0f766e',
+  '4': '#78716c', // piedra
+  '5': '#44403c',
+  '6': '#a8a29e',
+  '7': '#1c1917',
+  '8': '#fdba74',
+  '9': '#d6a36b',
+  K: '#111827', // contorno neutro
+  S: '#e8b58a', // piel (medio, sombra, luz)
+  s: '#b87a52',
+  z: '#f6d2ae',
   W: '#f8fafc', // blanco
+  w: '#cbd5e1',
   P: '#7c3aed', // púrpura
   p: '#4c1d95',
+  A: '#a78bfa',
+  a: '#2e1065',
   Y: '#facc15', // oro
+  y: '#fef08a',
+  Q: '#ca8a04',
+  q: '#713f12',
   G: '#22c55e', // verde
   g: '#15803d',
+  H: '#86efac',
+  h: '#14532d',
   B: '#2563eb', // azul
   b: '#1e3a8a',
+  F: '#60a5fa',
+  f: '#172554',
   L: '#cbd5e1', // metal
+  l: '#94a3b8',
+  t: '#475569',
+  U: '#f1f5f9',
   C: '#38bdf8', // agua
-  N: '#92400e', // tierra
+  c: '#bae6fd',
+  N: '#92400e', // tierra y cuero
   n: '#78350f',
-  D: '#3f3f46', // capucha
+  J: '#b45309',
+  j: '#451a03',
+  D: '#3f3f46', // tela oscura
   d: '#27272a',
+  k: '#18181b',
   R: '#dc2626', // rojo
   r: '#7f1d1d',
+  X: '#f87171',
+  u: '#450a0a',
   O: '#f97316', // naranjo
+  o: '#c2410c',
   I: '#ec4899', // frambuesa
   i: '#9d174d',
-  M: '#b91c1c', // jefe
+  V: '#f9a8d4',
+  M: '#b91c1c', // jefe genérico
   m: '#7f1d1d',
-  E: '#fde047', // ojos del jefe
-  T: '#e7e5e4', // cuernos / dientes
+  E: '#fde047',
+  T: '#e7e5e4',
+}
+
+export interface SpriteRun {
+  x: number
+  y: number
+  length: number
+  ch: string
+}
+
+/** Agrupa píxeles contiguos del mismo color de cada fila: menos nodos SVG por sprite. */
+export function spriteRuns(rows: string[]): SpriteRun[] {
+  const runs: SpriteRun[] = []
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; ) {
+      const ch = row[x]
+      let end = x + 1
+      while (end < row.length && row[end] === ch) end++
+      if (ch !== '.') runs.push({ x, y, length: end - x, ch })
+      x = end
+    }
+  })
+  return runs
 }
 
 export const CLASS_SPRITES: Record<string, string[]> = {
-  // Brujo Fitosanitario: sombrero arcano y poción verde
+  // Brujo Fitosanitario: sombrero arcano, ojos que brillan y poción
   brujo: [
-    '......KK........',
-    '.....KPPK.......',
-    '....KPPPPK......',
-    '....KPPYPK......',
-    '...KPPPPPPK.....',
-    '..KKKKKKKKKK....',
-    '...KSSSSSSK.....',
-    '...KSKSSKSK.....',
-    '...KWSSSSWK.....',
-    '...KWWWWWWK..KK.',
-    '..KPPWWWWPPK.KGK',
-    '.KPPPPWWPPPPKKGK',
-    '.KPpPPPPPPpPKKgK',
-    '.KPpPPYPPPpPK.K.',
-    '..KPPPYPPPPK....',
-    '..KKK.KK.KKK....',
+    '.............aaaaaaAa...',
+    '............aAPPPpaa....',
+    '...........aAPPpaa......',
+    '..........aAPPPpa.......',
+    '.........aAPPPPpa.......',
+    '......aaaAHPPPPpaa......',
+    '..aaaaAPPGGGGYHGPpaaaa..',
+    '.aAAAAAAAPPPPPPPPPPPPpa.',
+    '..aAPPPPPPPPPPPPPPPPpa..',
+    '...aaaajssssssssjaaaa...',
+    '.......jzzSSSSSsj.......',
+    '......jSSSHSSHSssj......',
+    '.......jSSGSSGSsh1hjj.h.',
+    '.......jSSSSSSSsjhjNNh1h',
+    '......a.jSSSSSsj..tWwthh',
+    '.....aPappppppppa.twwthH',
+    '....aPPPPPPPPPPpphGGGGhh',
+    '....aAPPPPPPPPPpphGHHGh.',
+    '....aPPPQQQYYQQQQSHGGGGh',
+    '....jSSAPPPPpPPppsGGGgh.',
+    '....aAAAPPPPpPPpppGGggh.',
+    '....aAAAPPPPpPPppppahh..',
+    '.....aaaaaaapaaaaaa.....',
+    '............a...........',
   ],
-  // Paladín del Riego: yelmo y escudo con gota de agua
+  // Paladín del Riego: yelmo con cresta de agua, escudo con gota y tridente
   paladin: [
-    '.....KKKKK......',
-    '....KLLLLLK.....',
-    '...KLLLLLLLK....',
-    '...KLKKKKKLK....',
-    '...KLSKSKSLK....',
-    '...KLSSSSSLK....',
-    '....KKKKKKK.....',
-    '..KBBBBBBBBBK...',
-    'KKKKKKBBBBBBBK..',
-    'KCCCCKBBLBBBBK..',
-    'KCWCCKBBBBBBBK..',
-    'KCCCCKBbBBBbBK..',
-    '.KCCK.KBBBBBK...',
-    '..KK..KBBKBBK...',
-    '......KbbKbbK...',
-    '......KKK.KKK...',
+    '............f........t..',
+    '...........fCf.....ttUtt',
+    '..........fCBf....tUtLtU',
+    '..........fCBBf...tLtLtL',
+    '..........fcBbf...tLtLtL',
+    '.........tfBBft...tLtLtL',
+    '........tULLLLLt..tlllll',
+    '.......tUULLLLLlt..tjNjt',
+    '......tUUULLLLLllt..jNj.',
+    '......tUUttttttllt..jNj.',
+    '......tLLSSSSSsllt..jNj.',
+    '......tLLSKSSKsllt..jNj.',
+    'tttttttLLSKSSKsllt..jNj.',
+    'UULLLLLLLssllssltt..jNj.',
+    'UBBBBBBLllllllllllt.jNj.',
+    'UBBBCBBLllUlllllllltjNj.',
+    'UBBCCCBLLBUCClBLLltjSNj.',
+    'UBBcCCBLBBUcClBbft.jsNj.',
+    'UBBBCBBLBBULLlBbf...jNj.',
+    'tUBBBBLjJJJYYJJbf...jNj.',
+    '.tLBBLt.fbbffbbf....jNj.',
+    '..tLLt..fbbffbbf....jNj.',
+    '...tt...KttKKttK....jNj.',
+    '.........KK..KK......j..',
   ],
-  // Druida de Suelos: capucha de hojas y bastón
+  // Druida de Suelos: capucha de hojas, barba y bastón con cristal de ámbar
   druida: [
-    '................',
-    '.....KKKKK......',
-    '....KGGGGGK.....',
-    '...KGgGGGgGK....',
-    '...KNNNNNNNK....',
-    '..KNKSSSSSKNK...',
-    '..KNSKSSKSNK....',
-    '..KNSSSSSSNK....',
-    '..KNNKSSKNNK..KK',
-    '.KNNNNKKNNNNK.KN',
-    '.KNnNNGGNNnNK.KN',
-    '.KNnNNNNNNnNKKNK',
-    '.KNNNNGNNNNNK.KN',
-    '..KNNNNNNNNK..KN',
-    '..KnnnKKnnnK..KN',
-    '..KKKK..KKKK..KK',
+    '..q.j.....hh.h..........',
+    '.qYjNjj..hHHhGh.........',
+    '..jN8ONj..hhGh..........',
+    '...qYOj8jhhhghhh........',
+    '..jNOoNhHHGGGGGHh.......',
+    '...jJjjhHHGGGGGGh.......',
+    '...jJnhHHHGGGGGGghh.....',
+    '...jJnHHHHGGGGGGggHh....',
+    '...jJnHHHHGssGGGggh.....',
+    '...jJnHHHssssssGggh.....',
+    '...jJnGGSSSSSSssggh.....',
+    '...jJnGGSSKSSKssggh.....',
+    '...jJnGGSSKSSKssggHh....',
+    '...jJnhGGSSSSSsGghh.....',
+    '...jJnjhgWWWWwwghj......',
+    '...jSsJJNgWWWwgNnnj.....',
+    '...jSnJJGgNWWNNNnnj.....',
+    '...jJnJJNGgWWNNNnnnj....',
+    '...jJnJJNNGgNNNNnnnj....',
+    '...jJnJJNNNGYgNNnnnj....',
+    '...jJnJJNNNNNGgNnnnnj...',
+    '...jJnJJNNNNNNGgnnnnj...',
+    '...jJnjjjjjjjjhGghjj....',
+    '....jj.........hh.......',
   ],
-  // Pícaro de Cosecha: capucha, ojos dorados y canasto de fruta
+  // Pícaro de Cosecha: capucha, pañuelo, hoz y canasto de frutos
   picaro: [
-    '......KKKK......',
-    '.....KDDDDK.....',
-    '....KDDDDDDK....',
-    '...KDDDDDDDDK...',
-    '...KDKKKKKKDK...',
-    '...KDKSYSYSKDK..',
-    '...KDKSSSSSKDK..',
-    '....KDKKKKKDK...',
-    '...KDDDDDDDDDK..',
-    '..KDDdDDDDDdDDK.',
-    '..KDdDYYYYDdDK..',
-    'KKKKKDDDDDDDDK..',
-    'KRRRKDDdDDdDDK..',
-    'KNRRKKDDDDDDK...',
-    'KNNNK.KddKddK...',
-    '.KKK..KKK.KKK...',
+    '........................',
+    '........................',
+    '........................',
+    '...........kk...........',
+    '.........kkDDkk.........',
+    '........kD4DDDDk...tt...',
+    '.......kD4DDDDDDk.tUUt..',
+    '......kD4DDDDDDDdtLtLLt.',
+    '......kDDDDDDDDDdLt.tUlt',
+    '.....kDDDssssssDddk.tLlt',
+    '.....kDDSSkSSkssddk.tLt.',
+    '......kDSSYSSYssdk.tLt..',
+    '......kDDSSSSSsDdkjJj...',
+    '.......uRXXRRRRRu.jJj...',
+    '..uuu.KurrrrrrrrRujJj...',
+    '.uVRRKkkDDDDDDDdkRrJj...',
+    'uRIXIkkkDDDDDDDdkkSJj...',
+    'jJJJJnkkDDDDDDDdkksJj...',
+    'j9999nSkJJYJJJJJkkkJj...',
+    'jJJJJnkkDDDDDNNdkkknj...',
+    'jnnnnnkkDDDDDNNdkkkkK...',
+    '.jKkkkkkkddkkddkkkkkkK..',
+    '...KKKKKkddkkddkKKKKK...',
+    '.........kk..kk.........',
+  ],
+  // Artífice de Precisión: antiparras, overol reflectante, tableta NDVI y dron
+  artifice: [
+    '...............ttt...ttt',
+    '..............tLULt.tLUL',
+    '...............tKtKtKtKt',
+    '................KtXlltK.',
+    '..........jjj...KtttttK.',
+    '........jj8OOjj..KfCfK..',
+    '.......j888OOOOj...f....',
+    '......jOcCCtcCCOjjfcf...',
+    '......joCCCtCCCooocfcf..',
+    '.......jOOOOOOOjjjf.f...',
+    '......jzzSOOOSssj.......',
+    '......jzzSKSSKssj.......',
+    '......jSSSKSSKssj.......',
+    '.KKKKK.jSSSSSSsj........',
+    'KtttttK3jSSSSSjK........',
+    'KtHGGt3222232223K.......',
+    'KtG1Gt3222232223K.......',
+    'KtGGYtSO8OO3OOOOj.......',
+    'KtgGRts222232223K.......',
+    'Kttttt322223ttt3K.......',
+    '.KKKKK3222232223K.......',
+    '.......K33KKK33K........',
+    '.......KttK.KttK........',
+    '........KK...KK.........',
+  ],
+  // Alquimista Fisiólogo: lentes, bata y orbe de fotosíntesis
+  alquimista: [
+    '........................',
+    '........................',
+    '........................',
+    '...........j.j..........',
+    '........j.jOjojj........',
+    '.......jOjOOOojoj.......',
+    '.......jOO8OOoooj.......',
+    '......jOO8OOOooooj......',
+    '......jooooooooo1hqqq..h',
+    '......jooooooooojoYYYqh1',
+    '.......jzzooooSsqYyyYYqh',
+    '.......jzWcttWcsqYyGGYq.',
+    '.......jScKSScKsqYYHgQq.',
+    '.......jSSSSSSSsjqYYQQq.',
+    '.....tttjSSSSSSj.jjqqqq.',
+    '....tWWWWWW2wWWwjSSj.qyq',
+    '....tWWWWW223WWwWWt...q.',
+    '....tWWWWW223WCCwt......',
+    '....tWWWWW223WWwwt......',
+    '.....jSWWl223Wlwwwt.....',
+    '.....tWWWW223WWwwwt.....',
+    '.....tWWWW223WWwwwt.....',
+    '......ttt3223Ktttt......',
+    '..........33K...........',
   ],
 }
 
-export const BOSS_SPRITE: string[] = [
+/** Sprite propio de cada jefe de la campaña, por id. */
+export const BOSS_SPRITES: Record<string, string[]> = {
+  // Archimago de Terrones: hechicero de tierra con hombreras de roca, ojos de magma y terrón flotante
+  'boss-m0': [
+    '.....jj.........................',
+    '....jJJj.......jj........j.jjj..',
+    '....j9Jj......jnnj......jOjNNNj.',
+    '....jJJj.....jnJnnj......jN9JNNj',
+    '.....jj..j..jnnnnnnj....jN9NOYNN',
+    '..jjj...jOjjNnJnnnnnj....jNNNONj',
+    '.jNNNj...j.jNnnnnnnnj.....jnNNnj',
+    'jNN9NNj...jNNnnnnnnnnj.....j8jj.',
+    '.jNNnj...jNNJnnnnnnnnjK....jJj..',
+    '..jjj...jNNNN777777nnjjK...jJjK.',
+    '.......jNNNN77777777njjjK..jJjK.',
+    '.......jNNNN7YO777YOnjjjK..jJjKj',
+    '.j.....jNNNN7Oo777OonjjjK..jJjj8',
+    'j8j...hjNNNN77777777njjjKh.jJjKj',
+    '.j...hHjNGNNN777777nnjHjhGhjJjK.',
+    '....hG6G44gNN9J9J9J9nG6G44gjJjK.',
+    '...766664444n9J9J9J966664444JjK.',
+    '...766664444N9J9J9J966664444JjK.',
+    '..744447444449J9J9J444474444JjK.',
+    '...744447744NNJ9J9JN44447744JjK.',
+    '...755555575NNJNJNJN55555575JjK.',
+    '....7555555NNNNNJNNNN555555jJjK.',
+    '.....7jJJNNNNNNOYONNNnnnn766JjK.',
+    '..jj.7655NNNNNNNONNNNnnnn766JjK.',
+    '.j9Nj7555NNnNNNNNNNNNjnnnj7jJjK.',
+    '.jNNjjJJJNNnNNNNNNNNNjnnnnjjJjK.',
+    '..jj.jJJJNnNNNNNONNNNnjnnnjjJjK.',
+    '.....jJJJNnNNNNO8ONNNnjnnnjjJjK.',
+    '....jJJJJNnNNNNNONNNNnjnnnnjJjK.',
+    '....jJJJJnNNNNNNNNNNNnnjnnnjJjK.',
+    '.....jjjjnjjjjjjjjjjjjKjKjjjJjK.',
+    '.........j.............K....jK..',
+  ],
+  // Deformidad de los Verticales: horror de la turbera con corona de brotes, ojos de arándano y floats
+  'boss-m1': [
+    '........uRu....uRu....uRu.......',
+    '......u.hgh....hgh....hgh.u.....',
+    '.....uRuhgh.u..hgh..u.hghuRu....',
+    '.....hghhghuXuhGgh.uXuhghhgh....',
+    '.....hghGghhgh.hgh.hghGghhgh....',
+    '.....hghhghhgh.hgHhhghhghhgh....',
+    '....hGghhgHhghhggh.hghhgHGgh....',
+    '.....hghgghGgh.hghhGghgghhgh....',
+    '.....hgHhghhgh.hgh.hghhghhgHh...',
+    '....hgghhghhgHhhghhhgHhghggh....',
+    '.....hGhhGhGGXGGGGGGghhghhgh....',
+    '.....hGhhGGGGRGRRGGRgggghhgh....',
+    '.....hGhGGGGGGRWRRGGgggghhgh....',
+    '.....hGGGGRRgRRXRRRgRRggghgh....',
+    '....hgggGRXRRRRRuRRRXRRgghhhK...',
+    '....hgggGRRuRgRRurgRRuRgghhhK...',
+    '....hgggGGRRgggRRgggRRggghhhK...',
+    '....hgggGGggggggggggggggghhhK...',
+    '....hgggGGggggggggggggggghhhK...',
+    '....hgggGGuTuTuTuTuTuTggghhhK...',
+    '...KhgggGGhuuuuuuuuuuhhhhhhhhK..',
+    '..KhhgggGGhuuuruuuruuhhhKhhhKhK.',
+    '..KhuRgghGhhuTuuTuuThhhKKhhRKhK.',
+    '.KhK.hgghhKhhhhhhhhhhKK.KhhK.KhK',
+    'KKhK.hggh..KKKKKKKKKK...KhhK.KhK',
+    'ThK..uRgh...............KhhK..Kh',
+    'KTKfffhghffffffffffffffffKhKfKTT',
+    'cCCCcCCCcCCCcCCCcCCCcCCCcCCCcCCC',
+    'BBXRBBBBBBBXRBBBBBBBBXRBBBBBBXRB',
+    'BBBBBBBXRBBBBBBBXRBBBBBBBBXRBBBB',
+    'bbbbbXRbbbbbbbbbbbbbbbbbXRbbbbbb',
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  ],
+  // Señor de las Cañas: armadura helada, corona de cañas espinosas y capa frambuesa
+  'boss-m2': [
+    '.............u.hhh.u.......t....',
+    '......f.....urhgGguru.....tWt...',
+    '.....fcf..uurruIVurru.u...tUt...',
+    '...ft.f..uruurIVIIurruru..tUcf..',
+    '..fcWt..urruuruIIiururru..tUcf..',
+    '...ft....uiiiiiiiiiiiiirufcUcf..',
+    '.........urrrrrrrrrrrrru..tUcCf.',
+    '.....f....utUcFFFFFBfuu...tUcf..',
+    '....fcf...tUccFFFFFBBff...tUcf..',
+    '.....tWt..Kfffffffffffcf.fcUcf..',
+    '......t...KfcWcffcWcfKf...tUcCf.',
+    '..t....tufKffCffffCffKuuf.tUcf..',
+    '.tWt..tWiciiFFFffFFBiiiiCfBUcf..',
+    '.fcf..fccciiBBBffBBBiiBBfCcUcf..',
+    '..f..fccUccciiBffBiiBBBBBBtUcCf.',
+    '.....fcccccccCCCCCCCFFFFFFtUcf..',
+    '.....fcccccccCCCCCCCFFFFFFtUcf..',
+    '.....uIicccccUUccCCCFFFFiicUcf..',
+    '.....uIiiicccUUIICCCFFiiiitUcCf.',
+    '.f...uIiiicccUIVIICCFFiiiitUcf..',
+    'fcf.uIIiiicccUUIiCCCFFiiiiiUcfu.',
+    '.f..uIIiiiiccUUccCCCFiiiIiiiiiiu',
+    '....KuIiiuiccCCCCCCCFiiuiccrruu.',
+    '....KuIiiuiFFFFFFFFFFiiuiccrru..',
+    '...uIuIiiuiccCCCCCCCFiiuiiirru..',
+    '...uIuIiiuiccFFCCcFFFiiuiiiIu...',
+    '...uIuIiiuicFFFCCFFFFiiuiiiuK...',
+    '..uIIuIiiuiiFFFiiFFFiiiuiiiuiuf.',
+    '..uIIuIiiuiiFFFiiFFFiiiuiiiuifcf',
+    '..uIIuIiiuiiFFFiiFFFiiiuiiiuiuf.',
+    '...uKuKuKuKfbbbffbbbfuKuKuKuK...',
+    '.....K...K..fff..fff...K...K....',
+  ],
+}
+
+/** Jefe genérico: se usa para jefes creados desde el panel admin. */
+const GENERIC_BOSS_SPRITE: string[] = [
   '..T..........T..',
   '..TT........TT..',
   '...TKKKKKKKKT...',
@@ -127,6 +379,10 @@ export const BOSS_SPRITE: string[] = [
   '...KMMmKKmMMK...',
   '...KKKK..KKKK...',
 ]
+
+export function bossSprite(bossId: string | null | undefined): string[] {
+  return (bossId && BOSS_SPRITES[bossId]) || GENERIC_BOSS_SPRITE
+}
 
 export const BADGE_SPRITES: Record<string, string[]> = {
   book: [

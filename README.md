@@ -58,7 +58,8 @@ App nativa hecha con **Expo (React Native)**. Comparte con la web los datos semi
 
 Ambos archivos se pueden re-ejecutar sin perder el progreso de los jugadores.
 **Al actualizar desde una versión anterior** re-ejecuta los dos: `schema.sql` agrega la tabla `raid_sessions` y las
-funciones del raid semanal, y `seed.sql` carga los nuevos Códices y preguntas. Las preguntas semilla conservan sus IDs
+funciones del raid semanal y habilita las clases Artífice de Precisión y Alquimista Fisiólogo, y `seed.sql` carga
+los nuevos Códices y preguntas. Las preguntas semilla conservan sus IDs
 (`m0-q1`…), pero su contenido cambió: el historial de respuestas de esos IDs ahora apunta a las preguntas nuevas.
 Ojo: re-ejecutar `seed.sql` restaura el contenido original de los módulos, preguntas, jefes y emblemas semilla
 (mismos IDs), pisando lo que hayas editado desde el panel admin. El contenido creado desde el panel no se toca.

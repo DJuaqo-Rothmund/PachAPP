@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { PALETTE } from './sprites'
+import { PALETTE, spriteRuns } from './sprites'
 
 interface PixelSpriteProps {
   rows: string[]
@@ -21,11 +21,9 @@ export const PixelSprite = memo(function PixelSprite({ rows, className, title }:
       aria-hidden={title ? undefined : true}
     >
       {title && <title>{title}</title>}
-      {rows.flatMap((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={PALETTE[ch] ?? '#ff00ff'} />,
-        ),
-      )}
+      {spriteRuns(rows).map(({ x, y, length, ch }) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width={length} height={1} fill={PALETTE[ch] ?? '#ff00ff'} />
+      ))}
     </svg>
   )
 })

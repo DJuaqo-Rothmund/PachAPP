@@ -1,4 +1,4 @@
-export type RpgClassId = 'brujo' | 'paladin' | 'druida' | 'picaro'
+export type RpgClassId = 'brujo' | 'paladin' | 'druida' | 'picaro' | 'artifice' | 'alquimista'
 
 export interface RpgClass {
   id: RpgClassId
@@ -37,5 +37,19 @@ export const RPG_CLASSES: RpgClass[] = [
     specialty: 'Cosecha y postcosecha',
     description: 'Veloz con el pre-frío y la cadena de frío. Ningún fruto se le pudre en la mano.',
     accent: 'gold',
+  },
+  {
+    id: 'artifice',
+    name: 'Artífice de Precisión',
+    specialty: 'Agricultura de precisión',
+    description: 'Vuela drones, lee mapas NDVI y calibra sensores. Donde otros ven un potrero, ve datos.',
+    accent: 'gold',
+  },
+  {
+    id: 'alquimista',
+    name: 'Alquimista Fisiólogo',
+    specialty: 'Fisiología y fenología',
+    description: 'Destila hormonas, cuenta horas frío y lee la fenología de la planta como un grimorio vivo.',
+    accent: 'mana',
   },
 ]

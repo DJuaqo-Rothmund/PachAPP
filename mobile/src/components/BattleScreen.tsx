@@ -207,7 +207,7 @@ function Raid({
         <View style={styles.bossRow}>
           <View style={styles.bossBox}>
             <Animated.View style={shakeStyle}>
-              <BossSprite size={72} defeated={defeated} />
+              <BossSprite bossId={boss.id} size={72} defeated={defeated} />
             </Animated.View>
             <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
               <PixelText size={12} tone="gold">
