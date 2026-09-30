@@ -15,7 +15,9 @@ import type {
   BossState,
   GameApi,
   LeaderboardRow,
+  RaidStatus,
 } from './types'
+import { RAID_QUESTION_LIMIT, nextRaidReset, raidWeekKey } from './raid'
 
 const STORAGE_KEY = 'pachapp-demo-v2'
 const DEMO_USER_ID = 'demo-user'
@@ -38,6 +40,19 @@ interface DemoAnswer {
   at: string
 }
 
+interface DemoRaid {
+  id: number
+  bossId: string
+  moduleId: number
+  /** Lunes de la semana de la batalla (AAAA-MM-DD). */
+  weekKey: string
+  questionIds: string[]
+  answeredIds: string[]
+  correct: number
+  damage: number
+  finished: boolean
+}
+
 interface DemoState {
   modules: DemoModule[]
   questions: AdminQuestion[]
@@ -50,6 +65,7 @@ interface DemoState {
   codexReads: number[]
   answers: DemoAnswer[]
   badges: { badgeId: string; earnedAt: string }[]
+  raids: DemoRaid[]
 }
 
 function initialState(): DemoState {
@@ -104,7 +120,27 @@ function initialState(): DemoState {
     codexReads: [],
     answers: [],
     badges: [],
+    raids: [],
   }
+}
+
+/** Almacenamiento clave-valor síncrono. En la web es localStorage; la app móvil inyecta el suyo. */
+export interface DemoStorage {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
+}
+
+let storage: DemoStorage = {
+  getItem: (key) => globalThis.localStorage?.getItem(key) ?? null,
+  setItem: (key, value) => globalThis.localStorage?.setItem(key, value),
+  removeItem: (key) => globalThis.localStorage?.removeItem(key),
+}
+
+/** Reemplaza el almacenamiento de la demo. Debe llamarse antes del primer uso de la API. */
+export function setDemoStorage(next: DemoStorage) {
+  storage = next
+  memoryState = null
 }
 
 let memoryState: DemoState | null = null
@@ -112,7 +148,7 @@ let memoryState: DemoState | null = null
 function load(): DemoState {
   if (memoryState) return memoryState
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = storage.getItem(STORAGE_KEY)
     memoryState = raw ? { ...initialState(), ...JSON.parse(raw) } : initialState()
   } catch {
     memoryState = initialState()
@@ -123,7 +159,7 @@ function load(): DemoState {
 function save(state: DemoState) {
   memoryState = state
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    storage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
     // Sin storage (modo privado): el progreso vive solo en memoria.
   }
@@ -151,6 +187,21 @@ const moduleQuestions = (s: DemoState, moduleId: number) =>
   s.questions
     .filter((q) => q.moduleId === moduleId)
     .sort((a, b) => Number(a.isBossFinal) - Number(b.isBossFinal) || a.sortOrder - b.sortOrder)
+
+const currentRaid = (s: DemoState, bossId: string) =>
+  s.raids.find((r) => r.bossId === bossId && r.weekKey === raidWeekKey())
+
+function raidStatus(s: DemoState, moduleId: number, boss: AdminBoss | undefined): RaidStatus {
+  const nextResetAt = nextRaidReset().toISOString()
+  const poolSize = moduleQuestions(s, moduleId).length
+  if (!boss) return { status: 'none', answered: 0, total: 0, nextResetAt }
+  const raid = currentRaid(s, boss.id)
+  const total = raid?.questionIds.length ?? Math.min(RAID_QUESTION_LIMIT, poolSize)
+  const answered = raid?.answeredIds.length ?? 0
+  if (boss.defeatedAt) return { status: 'defeated', answered, total, nextResetAt }
+  if (!raid) return { status: 'available', answered, total, nextResetAt }
+  return { status: raid.finished ? 'done' : 'in_progress', answered, total, nextResetAt }
+}
 
 const toBossState = (b: AdminBoss): BossState => ({
   id: b.id,
@@ -240,6 +291,7 @@ export function createDemoApi(): GameApi {
             answeredCount: s.answers.filter((a) => a.moduleId === m.id && a.awarded).length,
             codexRead: s.codexReads.includes(m.id),
             boss: boss ? toBossState(boss) : null,
+            raid: raidStatus(s, m.id, boss),
           }
         })
     },
@@ -265,40 +317,104 @@ export function createDemoApi(): GameApi {
       }))
     },
 
-    async answer(questionId, answer): Promise<AnswerResult> {
+    async startRaid(moduleId) {
+      const s = load()
+      if (!isUnlocked(s, moduleId)) throw new Error('Módulo bloqueado')
+      if (!s.codexReads.includes(moduleId)) throw new Error('Debes leer el Códice antes de jugar')
+      const boss = s.bosses.find((b) => b.moduleId === moduleId)
+      if (!boss) throw new Error('Este módulo no tiene jefe')
+      if (boss.defeatedAt) throw new Error('El jefe ya fue derrotado')
+
+      let raid = currentRaid(s, boss.id)
+      if (raid?.finished) throw new Error('Ya combatiste contra este jefe esta semana')
+      if (!raid) {
+        const pool = moduleQuestions(s, moduleId)
+        const final = pool.find((q) => q.isBossFinal)
+        const regular = shuffle(pool.filter((q) => !q.isBossFinal)).slice(0, RAID_QUESTION_LIMIT - (final ? 1 : 0))
+        const questionIds = [...regular.map((q) => q.id), ...(final ? [final.id] : [])]
+        if (questionIds.length === 0) throw new Error('Este módulo no tiene preguntas')
+        raid = {
+          id: Math.max(0, ...s.raids.map((r) => r.id)) + 1,
+          bossId: boss.id,
+          moduleId,
+          weekKey: raidWeekKey(),
+          questionIds,
+          answeredIds: [],
+          correct: 0,
+          damage: 0,
+          finished: false,
+        }
+        s.raids.push(raid)
+        save(s)
+      }
+
+      return {
+        id: raid.id,
+        total: raid.questionIds.length,
+        answered: raid.answeredIds.length,
+        correct: raid.correct,
+        damage: raid.damage,
+        questions: raid.questionIds
+          .filter((id) => !raid.answeredIds.includes(id))
+          .map((id) => s.questions.find((q) => q.id === id))
+          .filter((q): q is AdminQuestion => Boolean(q))
+          .map((q) => ({
+            id: q.id,
+            prompt: q.prompt,
+            options: shuffle([q.correct, ...q.distractors]),
+            isBossFinal: q.isBossFinal,
+            alreadyAnswered: false,
+          })),
+      }
+    },
+
+    async answer(questionId, answer, raidSessionId): Promise<AnswerResult> {
       const s = load()
       const q = s.questions.find((x) => x.id === questionId)
       if (!q) throw new Error('Pregunta no existe')
       if (!isUnlocked(s, q.moduleId)) throw new Error('Módulo bloqueado')
       if (!s.codexReads.includes(q.moduleId)) throw new Error('Debes leer el Códice antes de jugar')
 
+      const raid = raidSessionId === undefined ? undefined : s.raids.find((r) => r.id === raidSessionId)
+      if (raidSessionId !== undefined) {
+        if (!raid) throw new Error('Batalla no encontrada')
+        if (raid.finished || raid.weekKey !== raidWeekKey()) throw new Error('Esta batalla ya terminó')
+        if (!raid.questionIds.includes(q.id)) throw new Error('La pregunta no pertenece a esta batalla')
+        if (raid.answeredIds.includes(q.id)) throw new Error('Ya respondiste esta pregunta en la batalla')
+      }
+
       const boss = s.bosses.find((b) => b.moduleId === q.moduleId)
       const correct = answer.trim() === q.correct.trim()
       const firstCorrect = correct && !s.answers.some((a) => a.questionId === q.id && a.awarded)
-      let xp = 0
+      let xp = firstCorrect ? (q.isBossFinal ? 50 : 10) : 0
       let damage = 0
       let finalBlow = false
       const fresh: string[] = []
 
-      if (firstCorrect) {
-        xp = q.isBossFinal ? 50 : 10
-        if (boss && !boss.defeatedAt) {
-          damage = q.isBossFinal ? boss.damagePerHit * 5 : boss.damagePerHit
-          boss.currentHp = Math.max(boss.currentHp - damage, 0)
-          if (boss.currentHp === 0) {
-            boss.defeatedAt = new Date().toISOString()
-            finalBlow = true
-            xp += 100
-            const next = boss.unlocksModuleId
-            if (next !== null && !s.unlockedModules.includes(next)) s.unlockedModules.push(next)
-            for (const badge of s.badgeCatalog.filter((b) => b.criterion.type === 'final_blow')) {
-              if (s.badges.some((b) => b.badgeId === badge.id)) continue
-              s.badges.push({ badgeId: badge.id, earnedAt: new Date().toISOString() })
-              fresh.push(badge.id)
-            }
+      // Solo los aciertos dentro de la batalla semanal dañan al jefe.
+      if (correct && raid && boss && !boss.defeatedAt) {
+        damage = q.isBossFinal ? boss.damagePerHit * 5 : boss.damagePerHit
+        boss.currentHp = Math.max(boss.currentHp - damage, 0)
+        if (boss.currentHp === 0) {
+          boss.defeatedAt = new Date().toISOString()
+          finalBlow = true
+          xp += 100
+          const next = boss.unlocksModuleId
+          if (next !== null && !s.unlockedModules.includes(next)) s.unlockedModules.push(next)
+          for (const badge of s.badgeCatalog.filter((b) => b.criterion.type === 'final_blow')) {
+            if (s.badges.some((b) => b.badgeId === badge.id)) continue
+            s.badges.push({ badgeId: badge.id, earnedAt: new Date().toISOString() })
+            fresh.push(badge.id)
           }
         }
-        s.totalXp += xp
+      }
+      s.totalXp += xp
+
+      if (raid) {
+        raid.answeredIds.push(q.id)
+        if (correct) raid.correct++
+        raid.damage += damage
+        raid.finished = raid.answeredIds.length >= raid.questionIds.length
       }
 
       s.answers.push({
@@ -325,6 +441,7 @@ export function createDemoApi(): GameApi {
         bossDefeated: Boolean(boss?.defeatedAt),
         finalBlow,
         unlockedModuleId: finalBlow ? (boss?.unlocksModuleId ?? null) : null,
+        raidFinished: raid?.finished ?? false,
         newBadges: fresh,
       }
     },
@@ -496,7 +613,7 @@ export function createDemoAdminApi(): AdminApi {
 export function resetDemo() {
   memoryState = null
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    storage.removeItem(STORAGE_KEY)
   } catch {
     // ignorar
   }

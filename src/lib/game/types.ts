@@ -20,6 +20,21 @@ export interface BossState {
   unlocksModuleId: number | null
 }
 
+/**
+ * Estado de la batalla semanal del jugador contra el jefe del módulo:
+ * available (puede combatir), in_progress (empezó y puede retomarla),
+ * done (ya combatió esta semana), defeated (el jefe cayó), none (sin jefe).
+ */
+export type RaidStatusCode = 'available' | 'in_progress' | 'done' | 'defeated' | 'none'
+
+export interface RaidStatus {
+  status: RaidStatusCode
+  answered: number
+  total: number
+  /** Próximo reinicio semanal (ISO). */
+  nextResetAt: string
+}
+
 export interface CampaignModule {
   id: number
   title: string
@@ -30,6 +45,17 @@ export interface CampaignModule {
   answeredCount: number
   codexRead: boolean
   boss: BossState | null
+  raid: RaidStatus
+}
+
+/** Batalla semanal en curso: solo trae las preguntas pendientes. */
+export interface RaidSession {
+  id: number
+  total: number
+  answered: number
+  correct: number
+  damage: number
+  questions: PlayQuestion[]
 }
 
 export interface PlayQuestion {
@@ -51,6 +77,8 @@ export interface AnswerResult {
   bossDefeated: boolean
   finalBlow: boolean
   unlockedModuleId: number | null
+  /** true cuando esta respuesta completó la batalla semanal. */
+  raidFinished: boolean
   newBadges: string[]
 }
 
@@ -73,8 +101,12 @@ export interface GameApi {
   setRpgClass(rpgClass: RpgClassId): Promise<void>
   getCampaign(): Promise<CampaignModule[]>
   markCodexRead(moduleId: number): Promise<string[]>
+  /** Todas las preguntas del módulo, para entrenar (no daña al jefe). */
   getQuestions(moduleId: number): Promise<PlayQuestion[]>
-  answer(questionId: string, answer: string): Promise<AnswerResult>
+  /** Inicia o retoma la batalla semanal (máximo 15 preguntas). */
+  startRaid(moduleId: number): Promise<RaidSession>
+  /** Sin raidSessionId es entrenamiento; con él, la respuesta cuenta para la batalla. */
+  answer(questionId: string, answer: string, raidSessionId?: number): Promise<AnswerResult>
   getLeaderboard(): Promise<LeaderboardRow[]>
   getMyBadges(): Promise<EarnedBadge[]>
   /** Catálogo completo de emblemas (editable desde el panel admin). */

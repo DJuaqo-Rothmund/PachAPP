@@ -35,7 +35,7 @@ export default function OnboardingPage() {
         subtitle="Tu clase define tu avatar y tu especialidad. Puedes cambiarla después desde tu perfil."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RPG_CLASSES.map((c) => (
           <button
             key={c.id}

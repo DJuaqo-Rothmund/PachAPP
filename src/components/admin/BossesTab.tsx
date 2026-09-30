@@ -3,7 +3,7 @@ import { ErrorPanel } from '../ui/ErrorPanel'
 import { Modal } from '../ui/Modal'
 import { HpBar } from '../game/HpBar'
 import { PixelSprite } from '../pixel/PixelSprite'
-import { BOSS_SPRITE } from '../pixel/sprites'
+import { bossSprite } from '../pixel/sprites'
 import { FormFooter, errorMessage } from './FormFooter'
 import { useAsync } from '../../hooks/useAsync'
 import { adminApi, type AdminBoss, type AdminModule } from '../../lib/game'
@@ -64,7 +64,7 @@ export function BossesTab() {
           <section key={b.id} className="panel">
             <div className="flex items-center gap-3">
               <PixelSprite
-                rows={BOSS_SPRITE}
+                rows={bossSprite(b.id)}
                 className={`h-14 w-14 shrink-0 ${b.defeatedAt ? 'opacity-40 grayscale' : ''}`}
               />
               <div className="min-w-0">

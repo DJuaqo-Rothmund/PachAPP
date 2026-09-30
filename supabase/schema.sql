@@ -27,10 +27,15 @@ create table if not exists public.profiles (
   email text,
   display_name text,
   avatar_url text,
-  rpg_class text check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro')),
+  rpg_class text check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista')),
   total_xp integer not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- Bases creadas antes de las clases Artífice y Alquimista: se reemplaza el check.
+alter table public.profiles drop constraint if exists profiles_rpg_class_check;
+alter table public.profiles add constraint profiles_rpg_class_check
+  check (rpg_class in ('brujo', 'paladin', 'druida', 'picaro', 'artifice', 'alquimista'));
 
 create table if not exists public.modules (
   id integer primary key,
@@ -80,6 +85,22 @@ create table if not exists public.codex_reads (
   primary key (user_id, module_id)
 );
 
+-- Batallas semanales: una por jugador, jefe y semana (ver "Boss Raid semanal").
+create table if not exists public.raid_sessions (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  boss_id text not null references public.bosses (id) on delete cascade,
+  module_id integer not null references public.modules (id) on delete cascade,
+  week_start date not null,
+  question_ids text[] not null,
+  answered_ids text[] not null default '{}',
+  correct_count integer not null default 0,
+  damage_dealt integer not null default 0,
+  started_at timestamptz not null default now(),
+  finished_at timestamptz,
+  unique (user_id, boss_id, week_start)
+);
+
 -- Registro de todas las respuestas. `awarded` marca el primer acierto de un
 -- usuario en una pregunta: solo ese otorga XP y daña al jefe.
 create table if not exists public.answers (
@@ -93,6 +114,10 @@ create table if not exists public.answers (
   damage_dealt integer not null default 0,
   answered_at timestamptz not null default now()
 );
+-- Batalla a la que pertenece la respuesta (null = entrenamiento).
+alter table public.answers
+  add column if not exists raid_session_id bigint references public.raid_sessions (id) on delete set null;
+
 create unique index if not exists answers_first_correct_uidx
   on public.answers (user_id, question_id) where awarded;
 create index if not exists answers_user_time_idx on public.answers (user_id, answered_at desc);
@@ -331,10 +356,144 @@ begin
 end;
 $$;
 
--- Responde una pregunta. Valida en el servidor, registra el intento y, si es el
--- primer acierto del usuario en esa pregunta: otorga XP y daña al jefe.
--- Si el golpe deja al jefe en 0 HP, se desbloquea el siguiente módulo.
-create or replace function public.answer_question(p_question_id text, p_answer text)
+-- -----------------------------------------------------------------------------
+-- Boss Raid semanal
+-- -----------------------------------------------------------------------------
+-- Cada jugador tiene UNA batalla por semana contra cada jefe, de máximo 15
+-- preguntas (14 al azar del banco + la pregunta final del jefe). Solo los aciertos
+-- dentro de la batalla dañan al jefe: así derrotarlo exige a la comunidad.
+-- La semana va de lunes a domingo, hora de Chile.
+
+create or replace function public.raid_question_limit()
+returns integer
+language sql
+immutable
+as $$ select 15 $$;
+
+create or replace function public.current_raid_week()
+returns date
+language sql
+stable
+as $$ select date_trunc('week', now() at time zone 'America/Santiago')::date $$;
+
+-- Momento en que vuelve a estar disponible la batalla (próximo lunes 00:00, Chile).
+create or replace function public.next_raid_reset()
+returns timestamptz
+language sql
+stable
+as $$ select (public.current_raid_week() + 7)::timestamp at time zone 'America/Santiago' $$;
+
+-- Preguntas pendientes de una batalla, con alternativas barajadas y sin la correcta.
+create or replace function public.raid_pending_questions(p_session public.raid_sessions)
+returns jsonb
+language sql
+volatile
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', q.id,
+    'prompt', q.prompt,
+    'options', to_jsonb(array(
+      select opt from unnest(array_append(q.distractors, q.correct_answer)) as opt order by random()
+    )),
+    'is_boss_final', q.is_boss_final,
+    'already_answered', false
+  ) order by ids.ord), '[]'::jsonb)
+  from unnest(p_session.question_ids) with ordinality as ids(id, ord)
+  join public.questions q on q.id = ids.id
+  where not (ids.id = any (p_session.answered_ids));
+$$;
+
+-- Inicia (o retoma) la batalla semanal contra el jefe del módulo.
+create or replace function public.start_raid(p_module_id integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_boss public.bosses;
+  v_session public.raid_sessions;
+  v_week date := public.current_raid_week();
+  v_final text;
+  v_ids text[];
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  if not public.is_module_unlocked(p_module_id) then
+    raise exception 'Módulo bloqueado' using errcode = 'P0001';
+  end if;
+  if not exists (select 1 from public.codex_reads where user_id = v_uid and module_id = p_module_id) then
+    raise exception 'Debes leer el Códice antes de jugar' using errcode = 'P0001';
+  end if;
+
+  select * into v_boss from public.bosses where module_id = p_module_id;
+  if not found then
+    raise exception 'Este módulo no tiene jefe' using errcode = 'P0002';
+  end if;
+  if v_boss.defeated_at is not null then
+    raise exception 'El jefe ya fue derrotado' using errcode = 'P0001';
+  end if;
+
+  select * into v_session from public.raid_sessions
+  where user_id = v_uid and boss_id = v_boss.id and week_start = v_week;
+
+  if found and v_session.finished_at is not null then
+    raise exception 'Ya combatiste contra este jefe esta semana' using errcode = 'P0001';
+  end if;
+
+  if not found then
+    select id into v_final from public.questions
+    where module_id = p_module_id and is_boss_final
+    order by sort_order limit 1;
+
+    v_ids := array(
+      select id from public.questions
+      where module_id = p_module_id and not is_boss_final
+      order by random()
+      limit public.raid_question_limit() - (case when v_final is null then 0 else 1 end)
+    );
+    if v_final is not null then
+      v_ids := array_append(v_ids, v_final);  -- el ataque especial siempre al final
+    end if;
+    if coalesce(array_length(v_ids, 1), 0) = 0 then
+      raise exception 'Este módulo no tiene preguntas' using errcode = 'P0002';
+    end if;
+
+    -- on conflict: dos pestañas iniciando a la vez comparten la misma batalla.
+    insert into public.raid_sessions (user_id, boss_id, module_id, week_start, question_ids)
+    values (v_uid, v_boss.id, p_module_id, v_week, v_ids)
+    on conflict (user_id, boss_id, week_start) do nothing;
+
+    select * into v_session from public.raid_sessions
+    where user_id = v_uid and boss_id = v_boss.id and week_start = v_week;
+  end if;
+
+  return jsonb_build_object(
+    'session_id', v_session.id,
+    'total', array_length(v_session.question_ids, 1),
+    'answered', coalesce(array_length(v_session.answered_ids, 1), 0),
+    'correct', v_session.correct_count,
+    'damage', v_session.damage_dealt,
+    'questions', public.raid_pending_questions(v_session)
+  );
+end;
+$$;
+
+-- Responde una pregunta. Valida en el servidor y registra el intento.
+--  * XP: solo el primer acierto de cada usuario en cada pregunta (10, final 50).
+--  * Daño al jefe: solo los aciertos dentro de la batalla semanal (p_raid_session_id).
+--    La pregunta final pega x5. El golpe que deja al jefe en 0 HP es el golpe final
+--    (+100 XP) y desbloquea el siguiente módulo.
+drop function if exists public.answer_question(text, text);
+create or replace function public.answer_question(
+  p_question_id text,
+  p_answer text,
+  p_raid_session_id bigint default null
+)
 returns jsonb
 language plpgsql
 security definer
@@ -344,11 +503,14 @@ declare
   v_uid uuid := auth.uid();
   v_q public.questions;
   v_boss public.bosses;
+  v_session public.raid_sessions;
   v_correct boolean;
   v_awarded boolean := false;
   v_xp integer := 0;
   v_damage integer := 0;
+  v_answer_id bigint;
   v_final_blow boolean := false;
+  v_raid_finished boolean := false;
   v_new_badges text[] := '{}';
   v_participant uuid;
 begin
@@ -367,33 +529,50 @@ begin
     raise exception 'Debes leer el Códice antes de jugar' using errcode = 'P0001';
   end if;
 
+  if p_raid_session_id is not null then
+    -- for update: serializa respuestas simultáneas a la misma batalla.
+    select * into v_session from public.raid_sessions
+    where id = p_raid_session_id and user_id = v_uid
+    for update;
+    if not found then
+      raise exception 'Batalla no encontrada' using errcode = 'P0002';
+    end if;
+    if v_session.week_start <> public.current_raid_week() or v_session.finished_at is not null then
+      raise exception 'Esta batalla ya terminó' using errcode = 'P0001';
+    end if;
+    if not (v_q.id = any (v_session.question_ids)) then
+      raise exception 'La pregunta no pertenece a esta batalla' using errcode = 'P0001';
+    end if;
+    if v_q.id = any (v_session.answered_ids) then
+      raise exception 'Ya respondiste esta pregunta en la batalla' using errcode = 'P0001';
+    end if;
+  end if;
+
   v_correct := trim(p_answer) = trim(v_q.correct_answer);
   select * into v_boss from public.bosses where module_id = v_q.module_id;
 
-  if v_correct then
-    -- Primer acierto: XP base 10, la pregunta final del jefe vale 50 y pega x5.
-    v_xp := case when v_q.is_boss_final then 50 else 10 end;
-    v_damage := case
-      when v_boss.id is null or v_boss.defeated_at is not null then 0
-      when v_q.is_boss_final then v_boss.damage_per_hit * 5
-      else v_boss.damage_per_hit
-    end;
+  if v_correct and v_session.id is not null and v_boss.id is not null and v_boss.defeated_at is null then
+    v_damage := case when v_q.is_boss_final then v_boss.damage_per_hit * 5 else v_boss.damage_per_hit end;
+  end if;
 
-    insert into public.answers (user_id, question_id, module_id, is_correct, awarded, xp_awarded, damage_dealt)
-    values (v_uid, v_q.id, v_q.module_id, true, true, v_xp, v_damage)
-    on conflict (user_id, question_id) where awarded do nothing;
-    v_awarded := found;
+  if v_correct then
+    v_xp := case when v_q.is_boss_final then 50 else 10 end;
+    insert into public.answers (user_id, question_id, module_id, is_correct, awarded, xp_awarded, damage_dealt, raid_session_id)
+    values (v_uid, v_q.id, v_q.module_id, true, true, v_xp, v_damage, v_session.id)
+    on conflict (user_id, question_id) where awarded do nothing
+    returning id into v_answer_id;
+    v_awarded := v_answer_id is not null;
   end if;
 
   if not v_awarded then
-    -- Error, o acierto repetido: solo se registra el intento (cuenta para rachas).
+    -- Error, o acierto repetido: sin XP (cuenta para rachas; en batalla igual daña).
     v_xp := 0;
-    v_damage := 0;
-    insert into public.answers (user_id, question_id, module_id, is_correct)
-    values (v_uid, v_q.id, v_q.module_id, v_correct);
+    insert into public.answers (user_id, question_id, module_id, is_correct, damage_dealt, raid_session_id)
+    values (v_uid, v_q.id, v_q.module_id, v_correct, v_damage, v_session.id)
+    returning id into v_answer_id;
   end if;
 
-  if v_awarded and v_damage > 0 then
+  if v_damage > 0 then
     -- Update atómico: el lock de fila serializa golpes simultáneos, y solo el
     -- golpe que cruza a 0 HP ve `defeated_at` recién asignado.
     update public.bosses
@@ -406,17 +585,27 @@ begin
     if not found then
       -- Otro jugador lo derrotó justo antes: no hubo daño real.
       v_damage := 0;
-      update public.answers set damage_dealt = 0
-      where user_id = v_uid and question_id = v_q.id and awarded;
+      update public.answers set damage_dealt = 0 where id = v_answer_id;
       select * into v_boss from public.bosses where module_id = v_q.module_id;
     elsif v_boss.defeated_at is not null then
       v_final_blow := true;
       update public.modules set unlocked_at = coalesce(unlocked_at, now())
       where id = v_boss.unlocks_module_id;
       v_xp := v_xp + 100;
-      update public.answers set xp_awarded = v_xp
-      where user_id = v_uid and question_id = v_q.id and awarded;
+      update public.answers set xp_awarded = xp_awarded + 100 where id = v_answer_id;
     end if;
+  end if;
+
+  if v_session.id is not null then
+    update public.raid_sessions
+    set answered_ids = array_append(answered_ids, v_q.id),
+        correct_count = correct_count + (case when v_correct then 1 else 0 end),
+        damage_dealt = damage_dealt + v_damage,
+        finished_at = case
+          when coalesce(array_length(answered_ids, 1), 0) + 1 >= array_length(question_ids, 1) then now()
+        end
+    where id = v_session.id
+    returning finished_at is not null into v_raid_finished;
   end if;
 
   if v_xp > 0 then
@@ -453,19 +642,26 @@ begin
     'boss_defeated', v_boss.defeated_at is not null,
     'final_blow', v_final_blow,
     'unlocked_module_id', case when v_final_blow then v_boss.unlocks_module_id end,
+    'raid_finished', v_raid_finished,
     'new_badges', to_jsonb(v_new_badges)
   );
 end;
 $$;
 
--- Estado de la campaña para el usuario actual: desbloqueo, progreso y Códice.
+-- Estado de la campaña para el usuario actual: desbloqueo, progreso, Códice y
+-- estado de la batalla semanal ('available' | 'in_progress' | 'done' | 'defeated' | 'none').
+drop function if exists public.get_campaign();
 create or replace function public.get_campaign()
 returns table (
   module_id integer,
   unlocked boolean,
   question_count integer,
   answered_count integer,
-  codex_read boolean
+  codex_read boolean,
+  raid_status text,
+  raid_answered integer,
+  raid_total integer,
+  raid_next_reset timestamptz
 )
 language sql
 stable
@@ -478,8 +674,22 @@ as $$
     (select count(*)::integer from public.questions q where q.module_id = m.id),
     (select count(*)::integer from public.answers a
       where a.module_id = m.id and a.user_id = auth.uid() and a.awarded),
-    exists (select 1 from public.codex_reads c where c.module_id = m.id and c.user_id = auth.uid())
+    exists (select 1 from public.codex_reads c where c.module_id = m.id and c.user_id = auth.uid()),
+    case
+      when b.id is null then 'none'
+      when b.defeated_at is not null then 'defeated'
+      when s.id is null then 'available'
+      when s.finished_at is not null then 'done'
+      else 'in_progress'
+    end,
+    coalesce(array_length(s.answered_ids, 1), 0),
+    coalesce(array_length(s.question_ids, 1),
+      least(public.raid_question_limit(), (select count(*)::integer from public.questions q where q.module_id = m.id))),
+    public.next_raid_reset()
   from public.modules m
+  left join public.bosses b on b.module_id = m.id
+  left join public.raid_sessions s
+    on s.boss_id = b.id and s.user_id = auth.uid() and s.week_start = public.current_raid_week()
   order by m.id;
 $$;
 
@@ -603,6 +813,7 @@ alter table public.codex_reads  enable row level security;
 alter table public.answers      enable row level security;
 alter table public.badges       enable row level security;
 alter table public.user_badges  enable row level security;
+alter table public.raid_sessions enable row level security;
 
 -- admin_emails: sin políticas → inaccesible desde el cliente.
 
@@ -658,6 +869,10 @@ drop policy if exists answers_select on public.answers;
 create policy answers_select on public.answers
   for select to authenticated using (user_id = auth.uid() or public.is_admin());
 
+drop policy if exists raid_sessions_select on public.raid_sessions;
+create policy raid_sessions_select on public.raid_sessions
+  for select to authenticated using (user_id = auth.uid() or public.is_admin());
+
 drop policy if exists user_badges_select on public.user_badges;
 create policy user_badges_select on public.user_badges
   for select to authenticated using (user_id = auth.uid() or public.is_admin());
@@ -671,7 +886,9 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 
 revoke execute on function public.mark_codex_read(integer) from public, anon;
 revoke execute on function public.get_module_questions(integer) from public, anon;
-revoke execute on function public.answer_question(text, text) from public, anon;
+revoke execute on function public.answer_question(text, text, bigint) from public, anon;
+revoke execute on function public.start_raid(integer) from public, anon;
+revoke execute on function public.raid_pending_questions(public.raid_sessions) from public, anon, authenticated;
 revoke execute on function public.get_monthly_leaderboard(integer) from public, anon;
 revoke execute on function public.get_campaign() from public, anon;
 revoke execute on function public.admin_reset_boss(text) from public, anon;
@@ -680,7 +897,8 @@ revoke execute on function public.admin_question_stats() from public, anon;
 
 grant execute on function public.mark_codex_read(integer) to authenticated;
 grant execute on function public.get_module_questions(integer) to authenticated;
-grant execute on function public.answer_question(text, text) to authenticated;
+grant execute on function public.answer_question(text, text, bigint) to authenticated;
+grant execute on function public.start_raid(integer) to authenticated;
 grant execute on function public.get_monthly_leaderboard(integer) to authenticated;
 grant execute on function public.get_campaign() to authenticated;
 grant execute on function public.admin_reset_boss(text) to authenticated;

@@ -34,6 +34,7 @@ export default function App() {
                       <Route path="onboarding" element={<OnboardingPage />} />
                       <Route path="modulos/:moduleId/codice" element={<CodexPage />} />
                       <Route path="modulos/:moduleId/raid" element={<BossRaidPage />} />
+                      <Route path="modulos/:moduleId/entrenar" element={<BossRaidPage mode="training" />} />
                       <Route path="leaderboard" element={<LeaderboardPage />} />
                       <Route path="perfil" element={<ProfilePage />} />
 
