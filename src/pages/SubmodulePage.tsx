@@ -103,6 +103,8 @@ export default function SubmodulePage() {
       <div className="mt-8">
         <SubbossFrame
           submoduleId={node.id}
+          spriteUrl={node.spriteUrl}
+          bgTheme={node.bgTheme}
           name={node.subboss.name}
           title={node.subboss.title}
           defeated={node.subboss.defeated}

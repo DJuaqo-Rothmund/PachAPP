@@ -414,146 +414,244 @@ html[data-motif='forest'] body::before {
 }
 
 /* =============================================================================
- * Marcos de combate. Jefe cooperativo: hierro oxidado con remaches y aura
- * carmesí. Subjefe: piedra tallada con raíces. Los sprites nunca flotan
- * sueltos: siempre van dentro de su marco.
+ * Encuentros (EncounterCard): marco texturizado + escenario de batalla.
+ * Las variables --enc-* las fija el componente con la paleta del módulo
+ * (src/data/encounters.ts). El marco es el "relleno" del borde: su textura
+ * se ve en el anillo que rodea al interior.
  * ============================================================================= */
-.boss-frame {
-  position: relative;
-  padding: 1.4rem 1rem 1rem;
+.encounter {
+  background-color: var(--enc-frame-light);
+  box-shadow:
+    inset 3px 3px 0 0 color-mix(in srgb, var(--enc-frame-light) 60%, #fff),
+    inset -3px -3px 0 0 var(--enc-frame-dark),
+    6px 6px 0 0 #000;
+}
+.encounter[data-tier='subboss'] {
+  box-shadow:
+    inset 2px 2px 0 0 color-mix(in srgb, var(--enc-frame-light) 60%, #fff),
+    inset -2px -2px 0 0 var(--enc-frame-dark),
+    4px 4px 0 0 #000;
 }
 
-.boss-frame__seal {
+/* Remaches del jefe en las cuatro esquinas */
+.encounter__rivets {
   position: absolute;
-  top: -0.75rem;
-  left: 0.9rem;
-  padding: 0.2rem 0.55rem;
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border: 2px solid #0a0907;
+  inset: 2px;
+  z-index: 2;
+  pointer-events: none;
+  --rivet: radial-gradient(circle, #f2d18a 0 1.5px, #6b4a1c 2px 3px, #000 3.5px, transparent 4px);
+  background:
+    var(--rivet) top left / 10px 10px no-repeat,
+    var(--rivet) top right / 10px 10px no-repeat,
+    var(--rivet) bottom left / 10px 10px no-repeat,
+    var(--rivet) bottom right / 10px 10px no-repeat;
 }
 
-.boss-frame__stage {
-  position: relative;
+.encounter__stage {
   image-rendering: pixelated;
+  box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.6);
 }
-
-/* --- Jefe cooperativo: hierro oxidado ------------------------------------ */
-.boss-frame--coop {
-  border: 4px solid #6e3d22;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgb(194 106 53 / 0.18), transparent 50%),
-    linear-gradient(135deg, rgb(127 29 29 / 0.3), transparent 55%),
-    radial-gradient(rgb(255 240 210 / 0.03) 1px, transparent 1px) 0 0 / 6px 6px,
-    #1b1310;
-  box-shadow:
-    inset 3px 3px 0 0 #a8623a,
-    inset -3px -3px 0 0 #3b1d0e,
-    inset 0 0 0 5px #2a160c,
-    0 0 0 2px #0a0907,
-    5px 5px 0 0 rgb(0 0 0 / 0.5);
+.encounter__stage--aura {
+  animation: encounter-aura 2.4s ease-in-out infinite;
 }
-
-/* Remaches en las cuatro esquinas */
-.boss-frame--coop::before {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  pointer-events: none;
-  background:
-    radial-gradient(circle, #e0b15c 0 2px, #6b3f14 2.5px 3.5px, transparent 4px) top left / 12px 12px no-repeat,
-    radial-gradient(circle, #e0b15c 0 2px, #6b3f14 2.5px 3.5px, transparent 4px) top right / 12px 12px no-repeat,
-    radial-gradient(circle, #e0b15c 0 2px, #6b3f14 2.5px 3.5px, transparent 4px) bottom left / 12px 12px no-repeat,
-    radial-gradient(circle, #e0b15c 0 2px, #6b3f14 2.5px 3.5px, transparent 4px) bottom right / 12px 12px no-repeat;
-}
-
-.boss-frame--coop .boss-frame__seal {
-  background: linear-gradient(180deg, #f5c542, #b8860b);
-  color: #3b0a07;
-}
-
-.boss-frame--coop .boss-frame__stage {
-  border: 3px solid #0a0907;
-  background:
-    radial-gradient(circle at 50% 65%, rgb(224 69 58 / 0.4), transparent 70%),
-    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 2px, transparent 2px 4px),
-    #170908;
-  box-shadow:
-    inset 0 0 0 2px #7f1d1d,
-    0 0 0 2px #8b4a26;
-}
-
-.boss-frame--coop .boss-frame__name {
-  color: #ff6b5e;
-}
-
-/* --- Subjefe: piedra tallada con raíces ----------------------------------- */
-.boss-frame--sub {
-  border: 3px solid #4d473d;
-  background:
-    radial-gradient(rgb(255 240 210 / 0.03) 1px, transparent 1px) 0 0 / 6px 6px,
-    linear-gradient(160deg, rgb(255 240 210 / 0.04), transparent 50%),
-    #1f1d18;
-  box-shadow:
-    inset 2px 2px 0 0 #6d665a,
-    inset -2px -2px 0 0 #24211c,
-    0 0 0 2px #0a0907,
-    4px 4px 0 0 rgb(0 0 0 / 0.45);
-}
-
-/* Raíces que trepan por el borde superior */
-.boss-frame--sub::after {
-  content: '';
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: -3px;
-  height: 7px;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 18px, #4a6b2a 18px 22px, transparent 22px 30px, #6b8e3a 30px 32px, transparent 32px 46px),
-    linear-gradient(180deg, transparent 2px, rgb(74 107 42 / 0.6) 2px 5px, transparent 5px);
-}
-
-.boss-frame--sub .boss-frame__seal {
-  background: linear-gradient(180deg, #6d665a, #45403a);
-  color: var(--color-parchment-ink);
-}
-
-.boss-frame--sub .boss-frame__stage {
-  border: 3px solid #0a0907;
-  background:
-    radial-gradient(circle at 50% 70%, var(--skin-glow), transparent 70%),
-    #121110;
-  box-shadow:
-    inset 2px 2px 0 rgb(0 0 0 / 0.6),
-    0 0 0 2px #4d473d;
-}
-
-.boss-frame--sub .boss-frame__name {
-  color: var(--color-parchment-ink);
-}
-
-@keyframes boss-aura {
+@keyframes encounter-aura {
   0%,
   100% {
     box-shadow:
-      inset 0 0 0 2px #7f1d1d,
-      0 0 0 2px #8b4a26,
-      0 0 12px rgb(224 69 58 / 0.25);
+      inset 2px 2px 0 rgb(0 0 0 / 0.6),
+      0 0 0 2px var(--enc-frame-dark),
+      0 0 10px color-mix(in srgb, var(--enc-glow) 30%, transparent);
   }
   50% {
     box-shadow:
-      inset 0 0 0 2px #b91c1c,
-      0 0 0 2px #c26a35,
-      0 0 24px rgb(224 69 58 / 0.55);
+      inset 2px 2px 0 rgb(0 0 0 / 0.6),
+      0 0 0 2px var(--enc-glow),
+      0 0 22px color-mix(in srgb, var(--enc-glow) 60%, transparent);
   }
 }
 
-.boss-aura {
-  animation: boss-aura 2.4s ease-in-out infinite;
+/* --- Texturas de marco ---------------------------------------------------- */
+.frame-stone {
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.35) 2px, transparent 2px) 0 0 / 18px 9px,
+    linear-gradient(rgb(0 0 0 / 0.35) 2px, transparent 2px) 0 0 / 18px 9px,
+    var(--enc-frame-light);
+}
+.frame-packed-clay {
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.28) 0 2px, transparent 2px 5px, rgb(255 210 160 / 0.12) 5px 7px, transparent 7px 11px),
+    radial-gradient(circle, #6b8e3a 1.5px, transparent 2px) 3px 2px / 23px 17px,
+    var(--enc-frame-light);
+}
+.frame-salt-crystal {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.55) 25%, transparent 25% 50%, rgb(255 255 255 / 0.25) 50% 75%, transparent 75%) 0 0 / 8px 8px,
+    linear-gradient(45deg, rgb(70 120 130 / 0.45) 25%, transparent 25%) 0 0 / 12px 12px,
+    var(--enc-frame-light);
+}
+.frame-black-ice {
+  background:
+    linear-gradient(120deg, transparent 40%, rgb(200 225 255 / 0.5) 40% 45%, transparent 45%) 0 0 / 14px 14px,
+    linear-gradient(60deg, transparent 55%, rgb(0 0 0 / 0.45) 55% 62%, transparent 62%) 0 0 / 18px 18px,
+    var(--enc-frame-light);
+}
+.frame-ancient-root {
+  background:
+    radial-gradient(circle, rgb(155 92 240 / 0.7) 1px, transparent 1.5px) 5px 5px / 21px 21px,
+    repeating-linear-gradient(35deg, rgb(0 0 0 / 0.4) 0 3px, transparent 3px 9px),
+    repeating-linear-gradient(-55deg, rgb(255 220 160 / 0.15) 0 2px, transparent 2px 11px),
+    var(--enc-frame-light);
+}
+.frame-vine-lattice {
+  background:
+    linear-gradient(45deg, transparent 44%, #2a5a1a 44% 56%, transparent 56%) 0 0 / 12px 12px,
+    linear-gradient(-45deg, transparent 44%, #9ef07a 44% 52%, transparent 52%) 0 0 / 12px 12px,
+    var(--enc-frame-light);
+}
+.frame-tangled-wood {
+  background:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.35) 0 2px, transparent 2px 6px, rgb(255 210 150 / 0.12) 6px 7px, transparent 7px 12px),
+    repeating-linear-gradient(25deg, transparent 0 14px, rgb(43 23 10 / 0.8) 14px 17px, transparent 17px 30px),
+    var(--enc-frame-light);
+}
+.frame-peat-bog {
+  background:
+    radial-gradient(circle, #ff5a6e 1.5px, transparent 2px) 2px 3px / 13px 11px,
+    radial-gradient(ellipse, rgb(0 0 0 / 0.5) 3px, transparent 4px) 6px 0 / 17px 14px,
+    var(--enc-frame-light);
+}
+.frame-thorn-ice {
+  background:
+    conic-gradient(from 135deg at 50% 0, transparent 0 90deg, #3a1730 90deg 180deg, transparent 180deg) 0 0 / 10px 7px,
+    linear-gradient(120deg, transparent 45%, rgb(255 255 255 / 0.55) 45% 52%, transparent 52%) 0 0 / 16px 16px,
+    var(--enc-frame-light);
+}
+.frame-scrap-tech {
+  background:
+    radial-gradient(circle, #c9d2cf 1px, #1d2422 1.5px 2.5px, transparent 3px) 4px 4px / 20px 20px,
+    repeating-linear-gradient(-45deg, #f2c94c 0 4px, #1d2422 4px 8px) 0 0 / 100% 100%,
+    var(--enc-frame-light);
+  background-blend-mode: normal, soft-light, normal;
+}
+.frame-feather-grain {
+  background:
+    linear-gradient(135deg, transparent 50%, rgb(0 0 0 / 0.3) 50%) 0 0 / 8px 8px,
+    linear-gradient(45deg, rgb(255 230 150 / 0.4) 25%, transparent 25%) 0 0 / 8px 8px,
+    radial-gradient(ellipse 2px 4px, #ffd166 90%, transparent) 4px 2px / 11px 13px,
+    var(--enc-frame-light);
+}
+.frame-fungal {
+  background:
+    radial-gradient(circle, #c58bff 1.5px, transparent 2.5px) 3px 3px / 15px 13px,
+    radial-gradient(circle, #7cf2d0 1px, transparent 1.5px) 10px 8px / 19px 17px,
+    repeating-linear-gradient(80deg, rgb(0 0 0 / 0.35) 0 2px, transparent 2px 7px),
+    var(--enc-frame-light);
+}
+.frame-flesh-crest {
+  background:
+    radial-gradient(ellipse 4px 3px, #ff4d4d 85%, transparent) 3px 2px / 12px 10px,
+    repeating-linear-gradient(0deg, rgb(255 208 168 / 0.18) 0 2px, transparent 2px 6px),
+    var(--enc-frame-light);
+}
+.frame-dry-rock {
+  background:
+    linear-gradient(115deg, transparent 47%, rgb(0 0 0 / 0.5) 47% 53%, transparent 53%) 0 0 / 22px 15px,
+    linear-gradient(25deg, transparent 47%, rgb(0 0 0 / 0.35) 47% 51%, transparent 51%) 7px 4px / 17px 13px,
+    radial-gradient(circle, rgb(255 255 255 / 0.5) 0.8px, transparent 1.2px) 0 0 / 9px 9px,
+    var(--enc-frame-light);
+}
+
+/* --- Fondos de batalla (escenario del retrato) ---------------------------- */
+.bg-dungeon {
+  background:
+    radial-gradient(circle at 50% 70%, rgb(224 69 58 / 0.35), transparent 70%),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px) 0 0 / 12px 6px,
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px) 0 0 / 12px 6px,
+    #120f0d;
+}
+.bg-clay-pit {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 100%, rgb(194 86 47 / 0.55), transparent 70%),
+    repeating-linear-gradient(0deg, #3a2414 0 6px, #4a2e18 6px 10px, #2c1b0f 10px 14px),
+    #2c1b0f;
+}
+.bg-salt-flats {
+  background:
+    radial-gradient(circle at 50% 60%, rgb(158 240 255 / 0.35), transparent 65%),
+    linear-gradient(135deg, rgb(255 255 255 / 0.12) 25%, transparent 25%) 0 0 / 10px 10px,
+    linear-gradient(180deg, #16262b 0 60%, #c8dde0 60% 62%, #6f8c91 62%);
+}
+.bg-black-frost {
+  background:
+    radial-gradient(circle, rgb(220 235 255 / 0.8) 0.8px, transparent 1.2px) 0 0 / 11px 13px,
+    radial-gradient(circle, rgb(220 235 255 / 0.5) 0.6px, transparent 1px) 5px 6px / 17px 19px,
+    linear-gradient(180deg, #05070d, #1a2440 70%, #4b5d86);
+}
+.bg-ancient-roots {
+  background:
+    radial-gradient(circle at 50% 60%, rgb(155 92 240 / 0.45), transparent 65%),
+    repeating-linear-gradient(70deg, transparent 0 9px, rgb(80 55 30 / 0.7) 9px 12px, transparent 12px 20px),
+    #120c10;
+}
+.bg-geometric-grove {
+  background:
+    radial-gradient(circle at 50% 60%, rgb(74 222 128 / 0.35), transparent 65%),
+    conic-gradient(from 45deg, #13280f 0 25%, #0c1a0a 0 50%, #13280f 0 75%, #0c1a0a 0) 0 0 / 12px 12px;
+}
+.bg-overgrown-canopy {
+  background:
+    radial-gradient(circle, rgb(240 179 90 / 0.5) 1.5px, transparent 2px) 3px 4px / 17px 15px,
+    radial-gradient(ellipse 120% 50% at 50% 0%, #1f3a12 0 60%, transparent 61%),
+    linear-gradient(180deg, #0f1c0a, #2b1a0c);
+}
+.bg-red-swamp {
+  background:
+    radial-gradient(ellipse 100% 30% at 50% 100%, rgb(225 29 72 / 0.55), transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0 6px, rgb(255 90 110 / 0.18) 6px 7px),
+    linear-gradient(180deg, #1a0a0d, #3a0d16 75%, #5a1420);
+}
+.bg-thorn-frost {
+  background:
+    radial-gradient(circle at 50% 60%, rgb(236 72 153 / 0.35), transparent 65%),
+    linear-gradient(120deg, transparent 46%, rgb(191 233 255 / 0.35) 46% 50%, transparent 50%) 0 0 / 18px 18px,
+    linear-gradient(180deg, #0d1018, #2a1530);
+}
+.bg-greenhouse {
+  background:
+    radial-gradient(circle at 50% 55%, rgb(92 242 200 / 0.3), transparent 60%),
+    linear-gradient(90deg, rgb(92 242 200 / 0.18) 1px, transparent 1px) 0 0 / 16px 16px,
+    linear-gradient(rgb(92 242 200 / 0.18) 1px, transparent 1px) 0 0 / 16px 16px,
+    linear-gradient(180deg, #0b1614, #12241f);
+}
+.bg-wheat-storm {
+  background:
+    repeating-linear-gradient(100deg, transparent 0 7px, rgb(255 209 102 / 0.35) 7px 9px, transparent 9px 15px),
+    linear-gradient(180deg, #2a1c0c 0 55%, #6b4a1c 55%, #3d2a10);
+}
+.bg-spore-crypt {
+  background:
+    radial-gradient(circle, rgb(197 139 255 / 0.9) 1px, transparent 1.6px) 2px 3px / 13px 15px,
+    radial-gradient(circle, rgb(124 242 208 / 0.7) 0.8px, transparent 1.3px) 8px 9px / 19px 17px,
+    radial-gradient(circle at 50% 65%, rgb(168 85 247 / 0.4), transparent 65%),
+    #0d0a12;
+}
+.bg-mutant-coop {
+  background:
+    radial-gradient(circle at 50% 60%, rgb(239 68 68 / 0.45), transparent 65%),
+    repeating-linear-gradient(90deg, #2a1410 0 8px, #351a14 8px 10px),
+    #2a1410;
+}
+.bg-dry-steppe {
+  background:
+    radial-gradient(circle at 75% 20%, rgb(255 220 150 / 0.55) 0 8px, transparent 9px),
+    linear-gradient(180deg, #4a3a26 0 55%, #8a7350 55% 58%, #5e4c34 58%),
+    #4a3a26;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encounter__stage--aura {
+    animation: none;
+  }
 }
 
 /* =============================================================================
@@ -629,8 +727,3 @@ html[data-motif='forest'] body::before {
     #17110b;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .boss-aura {
-    animation: none;
-  }
-}

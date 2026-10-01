@@ -107,7 +107,7 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
 
       {boss && (
         <View style={{ marginTop: space.md }}>
-          <CoopBossFrame bossId={boss.id} name={boss.name} defeated={boss.defeated} spriteSize={44}>
+          <CoopBossFrame bossId={boss.id} spriteUrl={m.spriteUrl} name={boss.name} defeated={boss.defeated} spriteSize={44}>
             {boss.defeated ? (
               <PixelText size={8} tone="gold" style={{ marginTop: 4 }}>
                 Derrotado

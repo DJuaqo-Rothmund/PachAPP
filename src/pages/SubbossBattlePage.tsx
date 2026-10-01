@@ -158,6 +158,8 @@ function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
         </Link>
         <SubbossFrame
           submoduleId={node.id}
+          spriteUrl={node.spriteUrl}
+          bgTheme={node.bgTheme}
           name={node.subboss.name}
           title={node.subboss.title}
           defeated={Boolean(over?.subbossDefeated)}

@@ -47,7 +47,7 @@ export function BossCard({ module, tester = false, variant = 'full' }: BossCardP
 
   return (
     <div>
-      <CoopBossFrame bossId={boss.id} name={boss.name} title={compact ? undefined : boss.title} defeated={boss.defeated} size={compact ? 'sm' : 'md'}>
+      <CoopBossFrame bossId={boss.id} spriteUrl={module.spriteUrl} bgTheme={module.bgTheme} name={boss.name} title={compact ? undefined : boss.title} defeated={boss.defeated} size={compact ? 'sm' : 'md'}>
         <div className="mt-3">
           {boss.defeated ? (
             <p className="font-title text-2xl leading-none text-gold">✦ Derrotado ✦</p>

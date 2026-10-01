@@ -109,7 +109,7 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
       </Body>
 
       <View style={{ marginTop: space.md }}>
-        <SubbossFrame submoduleId={node.id} name={node.subboss.name} title={node.subboss.title} defeated={node.subboss.defeated} spriteSize={40}>
+        <SubbossFrame submoduleId={node.id} spriteUrl={node.spriteUrl} name={node.subboss.name} title={node.subboss.title} defeated={node.subboss.defeated} spriteSize={40}>
           <View style={{ marginTop: 6 }}>
             <HpBar current={node.subboss.hp} max={node.subboss.maxHp} compact />
             <Body tone="mist" size={11} style={{ marginTop: 2 }}>
@@ -154,7 +154,7 @@ function BossStep({ module, ready }: { module: CampaignModule; ready: boolean })
 
   return (
     <View style={{ gap: space.md }}>
-      <CoopBossFrame bossId={boss.id} name={boss.name} title={boss.title} defeated={boss.defeated}>
+      <CoopBossFrame bossId={boss.id} spriteUrl={module.spriteUrl} name={boss.name} title={boss.title} defeated={boss.defeated}>
         <View style={{ marginTop: 6 }}>
           <HpBar current={boss.currentHp} max={boss.maxHp} compact />
           <Body tone="mist" size={11} style={{ marginTop: 2 }}>

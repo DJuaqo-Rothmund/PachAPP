@@ -169,6 +169,10 @@ En la demo sin Supabase la clave es `1234` (`DEMO_MASTER_CODE` en `src/lib/game/
   `skinScope()` a un solo contenedor (como cada tarjeta de `ClassCard`). `html[data-skin]` permite detalles propios.
 - **Combate**: `CoopBossFrame` (hierro oxidado con remaches), `SubbossFrame` (piedra con raíces), `HpBar` segmentada
   con rastro de daño y `BossCard` (retrato, HP y botón del raid).
+- **Encuentros**: `src/data/encounters.ts` asigna a cada módulo una temática, un marco (`frame-*`), un fondo de batalla
+  (`bg-*`) y una paleta. `EncounterCard` es la tarjeta universal de jefes y subjefes. Las imágenes se conectan con
+  `modules.sprite_url` / `submodules.sprite_url` (y `bg_theme`); ver **`docs/arte-encuentros.md`** (prompts, nombres de
+  archivo y cómo subirlas).
 - **Android** replica lo mismo en `mobile/src/theme.ts`, `components/ui.tsx` (`Panel`, `Button`, `PixelText`) y
   `components/game.tsx`.
 

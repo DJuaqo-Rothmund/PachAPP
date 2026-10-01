@@ -1,12 +1,13 @@
-import type { ReactNode } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { useState, type ReactNode } from 'react'
+import { Image, StyleSheet, View } from 'react-native'
 import { BADGE_SPRITES, bossSprite, CLASS_SPRITES, subbossSprite } from '@shared/components/pixel/sprites'
 import { formatLivesCountdown } from '@shared/lib/game/lives'
 import type { LivesStatus } from '@shared/lib/game/types'
+import { encounterForBoss, encounterForSubmodule, type EncounterStyle } from '@shared/data/encounters'
 import type { RpgClassId } from '@shared/data/classes'
 import { PixelSprite } from './PixelSprite'
 import { Body, PixelText } from './ui'
-import { colors, radius } from '@/theme'
+import { colors, fonts, mix, radius } from '@/theme'
 
 export function ClassAvatar({ rpgClass, size }: { rpgClass: RpgClassId | null; size: number }) {
   if (!rpgClass) return <View style={{ width: size, height: size, borderRadius: radius.sm, backgroundColor: colors.stone }} />
@@ -64,96 +65,138 @@ export function OutOfLives({ lives }: { lives: LivesStatus | null }) {
   )
 }
 
-/** Jefe cooperativo: marco dorado y carmesí con remaches y sello "JEFE COOPERATIVO". */
-export function CoopBossFrame({
-  bossId,
-  name,
-  title,
-  defeated = false,
-  spriteSize = 72,
-  sprite,
-  children,
-}: {
-  bossId: string
+/**
+ * Retrato del encuentro: la imagen pixel art (si sprite_url es una URL http/https)
+ * o el sprite pixel de respaldo. Si la imagen falla, vuelve al sprite.
+ */
+export function EncounterPortrait({ url, size, fallback }: { url: string | null | undefined; size: number; fallback: ReactNode }) {
+  const [failed, setFailed] = useState(false)
+  const remote = url && /^https?:\/\//.test(url) ? url : null
+  if (!remote || failed) return <>{fallback}</>
+  return <Image source={{ uri: remote }} style={{ width: size, height: size }} resizeMode="contain" onError={() => setFailed(true)} />
+}
+
+interface EncounterProps {
   name: string
   title?: string
   defeated?: boolean
   spriteSize?: number
-  /** Reemplaza el sprite (por ejemplo, uno animado). */
+  /** Reemplaza el retrato (por ejemplo, uno animado). */
   sprite?: ReactNode
+  /** Imagen desde la base de datos (sprite_url). */
+  spriteUrl?: string | null
+  children?: ReactNode
+}
+
+/**
+ * Tarjeta universal de encuentro al estilo RPG de 16 bits (equivalente a EncounterCard
+ * de la web). Usa la paleta del módulo de src/data/encounters.ts.
+ */
+function EncounterFrame({
+  tier,
+  encounter,
+  name,
+  title,
+  spriteSize,
+  portrait,
+  children,
+}: {
+  tier: 'boss' | 'subboss'
+  encounter: EncounterStyle
+  name: string
+  title?: string
+  spriteSize: number
+  portrait: ReactNode
   children?: ReactNode
 }) {
+  const boss = tier === 'boss'
+  const { palette } = encounter
+  const ring = boss ? 5 : 3
   return (
-    <View style={[styles.frame, styles.coop]}>
-      <View style={[styles.rivet, { left: 5 }]} />
-      <View style={[styles.rivet, { right: 5 }]} />
-      <View style={[styles.rivet, { left: 5, top: undefined, bottom: 5 }]} />
-      <View style={[styles.rivet, { right: 5, top: undefined, bottom: 5 }]} />
-      <View style={[styles.seal, styles.coopSeal]}>
-        <PixelText size={7} style={{ color: '#450a0a' }}>
-          ♛ JEFE COOPERATIVO
-        </PixelText>
+    <View style={[styles.encounterShadow, { marginTop: 12 }]}>
+      <View
+        style={{
+          backgroundColor: palette.surface,
+          borderWidth: ring,
+          borderTopColor: palette.frameLight,
+          borderLeftColor: palette.frameLight,
+          borderBottomColor: palette.frameDark,
+          borderRightColor: palette.frameDark,
+          paddingTop: 20,
+          paddingHorizontal: 12,
+          paddingBottom: 12,
+        }}
+      >
+        {boss && (
+          <>
+            <View style={[styles.rivet, { left: 4 }]} />
+            <View style={[styles.rivet, { right: 4 }]} />
+            <View style={[styles.rivet, { left: 4, top: undefined, bottom: 4 }]} />
+            <View style={[styles.rivet, { right: 4, top: undefined, bottom: 4 }]} />
+          </>
+        )}
+        <View style={styles.frameRow}>
+          <View
+            style={[
+              styles.stage,
+              {
+                width: spriteSize + (boss ? 16 : 12),
+                height: spriteSize + (boss ? 16 : 12),
+                backgroundColor: mix(palette.glow, '#000000', 0.22),
+              },
+            ]}
+          >
+            {portrait}
+          </View>
+          <View style={{ flex: 1 }}>
+            <PixelText size={boss ? 10 : 9} style={{ color: palette.primary }}>
+              {name}
+            </PixelText>
+            {title ? (
+              <Body size={boss ? 17 : 15} style={{ fontFamily: fonts.title, lineHeight: boss ? 18 : 16, color: palette.secondary, marginTop: 2 }}>
+                {title}
+              </Body>
+            ) : null}
+            {children}
+          </View>
+        </View>
       </View>
-      <View style={styles.frameRow}>
-        <View style={[styles.stage, styles.coopStage, { width: spriteSize + 16, height: spriteSize + 16 }]}>
-          {sprite ?? <BossSprite bossId={bossId} size={spriteSize} defeated={defeated} />}
-        </View>
-        <View style={{ flex: 1 }}>
-          <PixelText size={10} style={{ color: '#ff6b5e' }}>
-            {name}
-          </PixelText>
-          {title ? (
-            <Body tone="mist" size={13} style={{ marginTop: 2 }}>
-              {title}
-            </Body>
-          ) : null}
-          {children}
-        </View>
+      <View style={[styles.seal, { backgroundColor: boss ? palette.secondary : palette.frameDark }]}>
+        <PixelText size={7} style={{ color: boss ? '#000000' : palette.secondary }}>
+          {boss ? '♛ JEFE COOPERATIVO' : '⚔ SUBJEFE'}
+        </PixelText>
       </View>
     </View>
   )
 }
 
-/** Subjefe: marco de piedra y acero, compacto, con sello "SUBJEFE". */
-export function SubbossFrame({
-  submoduleId,
-  name,
-  title,
-  defeated = false,
-  spriteSize = 48,
-  sprite,
-  children,
-}: {
-  submoduleId: string
-  name: string
-  title?: string
-  defeated?: boolean
-  spriteSize?: number
-  sprite?: ReactNode
-  children?: ReactNode
-}) {
+/** Jefe cooperativo con el estilo de su módulo. */
+export function CoopBossFrame({ bossId, defeated = false, spriteSize = 72, sprite, spriteUrl, ...rest }: EncounterProps & { bossId: string }) {
   return (
-    <View style={[styles.frame, styles.sub]}>
-      <View style={[styles.seal, styles.subSeal]}>
-        <PixelText size={7} style={{ color: '#e2e8f0' }}>
-          ⚔ SUBJEFE
-        </PixelText>
-      </View>
-      <View style={styles.frameRow}>
-        <View style={[styles.stage, styles.subStage, { width: spriteSize + 12, height: spriteSize + 12 }]}>
-          {sprite ?? <SubbossSprite submoduleId={submoduleId} size={spriteSize} defeated={defeated} />}
-        </View>
-        <View style={{ flex: 1 }}>
-          <PixelText size={9}>{name}</PixelText>
-          {title ? (
-            <Body tone="mist" size={12} style={{ marginTop: 2 }}>
-              {title}
-            </Body>
-          ) : null}
-          {children}
-        </View>
-      </View>
-    </View>
+    <EncounterFrame
+      tier="boss"
+      encounter={encounterForBoss(bossId)}
+      spriteSize={spriteSize}
+      portrait={sprite ?? <EncounterPortrait url={spriteUrl} size={spriteSize} fallback={<BossSprite bossId={bossId} size={spriteSize} defeated={defeated} />} />}
+      {...rest}
+    />
+  )
+}
+
+/** Subjefe: versión menor con el material del módulo al que pertenece. */
+export function SubbossFrame({ submoduleId, defeated = false, spriteSize = 48, sprite, spriteUrl, ...rest }: EncounterProps & { submoduleId: string }) {
+  return (
+    <EncounterFrame
+      tier="subboss"
+      encounter={encounterForSubmodule(submoduleId)}
+      spriteSize={spriteSize}
+      portrait={
+        sprite ?? (
+          <EncounterPortrait url={spriteUrl} size={spriteSize} fallback={<SubbossSprite submoduleId={submoduleId} size={spriteSize} defeated={defeated} />} />
+        )
+      }
+      {...rest}
+    />
   )
 }
 
@@ -215,31 +258,10 @@ const styles = StyleSheet.create({
   hearts: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   frame: { paddingTop: 20, paddingHorizontal: 12, paddingBottom: 12, marginTop: 10 },
   frameRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  // Jefe cooperativo: hierro oxidado con remaches.
-  coop: {
-    borderWidth: 4,
-    borderTopColor: colors.rustLight,
-    borderLeftColor: colors.rustLight,
-    borderBottomColor: '#3b1d0e',
-    borderRightColor: '#3b1d0e',
-    backgroundColor: '#1b1310',
-  },
-  // Subjefe: piedra tallada con raíces en el borde superior.
-  sub: {
-    borderWidth: 3,
-    borderTopColor: '#6b8e3a',
-    borderLeftColor: '#6d665a',
-    borderBottomColor: '#24211c',
-    borderRightColor: '#24211c',
-    backgroundColor: colors.crypt,
-  },
+  encounterShadow: { borderWidth: 2, borderColor: '#000000' },
   rivet: { position: 'absolute', top: 5, width: 7, height: 7, backgroundColor: '#e0b15c', borderWidth: 2, borderColor: '#6b3f14' },
-  seal: { position: 'absolute', top: -12, left: 12, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 2, borderColor: colors.ink },
-  coopSeal: { backgroundColor: colors.gold },
-  subSeal: { backgroundColor: '#5a5449' },
+  seal: { position: 'absolute', top: -12, left: 14, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 2, borderColor: '#000000' },
   stage: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.ink },
-  coopStage: { backgroundColor: '#170908' },
-  subStage: { backgroundColor: '#121110' },
   hpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 },
   hpFrame: {
     backgroundColor: '#4f453c',

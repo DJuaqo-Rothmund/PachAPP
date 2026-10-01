@@ -118,6 +118,8 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
         <div className="mt-5">
           <SubbossFrame
             submoduleId={node.id}
+            spriteUrl={node.spriteUrl}
+            bgTheme={node.bgTheme}
             name={node.subboss.name}
             title={node.subboss.title}
             defeated={node.subboss.defeated}

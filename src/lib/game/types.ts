@@ -63,6 +63,10 @@ export interface CampaignModule {
   /** Subjefes del módulo y cuántos derrotó el jugador (el Boss Raid exige todos). */
   subbossesTotal: number
   subbossesDefeated: number
+  /** Imagen del jefe cooperativo (modules.sprite_url). null = sprite pixel de respaldo. */
+  spriteUrl: string | null
+  /** Fondo temático de la batalla (modules.bg_theme). null = el de src/data/encounters.ts. */
+  bgTheme: string | null
 }
 
 /** Un submódulo en el árbol del módulo, con el progreso del jugador. */
@@ -83,6 +87,9 @@ export interface SubmoduleNode {
     hp: number
     defeated: boolean
   }
+  /** Imagen del subjefe (submodules.sprite_url) y fondo de batalla (hereda el del módulo). */
+  spriteUrl: string | null
+  bgTheme: string | null
 }
 
 /** Códice de un submódulo: texto, video opcional y checkpoints interactivos. */
@@ -223,6 +230,10 @@ export interface AdminModule {
   /** Desbloqueado por la comunidad (o manualmente por el admin). */
   unlocked: boolean
   codex: CodexSection[]
+  /** Imagen pixel art del jefe del módulo (null = sprite de respaldo). */
+  spriteUrl: string | null
+  /** Fondo de batalla (null = el de src/data/encounters.ts). */
+  bgTheme: string | null
 }
 
 export interface AdminQuestion {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Animated, StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { Gate, OptionButton, optionState, useHitAnimation } from '@/components/BattleScreen'
-import { HpBar, LivesHearts, OutOfLives, SubbossFrame, SubbossSprite } from '@/components/game'
+import { EncounterPortrait, HpBar, LivesHearts, OutOfLives, SubbossFrame, SubbossSprite } from '@/components/game'
 import { Body, Button, ErrorPanel, Loader, Panel, PixelText, Screen } from '@/components/ui'
 import { useLives } from '@/context/LivesContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -142,7 +142,7 @@ function Fight({
         sprite={
           <View>
             <Animated.View style={shakeStyle}>
-              <SubbossSprite submoduleId={node.id} size={64} defeated={Boolean(over?.subbossDefeated)} />
+              <EncounterPortrait url={node.spriteUrl} size={64} fallback={<SubbossSprite submoduleId={node.id} size={64} defeated={Boolean(over?.subbossDefeated)} />} />
             </Animated.View>
             <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
               <PixelText size={11} tone="gold">

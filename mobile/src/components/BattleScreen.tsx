@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Animated, Pressable, StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { BossSprite, CoopBossFrame, HpBar, LivesHearts, OutOfLives } from '@/components/game'
+import { BossSprite, CoopBossFrame, EncounterPortrait, HpBar, LivesHearts, OutOfLives } from '@/components/game'
 import { Body, Button, ErrorPanel, Loader, Panel, PixelText, Screen } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -232,12 +232,13 @@ function Raid({
       <Panel>
         <CoopBossFrame
           bossId={boss.id}
+          spriteUrl={module.spriteUrl}
           name={boss.name}
           title={boss.title}
           sprite={
             <View>
               <Animated.View style={shakeStyle}>
-                <BossSprite bossId={boss.id} size={72} defeated={defeated} />
+                <EncounterPortrait url={module.spriteUrl} size={72} fallback={<BossSprite bossId={boss.id} size={72} defeated={defeated} />} />
               </Animated.View>
               <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
                 <PixelText size={12} tone="gold">

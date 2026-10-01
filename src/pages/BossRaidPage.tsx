@@ -246,7 +246,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
           {isRaid ? 'Boss Raid cooperativo semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
         </p>
         <div className="mt-5">
-          <CoopBossFrame bossId={boss.id} name={boss.name} title={boss.title} defeated={defeated} hitKey={hitKey} damage={lastDamage}>
+          <CoopBossFrame bossId={boss.id} spriteUrl={module.spriteUrl} bgTheme={module.bgTheme} name={boss.name} title={boss.title} defeated={defeated} hitKey={hitKey} damage={lastDamage}>
             <div className="mt-3">
               <HpBar current={hp} max={boss.maxHp} />
             </div>

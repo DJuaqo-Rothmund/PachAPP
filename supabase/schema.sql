@@ -225,6 +225,17 @@ as $$
   );
 $$;
 
+-- Assets visuales de los encuentros (D&D Agrícola 16-bits).
+--   sprite_url: imagen pixel art del jefe (en modules) o del subjefe (en submodules).
+--               Puede ser una URL de Supabase Storage o una ruta del sitio (/encounters/…).
+--               null = la app usa su sprite pixel de respaldo.
+--   bg_theme:   fondo temático de la batalla (clase CSS bg-*, ver src/data/encounters.ts).
+--               En submodules, null = hereda el del módulo.
+alter table public.modules add column if not exists sprite_url text;
+alter table public.modules add column if not exists bg_theme text;
+alter table public.submodules add column if not exists sprite_url text;
+alter table public.submodules add column if not exists bg_theme text;
+
 create table if not exists public.codices (
   id text primary key,
   submodule_id text not null unique references public.submodules (id) on delete cascade,
@@ -1007,6 +1018,8 @@ as $$
 $$;
 
 -- Árbol del módulo para el jugador: submódulos, estado del Códice y del subjefe.
+-- (Se elimina antes de recrearla porque cambió su tipo de retorno.)
+drop function if exists public.get_module_tree(integer);
 create or replace function public.get_module_tree(p_module_id integer)
 returns table (
   submodule_id text,
@@ -1022,7 +1035,9 @@ returns table (
   codex_read boolean,
   checkpoints_total integer,
   checkpoints_passed integer,
-  question_count integer
+  question_count integer,
+  sprite_url text,
+  bg_theme text
 )
 language sql
 stable
@@ -1039,7 +1054,9 @@ as $$
     sp.codex_read_at is not null,
     coalesce(jsonb_array_length(c.interactive_checkpoints), 0),
     coalesce(array_length(sp.checkpoints_passed, 1), 0),
-    (select count(*)::integer from public.questions q where q.submodule_id = sm.id)
+    (select count(*)::integer from public.questions q where q.submodule_id = sm.id),
+    sm.sprite_url,
+    coalesce(sm.bg_theme, m.bg_theme)
   from public.submodules sm
   join public.modules m on m.id = sm.module_id and not m.archived
   left join public.codices c on c.submodule_id = sm.id

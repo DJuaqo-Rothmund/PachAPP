@@ -4,6 +4,11 @@ import { Modal } from '../ui/Modal'
 import { FormFooter, errorMessage } from './FormFooter'
 import { useAsync } from '../../hooks/useAsync'
 import { adminApi, type AdminModule } from '../../lib/game'
+import { CoopBossFrame } from '../game/BossFrames'
+import { DEFAULT_ENCOUNTER, ENCOUNTERS, encounterForModule } from '../../data/encounters'
+
+/** Fondos de batalla disponibles (uno por módulo más el de mazmorra). */
+const BG_THEMES = [...new Set([...Object.values(ENCOUNTERS).map((e) => e.bgTheme), DEFAULT_ENCOUNTER.bgTheme])]
 
 export function ModulesTab() {
   const { data: modules, error, loading, reload } = useAsync(() => adminApi.listModules(), [])
@@ -21,6 +26,8 @@ export function ModulesTab() {
         initiallyUnlocked: false,
         unlocked: false,
         codex: [{ heading: '', body: [''] }],
+        spriteUrl: null,
+        bgTheme: null,
       },
     })
   }
@@ -238,6 +245,47 @@ function ModuleForm({ initial, isNew, existingIds, onClose, onSaved }: ModuleFor
             Desbloqueado (por la comunidad o manualmente)
           </label>
         </div>
+
+        <fieldset className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <legend className="label">Aspecto del jefe cooperativo</legend>
+          <div className="space-y-3">
+            <div>
+              <label className="label" htmlFor="m-sprite">
+                Imagen del jefe (sprite_url): URL de Supabase Storage o ruta /encounters/…
+              </label>
+              <input
+                id="m-sprite"
+                className="input"
+                placeholder="Vacío = sprite pixel de respaldo"
+                value={form.spriteUrl ?? ''}
+                onChange={(e) => set('spriteUrl', e.target.value || null)}
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="m-bg">
+                Fondo de batalla (bg_theme)
+              </label>
+              <select id="m-bg" className="input" value={form.bgTheme ?? ''} onChange={(e) => set('bgTheme', e.target.value || null)}>
+                <option value="">Predeterminado del módulo ({encounterForModule(form.id).bgTheme})</option>
+                {BG_THEMES.map((bg) => (
+                  <option key={bg} value={bg}>
+                    {bg}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <p className="label">Vista previa</p>
+            <CoopBossFrame
+              bossId={`boss-${form.slug}`}
+              name={form.title || 'Jefe del módulo'}
+              spriteUrl={form.spriteUrl}
+              bgTheme={form.bgTheme}
+              size="sm"
+            />
+          </div>
+        </fieldset>
 
         <fieldset>
           <legend className="label">Códice (separa los párrafos con una línea en blanco)</legend>

@@ -32,6 +32,8 @@ interface TreeRow {
   checkpoints_total: number
   checkpoints_passed: number
   question_count: number
+  sprite_url: string | null
+  bg_theme: string | null
 }
 
 interface CheckpointRow {
@@ -108,7 +110,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
 
     async getCampaign() {
       const [modules, bosses, campaign] = await Promise.all([
-        sb.from('modules').select('id, title, summary, codex').eq('archived', false).order('id'),
+        sb.from('modules').select('id, title, summary, codex, sprite_url, bg_theme').eq('archived', false).order('id'),
         sb.from('bosses').select('*'),
         sb.rpc('get_campaign'),
       ])
@@ -119,7 +121,8 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       const status = new Map<number, CampaignRow>((campaign.data as CampaignRow[]).map((c) => [c.module_id, c]))
       const bossByModule = new Map((bosses.data as BossRow[]).map((b) => [b.module_id, toBoss(b)]))
 
-      return modules.data.map((m: { id: number; title: string; summary: string; codex: CodexSection[] }) => {
+      return modules.data.map(
+        (m: { id: number; title: string; summary: string; codex: CodexSection[]; sprite_url: string | null; bg_theme: string | null }) => {
         const s = status.get(m.id)
         return {
           id: m.id,
@@ -139,6 +142,8 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
           },
           subbossesTotal: s?.subbosses_total ?? 0,
           subbossesDefeated: s?.subbosses_defeated ?? 0,
+          spriteUrl: m.sprite_url,
+          bgTheme: m.bg_theme,
         }
       })
     },
@@ -277,6 +282,8 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
           hp: r.subboss_hp,
           defeated: r.subboss_defeated,
         },
+        spriteUrl: r.sprite_url,
+        bgTheme: r.bg_theme,
       }))
     },
 

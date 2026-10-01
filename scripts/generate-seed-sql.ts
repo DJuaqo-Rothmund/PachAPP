@@ -9,6 +9,7 @@
  */
 import { BADGES, MODULES } from '../src/data/seed.ts'
 import type { Codex, Question } from '../src/data/types.ts'
+import { encounterForModule } from '../src/data/encounters.ts'
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'joaquin.rothmund@gmail.com')
   .split(',')
@@ -40,13 +41,17 @@ emit()
 
 emit('-- Módulos')
 for (const m of MODULES) {
+  const enc = encounterForModule(m.id)
   emit(
-    `insert into public.modules (id, slug, title, summary, initially_unlocked, codex) values (` +
-      `${m.id}, ${str(m.slug)}, ${str(m.title)}, ${str(m.summary)}, ${m.initiallyUnlocked}, ${json(m.codex)})`,
+    `insert into public.modules (id, slug, title, summary, initially_unlocked, codex, bg_theme, sprite_url) values (` +
+      `${m.id}, ${str(m.slug)}, ${str(m.title)}, ${str(m.summary)}, ${m.initiallyUnlocked}, ${json(m.codex)}, ` +
+      `${str(enc.bgTheme)}, ${nullable(enc.spriteUrl)})`,
   )
   emit(
     '  on conflict (id) do update set slug = excluded.slug, title = excluded.title, summary = excluded.summary,' +
-      ' initially_unlocked = excluded.initially_unlocked, codex = excluded.codex;',
+      ' initially_unlocked = excluded.initially_unlocked, codex = excluded.codex, bg_theme = excluded.bg_theme,' +
+      // Una imagen ya conectada en la base de datos no se pisa con un null del seed.
+      ' sprite_url = coalesce(excluded.sprite_url, public.modules.sprite_url);',
   )
 }
 emit()

@@ -97,6 +97,8 @@ function initialState(): DemoState {
       summary: m.summary,
       initiallyUnlocked: m.initiallyUnlocked,
       codex: m.codex,
+      spriteUrl: null,
+      bgTheme: null,
     })),
     questions: MODULES.flatMap((m) => [
       ...m.questions.map((q, i) => ({
@@ -360,6 +362,9 @@ export function createDemoApi(): GameApi {
             raid: raidStatus(s, m.id, boss),
             subbossesTotal: subbossesOf(s, m.id).total,
             subbossesDefeated: subbossesOf(s, m.id).defeated,
+            // Editables desde el panel admin de la demo; null = estilo de src/data/encounters.ts.
+            spriteUrl: m.spriteUrl ?? null,
+            bgTheme: m.bgTheme ?? null,
           }
         })
     },
@@ -560,6 +565,8 @@ export function createDemoApi(): GameApi {
               hp: p?.defeated ? 0 : sm.subboss.maxHp - (p?.damage ?? 0),
               defeated: Boolean(p?.defeated),
             },
+            spriteUrl: null,
+            bgTheme: null,
           }
         })
     },

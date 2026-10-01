@@ -105,7 +105,7 @@ export default function SubmoduleCodexScreen() {
         </View>
       )}
 
-      <SubbossFrame submoduleId={node.id} name={node.subboss.name} title={node.subboss.title} defeated={node.subboss.defeated} spriteSize={40}>
+      <SubbossFrame submoduleId={node.id} spriteUrl={node.spriteUrl} name={node.subboss.name} title={node.subboss.title} defeated={node.subboss.defeated} spriteSize={40}>
         <Body tone="mist" size={12} style={{ marginTop: 4 }}>
           {node.subboss.defeated ? 'Ya lo derrotaste.' : `Te espera al final de este Códice · ${node.subboss.maxHp} HP`}
         </Body>

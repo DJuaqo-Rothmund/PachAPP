@@ -48,6 +48,8 @@ export function createSupabaseAdminApi(sb: SupabaseClient): AdminApi {
           initiallyUnlocked: m.initially_unlocked,
           unlocked: m.initially_unlocked || m.unlocked_at !== null,
           codex: m.codex,
+          spriteUrl: m.sprite_url ?? null,
+          bgTheme: m.bg_theme ?? null,
         }),
       )
     },
@@ -65,6 +67,8 @@ export function createSupabaseAdminApi(sb: SupabaseClient): AdminApi {
           initially_unlocked: m.initiallyUnlocked,
           unlocked_at: unlockedAt,
           codex: m.codex,
+          sprite_url: m.spriteUrl?.trim() || null,
+          bg_theme: m.bgTheme || null,
         }),
       )
     },
