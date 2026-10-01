@@ -12,7 +12,7 @@
       "package": "cl.djuaqo.pachapp",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0b0f0c",
+        "backgroundColor": "#141b20",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
@@ -25,7 +25,16 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#0b0f0c"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

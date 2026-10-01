@@ -155,6 +155,25 @@ update public.master_settings set enabled = false;
 
 En la demo sin Supabase la clave es `1234` (`DEMO_MASTER_CODE` en `src/lib/game/lives.ts`).
 
+## Logo e íconos
+
+El logo original está en `branding/pachapp-logo.jpg`. Todos los íconos salen de ahí con:
+
+```bash
+pip install pillow
+python3 scripts/generate-brand-assets.py
+```
+
+- **Web (PWA):** favicon, íconos 192/512, ícono *maskable* y apple-touch-icon en `public/icons/`; logo y emblema en
+  `public/brand/`. El logo se ve en la pantalla de carga inicial (`index.html`), en `FullScreenLoader`, en el login y
+  (el emblema) en la cabecera.
+- **Android:** `mobile/assets/icon.png`, ícono adaptativo (emblema sobre piedra `#141b20`) con versión monocromo para
+  los íconos temáticos, splash nativo (`expo-splash-screen`, emblema sobre `#0b0f0c`) y `logo.png` para la pantalla de
+  carga (`BootScreen`) y el login.
+
+Si cambias el logo, reemplaza `branding/pachapp-logo.jpg` y vuelve a correr el script. Si el emblema queda mal
+encuadrado, ajusta `EMBLEM_BOX` en el script.
+
 ## Clases, skins y desbloqueables
 
 Las clases viven en `src/data/classes.ts` (compartido con la app Android). Cada una define:

@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ProfileProvider, useProfile } from '@/context/ProfileContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { LivesProvider } from '@/context/LivesContext'
-import { Loader } from '@/components/ui'
+import { BootScreen } from '@/components/BootScreen'
 import { hydrateDemoStorage } from '@/lib/demoStorage'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { colors } from '@/theme'
@@ -42,7 +42,7 @@ export default function RootLayout() {
           </ProfileProvider>
         </AuthProvider>
       ) : (
-        <Loader />
+        <BootScreen />
       )}
     </SafeAreaProvider>
   )
@@ -88,7 +88,7 @@ function RootNavigator() {
       </Stack>
       {loading && (
         <View style={StyleSheet.absoluteFill}>
-          <Loader />
+          <BootScreen />
         </View>
       )}
     </View>

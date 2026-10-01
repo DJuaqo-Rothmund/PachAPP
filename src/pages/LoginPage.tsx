@@ -20,9 +20,9 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="panel w-full max-w-sm text-center">
-        <img src="/icons/pachapp.svg" alt="" className="pixelated mx-auto h-20 w-20" />
-        <h1 className="pixel-title mt-6 text-xl text-moss">Pachapp</h1>
-        <p className="mt-3 text-sm text-mist">Aprende agronomía. Derrota jefes. Gana loot.</p>
+        <img src="/brand/logo.webp" alt="Pachapp" width={280} height={280} className="mx-auto w-full max-w-[280px]" />
+        <h1 className="sr-only">Pachapp</h1>
+        <p className="mt-2 text-sm text-mist">Aprende agronomía. Derrota jefes. Gana loot.</p>
 
         <button type="button" onClick={handleLogin} className="btn-primary mt-8 w-full">
           Entrar con Google

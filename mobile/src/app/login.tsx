@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { PixelSprite } from '@/components/PixelSprite'
-import { Body, Button, PixelText } from '@/components/ui'
-import { BADGE_SPRITES } from '@shared/components/pixel/sprites'
+import { Body, Button } from '@/components/ui'
 import { signInWithGoogle } from '@/lib/auth'
 import { colors, space } from '@/theme'
 
@@ -27,11 +25,8 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.center}>
-        <PixelSprite rows={BADGE_SPRITES.leaf} size={72} />
-        <PixelText size={22} tone="moss" style={{ marginTop: space.xl }}>
-          Pachapp
-        </PixelText>
-        <Body tone="mist" style={{ marginTop: space.sm, textAlign: 'center' }}>
+        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Pachapp" />
+        <Body tone="mist" style={{ marginTop: space.md, textAlign: 'center' }}>
           Aprende agronomía. Derrota jefes. Gana loot.
         </Body>
 
@@ -58,4 +53,5 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.void },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl },
+  logo: { width: 280, height: 280, maxWidth: '100%' },
 })

@@ -29,7 +29,7 @@ export function AppShell() {
       <header className="sticky top-0 z-10 border-b border-rune bg-void/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <NavLink to="/" className="flex items-center gap-2">
-            <img src="/icons/pachapp.svg" alt="" className="pixelated h-8 w-8" />
+            <img src="/brand/emblem.webp" alt="" className="h-9 w-10 object-contain" />
             <span className="pixel-title text-sm text-moss">Pachapp</span>
           </NavLink>
 
