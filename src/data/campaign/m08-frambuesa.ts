@@ -2,7 +2,7 @@ import type { Question } from '../types'
 import { campaignModule } from './helpers.ts'
 
 /**
- * Módulo 8 · Frambuesa. Sus 25 preguntas vienen de la campaña anterior (cuando era
+ * Módulo 8 · Frambuesa. 20 de sus preguntas vienen de la campaña anterior (cuando era
  * el módulo 2) y conservan su id `m2-q{n}`: así no se pierde el historial de respuestas.
  */
 const { submodule } = campaignModule(8)
@@ -24,6 +24,7 @@ export const FRAMBUESA_SUBMODULES = [
         body: [
           'La frambuesa (Rubus idaeus) es una Rosácea con raíz y corona perennes, pero sus cañas viven dos temporadas. El primer año la caña se llama primocane (crece vegetativa); el segundo, floricane (fructifica y luego muere).',
           'Brota desde yemas de la corona y desde raíces gemíferas que emiten hijuelos a distancia: por eso la plantación "camina" y puede volverse invasiva entre hileras.',
+          'Su raíz es muy sensible a la asfixia y a Phytophthora: se planta en camellones elevados, en suelos francos y bien drenados, con riego por goteo. También es sensible al cloro, por lo que el potasio se aplica como sulfato o nitrato y no como cloruro (muriato).',
         ],
       },
       {
@@ -86,68 +87,73 @@ export const FRAMBUESA_SUBMODULES = [
 
   submodule({
     order: 2,
-    title: 'Suelo, Riego y Nutrición',
-    description: 'Camellones contra la asfixia, goteo con doble cinta y una nutrición cuidadosa con el cloro y el calcio.',
-    subboss: { name: 'El Tensor Roto', title: 'Azote de los Camellones' },
-    codexTitle: 'Establecimiento, Riego y Nutrición',
+    title: 'Estructuras de Soporte',
+    description: 'Postes, alambres, crucetas y tensores: la estructura que sostiene las cañas y ordena la hilera.',
+    subboss: { name: 'El Tensor Roto', title: 'Azote de los Alambres' },
+    codexTitle: 'Espalderas y Estructuras de Soporte',
     sections: [
       {
-        heading: 'Suelo y camellones',
+        heading: 'Por qué necesita soporte',
         body: [
-          'La raíz de la frambuesa es muy sensible a la falta de oxígeno y a Phytophthora. Se planta en camellones elevados de 30 a 40 cm, en suelos profundos, francos y bien drenados.',
-          'Antes de plantar conviene analizar nematodos: Pratylenchus, un endoparásito migratorio, destruye el tejido de la raíz al desplazarse por ella.',
+          'Las cañas de frambuesa son largas y flexibles: con el peso de la fruta, el viento y la lluvia se doblan y caen al pasillo. Una espaldera las mantiene erguidas, expone la fruta a la luz, ventila la hilera y permite cosechar rápido y sin daño.',
+          'La estructura se instala antes o durante el primer año, porque después de plantado cuesta trabajar entre las plantas sin dañarlas.',
         ],
       },
       {
-        heading: 'Riego',
+        heading: 'Sistemas de espaldera',
         body: [
-          'El sistema más usado es el goteo con doble cinta sobre el camellón: moja la franja de raíces sin saturar y permite fertirrigar.',
-          'La demanda es máxima en cosecha: el déficit en esa etapa reduce el calibre y aumenta el ablandamiento de la fruta.',
+          'La espaldera simple (vertical) usa uno o dos pares de alambres a cada lado de las cañas, a unos 0,8 y 1,5 m de altura. La espaldera en T o en V usa crucetas de 0,6 a 1 m de ancho que separan las cañas hacia los lados y abren el centro de la hilera.',
+          'En túneles y cultivos remontantes es común sujetar las cañas con mallas o alambres móviles que se suben a medida que las primocanes crecen.',
         ],
       },
       {
-        heading: 'Nutrición',
+        heading: 'Postes, anclajes y tensores',
         body: [
-          'El potasio se asocia a la firmeza y la calidad de la fruta. Como la frambuesa es sensible al cloro, se prefiere sulfato o nitrato de potasio en vez de cloruro (muriato).',
-          'El calcio aplicado al follaje después de la cuaja llega poco al fruto, porque viaja por el xilema hacia los órganos que más transpiran, las hojas.',
+          'Los postes intermedios van cada 6 a 10 m; los postes de cabecera son más gruesos y se inclinan hacia afuera, y se anclan al suelo con un "muerto" (ancla enterrada) para resistir la tensión de todos los alambres.',
+          'Se usa alambre galvanizado de alta resistencia. Los tensores permiten recuperar la tensión que se pierde con el peso y los cambios de temperatura: un alambre suelto deja caer las cañas y las roza con el viento.',
+          'Revisar y tensar la estructura antes de cada temporada, y reemplazar postes podridos o quebrados, evita que una cabecera ceda y arrastre toda la hilera.',
         ],
       },
     ],
     checkpoint: {
       at: 120,
-      prompt: '¿Por qué se recomienda plantar frambuesa en camellones elevados?',
+      prompt: 'En plena cosecha, la cabecera de una hilera se inclina hacia adentro y los alambres quedan sueltos. ¿Qué falló?',
       options: [
-        'Para cosechar a máquina',
-        'Porque su raíz es muy sensible a la asfixia y a Phytophthora',
-        'Para evitar heladas de primavera',
-        'Para usar menos plantas',
+        'El riego por goteo',
+        'El anclaje del poste de cabecera, que no resistió la tensión de los alambres',
+        'El raleo de primocanes',
+        'La variedad remontante',
       ],
       correctIndex: 1,
-      explanation: 'El camellón aleja la raíz del agua acumulada: menos asfixia y menos Phytophthora.',
+      explanation:
+        'Toda la tensión de la línea descansa en las cabeceras: deben ser postes gruesos, inclinados hacia afuera y bien anclados con un muerto.',
     },
     questions: [
-      legacy(3, '¿Por qué se planta en camellones elevados?', 'La raíz es hipersensible a la asfixia y a Phytophthora', [
-        'Para permitir cosecha mecánica',
-        'Para evitar heladas',
-        'Para proteger del viento',
-      ]),
-      legacy(11, '¿Cuál es el sistema ideal de riego y fertirrigación?', 'Goteo con doble cinta', [
-        'Surco',
-        'Aspersión foliar',
-        'Pivote',
-      ]),
-      legacy(7, '¿Qué nutriente se asocia a la firmeza del fruto?', 'Potasio', ['Nitrógeno', 'Fósforo', 'Cloro']),
-      legacy(
-        23,
-        '¿Por qué el calcio foliar aplicado post-cuaja llega poco al fruto?',
-        'Viaja por xilema hacia las hojas que transpiran',
-        ['La raíz es impermeable', 'Ahuyenta a la mosca', 'Se transforma en yeso'],
-      ),
-      legacy(21, '¿Qué tipo de nematodo es Pratylenchus?', 'Endoparásito migratorio (destruye tejido al moverse)', [
-        'Ectoparásito adherido a la raíz',
-        'Fijador de nitrógeno',
-        'Ataca estolones',
-      ]),
+      [
+        '¿Cuál es la ventaja principal de la espaldera en T o en V?',
+        'Separa las cañas hacia los lados y abre el centro de la hilera',
+        ['Permite plantar sin camellón', 'Elimina la necesidad de podar', 'Reemplaza el riego por goteo'],
+      ],
+      [
+        '¿Para qué sirve un "muerto" en la espaldera?',
+        'Para anclar al suelo el poste de cabecera',
+        ['Para medir la humedad del suelo', 'Para sujetar las mallas antipájaros', 'Para marcar el fin de la hilera'],
+      ],
+      [
+        '¿Para qué se usan los tensores?',
+        'Para recuperar la tensión perdida de los alambres',
+        ['Para cortar las floricanes', 'Para medir el calibre de la fruta', 'Para regar las cabeceras'],
+      ],
+      [
+        '¿A qué distancia aproximada van los postes intermedios?',
+        'Cada 6 a 10 m',
+        ['Cada 50 cm', 'Cada 50 m', 'Solo en las cabeceras'],
+      ],
+      [
+        '¿Qué tipo de alambre se usa en las espalderas?',
+        'Galvanizado de alta resistencia',
+        ['De cobre sin aislar', 'De aluminio blando', 'Plástico reciclado sin tensión'],
+      ],
     ],
   }),
 

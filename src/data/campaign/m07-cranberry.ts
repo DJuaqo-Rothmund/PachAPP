@@ -2,7 +2,7 @@ import type { Question } from '../types'
 import { campaignModule } from './helpers.ts'
 
 /**
- * Módulo 7 · Cranberry. Sus 25 preguntas vienen de la campaña anterior (cuando era
+ * Módulo 7 · Cranberry. 20 de sus preguntas vienen de la campaña anterior (cuando era
  * el módulo 1) y conservan su id `m1-q{n}`: así no se pierde el historial de respuestas.
  */
 const { submodule } = campaignModule(7)
@@ -140,62 +140,75 @@ export const CRANBERRY_SUBMODULES = [
 
   submodule({
     order: 3,
-    title: 'Manejo de las Camas',
-    description: 'Arenado, poda de runners, peinado y nitrógeno: cómo mantener una cama productiva por décadas.',
+    title: 'Fenología y Floración',
+    description: 'El ciclo anual del cranberry: uprights, yema mixta, estados de brotación y una flor con forma de grulla.',
     subboss: { name: 'Sílfide del Botón Floral', title: 'Danzante de los Uprights' },
-    codexTitle: 'Manejo de Camas de Cranberry',
+    codexTitle: 'Fenología y Floración del Cranberry',
     sections: [
       {
-        heading: 'Establecimiento y variedades',
+        heading: 'Runners y uprights',
         body: [
-          'Las camas se plantan con estacas de runners presionadas en la arena; tardan 3 a 5 años en cubrir y entrar en plena producción, y pueden producir por décadas.',
-          'Stevens es la variedad histórica más productiva; hoy existen variedades de alto rendimiento y color como las de la serie de Rutgers.',
+          'El cranberry (Vaccinium macrocarpon) es una enredadera perenne de hoja persistente. Forma tallos rastreros, los runners, que cubren la cama, y de ellos nacen tallos verticales cortos, los uprights, que son los que producen la fruta.',
+          'La productividad de una cama depende de su densidad de uprights con flor: una cama sana tiene varios cientos por metro cuadrado.',
         ],
       },
       {
-        heading: 'Arenado (sanding)',
+        heading: 'La yema terminal y el ciclo anual',
         body: [
-          'Cada pocos años se aplica una capa delgada de arena (1 a 2,5 cm) sobre la cama, normalmente en invierno. Entierra parcialmente los runners, estimula su enraizamiento y la formación de nuevos uprights, y rejuvenece la cama.',
-          'También ayuda a controlar algunos insectos y a mejorar el drenaje superficial.',
+          'La yema terminal del upright es mixta: contiene el brote y las flores de la temporada siguiente. Se forma a fines del verano anterior, por lo que una temporada con estrés, mucha carga o exceso de nitrógeno reduce la flor del año próximo.',
+          'En invierno la planta está en reposo y, ya endurecida, tolera fuertes heladas. En primavera la yema se hincha, se abre y el brote se alarga; los botones florales cuelgan de pedicelos curvos en el estado de "gancho" (hook), justo antes de abrir.',
+          'Al avanzar desde la yema cerrada hasta el gancho, la tolerancia a la helada cae de varios grados bajo cero a cerca de 0 °C: el estado fenológico decide cuándo hay que proteger.',
         ],
       },
       {
-        heading: 'Poda, peinado y vigor',
+        heading: 'La floración',
         body: [
-          'La poda de runners mantiene la cama densa en uprights; una poda severa baja temporalmente el rendimiento, pero aumenta el calibre. En primavera se usan peinadoras para alinear los runners y facilitar la cosecha.',
-          'El exceso de nitrógeno produce "emboscamiento": demasiados runners y follaje, menos flores, fruta blanda y más enfermedades. El N se dosifica según el vigor observado.',
+          'Cada upright lleva varias flores en su base. La flor cuelga, tiene cuatro pétalos rosados vueltos hacia atrás y un cono de estambres que recuerda la cabeza y el pico de una grulla: de ahí el nombre "craneberry".',
+          'La floración dura varias semanas al inicio del verano y es la etapa más sensible del cultivo. Solo una parte de las flores llega a fruto: una cuaja de 30 a 40 % se considera buena.',
+          'Desde la cuaja, la baya tarda unos dos a tres meses en crecer y tomar color antes de la cosecha.',
         ],
       },
     ],
     checkpoint: {
       at: 125,
-      prompt: 'Una cama vieja tiene pocos uprights y runners largos sin enraizar. ¿Qué práctica la rejuvenece?',
-      options: ['Más nitrógeno nítrico', 'Arenado (sanding)', 'Inundación de verano', 'Retirar las abejas'],
+      prompt:
+        'Una cama tuvo una temporada con exceso de nitrógeno y mucho follaje. ¿Qué es esperable en la floración del año siguiente?',
+      options: [
+        'Más flores, porque hubo más crecimiento',
+        'Menos flores, porque la yema terminal mixta se formó mal el verano anterior',
+        'Ningún efecto: las flores se forman en la misma primavera',
+        'Floración en invierno',
+      ],
       correctIndex: 1,
-      explanation: 'La capa de arena entierra los runners, estimula raíces nuevas y la formación de uprights productivos.',
+      explanation:
+        'Las flores de la próxima temporada se forman a fines del verano en la yema terminal del upright: el exceso de vigor reduce esa inducción.',
     },
     questions: [
-      legacy(4, '¿Cuál es el objetivo del sanding (aplicación de arena)?', 'Estimular el enraizamiento y rejuvenecer', [
-        'Subir el pH',
-        'Retener agua en verano',
-        'Aportar sílice',
-      ]),
-      legacy(12, '¿Para qué se usan peinadoras en primavera?', 'Alinear runners para la cosecha', [
-        'Cortar flores',
-        'Romper la costra del suelo',
-        'Espantar insectos',
-      ]),
-      legacy(23, '¿Qué efecto tiene un pruning severo?', 'Caída temporal del rendimiento y aumento de calibre', [
-        'Aumento explosivo del rendimiento',
-        'Muerte de uprights',
-        'Retraso del color',
-      ]),
-      legacy(15, '¿Qué provoca el exceso de nitrógeno?', 'Emboscamiento y fruta blanda', [
-        'Fruta gigante',
-        'Clorosis',
-        'Muerte de raíces',
-      ]),
-      legacy(14, '¿Cuál es la variedad histórica más productiva?', 'Stevens', ['Duke', 'Chandler', 'Heritage']),
+      [
+        '¿Cómo se llaman los tallos verticales del cranberry que producen fruta?',
+        'Uprights',
+        ['Runners', 'Floricanes', 'Estolones aéreos'],
+      ],
+      [
+        '¿Cuándo se forman las flores que abrirán en la próxima temporada?',
+        'A fines del verano anterior, en la yema terminal',
+        ['En la misma primavera de la floración', 'En plena cosecha de otoño', 'Durante el invierno bajo el hielo'],
+      ],
+      [
+        '¿Qué estado fenológico tiene los botones colgando de pedicelos curvos, justo antes de abrir?',
+        'Gancho (hook)',
+        ['Yema cerrada', 'Cuaja', 'Pinta'],
+      ],
+      [
+        '¿De dónde viene el nombre "cranberry"?',
+        'De su flor, que recuerda la cabeza de una grulla',
+        ['De su color rojo intenso', 'De la turba donde crece', 'De la cosecha en agua'],
+      ],
+      [
+        '¿Qué porcentaje de cuaja se considera bueno en cranberry?',
+        'Entre 30 y 40 %',
+        ['Sobre 95 %', 'Menos de 2 %', 'Exactamente 100 %'],
+      ],
     ],
   }),
 

@@ -110,15 +110,40 @@ const questionRows = MODULES.flatMap((m) => {
     ...(m.boss.finalQuestion ? [questionRow(m.id, null, m.boss.finalQuestion, 999, true)] : []),
   ]
 })
-emit('insert into public.questions (id, module_id, submodule_id, prompt, correct_answer, distractors, is_boss_final, sort_order) values')
+emit(
+  'insert into public.questions (id, module_id, submodule_id, prompt, correct_answer, distractors, is_boss_final, sort_order) values',
+)
 emit(questionRows.join(',\n'))
 emit(
   'on conflict (id) do update set module_id = excluded.module_id, submodule_id = excluded.submodule_id, prompt = excluded.prompt,' +
     ' correct_answer = excluded.correct_answer, distractors = excluded.distractors,' +
     ' is_boss_final = excluded.is_boss_final, sort_order = excluded.sort_order;',
 )
+// Preguntas de un submódulo de la campaña que ya no están en el seed (submódulo reescrito):
+// se retiran. Las preguntas creadas desde el admin no tienen submódulo y no se tocan.
+const seededSubmodules = MODULES.flatMap((m) => m.submodules.map((sm) => sm.id))
+const seededQuestions = MODULES.flatMap((m) =>
+  [...m.questions, ...(m.boss.finalQuestion ? [m.boss.finalQuestion] : [])].map((q) => q.id),
+)
+emit('-- Preguntas retiradas de submódulos reescritos, y combates en curso que las usaban.')
+emit(
+  `delete from public.questions where submodule_id = any (${textArray(seededSubmodules)}) and not (id = any (${textArray(seededQuestions)}));`,
+)
+emit(
+  "update public.submodule_progress sp set fight_question_ids = '{}', fight_answered_ids = '{}', subboss_damage = 0" +
+    ' where sp.subboss_defeated_at is null and exists (select 1 from unnest(sp.fight_question_ids) i' +
+    ' where not exists (select 1 from public.questions q where q.id = i));',
+)
+emit(
+  'update public.raid_sessions rs set question_ids = array(select i from unnest(rs.question_ids) i' +
+    ' where exists (select 1 from public.questions q where q.id = i)),' +
+    ' answered_ids = array(select i from unnest(rs.answered_ids) i where exists (select 1 from public.questions q where q.id = i))' +
+    ' where exists (select 1 from unnest(rs.question_ids) i where not exists (select 1 from public.questions q where q.id = i));',
+)
 emit('-- Las respuestas siguen a su pregunta si esta cambió de módulo.')
-emit('update public.answers a set module_id = q.module_id from public.questions q where q.id = a.question_id and a.module_id <> q.module_id;')
+emit(
+  'update public.answers a set module_id = q.module_id from public.questions q where q.id = a.question_id and a.module_id <> q.module_id;',
+)
 emit()
 
 emit('-- Jefes (el HP actual y la derrota se preservan al re-ejecutar)')

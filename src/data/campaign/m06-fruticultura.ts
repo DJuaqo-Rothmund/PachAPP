@@ -301,60 +301,69 @@ export const FRUTICULTURA_SUBMODULES = [
 
   submodule({
     order: 5,
-    title: 'Madurez, Cosecha y Postcosecha',
-    description: 'Índices de madurez, frutos climatéricos, cadena de frío y almacenaje en atmósfera controlada.',
-    subboss: { name: 'La Yema Invernante', title: 'Guardiana de la Cámara de Frío' },
-    codexTitle: 'Madurez y Postcosecha',
+    title: 'Dormancia y Requerimiento de Frío',
+    description: 'Cómo el frutal se prepara para el invierno, cuánto frío necesita y qué pasa cuando no lo recibe.',
+    subboss: { name: 'La Yema Invernante', title: 'Guardiana del Receso' },
+    codexTitle: 'Dormancia de Frutales Caducos',
     sections: [
       {
-        heading: 'Índices de cosecha',
+        heading: 'Las fases de la dormancia',
         body: [
-          'Se cosecha según índices objetivos: sólidos solubles (°Brix, con refractómetro), firmeza (presionómetro, en lb o kg), color de fondo y de cubrimiento, acidez titulable, test de almidón con yodo en manzana y materia seca en palta.',
-          'El momento de cosecha define el potencial de guarda: una manzana cosechada muy madura no aguanta meses en frío; una muy inmadura nunca desarrolla sabor.',
+          'En otoño, los días cortos y el frío detienen el crecimiento, las hojas caen y las yemas entran en receso. Se distinguen tres fases: paradormancia (otro órgano inhibe la yema, como la dominancia apical), endodormancia (la inhibición está dentro de la yema y solo la rompe el frío) y ecodormancia (la yema ya está lista, pero espera temperaturas favorables).',
+          'Durante el invierno, las yemas acumulan frío hasta cumplir su requerimiento; recién entonces pueden brotar cuando suben las temperaturas.',
         ],
       },
       {
-        heading: 'Climatéricos y no climatéricos',
+        heading: 'Medir el frío',
         body: [
-          'Los frutos climatéricos (manzana, pera, kiwi, palta, durazno, tomate) tienen un alza de respiración y etileno al madurar: pueden cosecharse fisiológicamente maduros y terminar de madurar después. La palta incluso solo madura fuera del árbol.',
-          'Los no climatéricos (cereza, uva, cítricos, frutilla, frambuesa) no siguen madurando tras la cosecha: hay que cosecharlos en su punto.',
+          'El método más simple cuenta horas bajo 7,2 °C. El modelo Utah asigna unidades de frío según la temperatura: el rango de 2,5 a 9 °C suma más, y las horas sobre unos 16 °C restan. El modelo dinámico (porciones de frío) funciona mejor en climas de invierno templado como Chile central.',
+          'Los requerimientos varían mucho: hay manzanos y cerezos de alto requerimiento (sobre 1.000 horas frío), y durazneros y almendros de bajo requerimiento (300 a 600 horas). La variedad debe calzar con el frío del lugar.',
         ],
       },
       {
-        heading: 'Cadena de frío',
+        heading: 'Cuando falta frío',
         body: [
-          'Cada hora a temperatura de campo acorta la vida de la fruta. El pre-enfriado rápido (hidrocooling, aire forzado) baja la temperatura en horas; luego la fruta debe mantenerse en frío sin quiebres hasta el consumidor.',
-          'La atmósfera controlada (bajo O₂ y alto CO₂) reduce la respiración y prolonga la guarda de manzanas por meses. El 1-MCP bloquea la acción del etileno.',
-          'Algunas especies sufren daño por frío bajo cierta temperatura (palta, tomate, plátano, cítricos), con manchas y pardeamiento: no todas se guardan a 0 °C.',
+          'Un invierno insuficiente produce brotación tardía, escasa y dispareja, floración prolongada que no coincide con los polinizantes y menor cuaja.',
+          'Para compensar se usan compensadores de frío como la cianamida hidrogenada, aplicada unas semanas antes de la brotación esperada; requiere un manejo estricto de la dosis y del momento porque es tóxica.',
+          'El aceite mineral invernal y la defoliación oportuna también ayudan a uniformar la brotación.',
         ],
       },
     ],
     checkpoint: {
       at: 150,
-      prompt: '¿Cuál de estas frutas no sigue madurando después de cosechada?',
-      options: ['Palta', 'Kiwi', 'Cereza', 'Pera'],
-      correctIndex: 2,
+      prompt: 'Tras un invierno templado, un huerto de cerezos brota disparejo y florece durante semanas. ¿Qué ocurrió?',
+      options: [
+        'Exceso de horas frío',
+        'No se cumplió el requerimiento de frío de la endodormancia',
+        'Paradormancia por dominancia apical',
+        'Falta de nitrógeno en otoño',
+      ],
+      correctIndex: 1,
       explanation:
-        'La cereza es no climatérica: no aumenta su azúcar ni su color tras la cosecha, por eso se cosecha en su punto óptimo.',
+        'Sin el frío suficiente la endodormancia no se rompe por completo: la brotación y la floración son irregulares y se alargan.',
     },
     questions: [
-      ['¿Qué mide el refractómetro?', 'Sólidos solubles (°Brix)', ['Firmeza', 'Color de fondo', 'Materia seca']],
-      ['¿Qué índice de madurez se usa en palta?', 'Materia seca', ['Test de almidón', 'Grados Brix', 'Color de cubrimiento']],
       [
-        '¿Qué caracteriza a un fruto climatérico?',
-        'Alza de respiración y etileno al madurar',
-        ['No madura tras la cosecha', 'No produce etileno', 'Solo se cosecha maduro'],
+        '¿Qué fase de la dormancia solo se rompe con acumulación de frío?',
+        'Endodormancia',
+        ['Paradormancia', 'Ecodormancia', 'Fotodormancia'],
+      ],
+      ['¿Bajo qué temperatura se cuentan las horas frío en el método clásico?', '7,2 °C', ['0 °C', '15 °C', '−5 °C']],
+      [
+        '¿Qué hace el modelo Utah con las horas sobre unos 16 °C?',
+        'Las resta del frío acumulado',
+        ['Las suma doble', 'Las ignora', 'Las convierte en grados día'],
       ],
       [
-        '¿Qué hace la atmósfera controlada?',
-        'Baja O₂ y sube CO₂ para reducir la respiración',
-        [
-          'Sube O₂ y baja CO₂ para acelerar la maduración',
-          'Agrega etileno para uniformar el color',
-          'Sube la temperatura para evitar el daño por frío',
-        ],
+        '¿Qué producto se usa como compensador de frío?',
+        'Cianamida hidrogenada',
+        ['Ácido giberélico en cosecha', 'Urea al suelo en verano', 'Sulfato de cobre en floración'],
       ],
-      ['¿Qué fruta sufre daño por frío si se guarda a 0 °C?', 'Palta', ['Manzana', 'Cereza', 'Uva']],
+      [
+        '¿Qué síntoma muestra un frutal que no cumplió su requerimiento de frío?',
+        'Brotación tardía y dispareja con floración prolongada',
+        ['Brotación anticipada y uniforme', 'Mayor cuaja y fruta más grande', 'Caída de hojas en verano'],
+      ],
     ],
   }),
 ]

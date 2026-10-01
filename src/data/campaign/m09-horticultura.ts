@@ -6,145 +6,153 @@ const { submodule, bossFinal } = campaignModule(9)
 export const HORTICULTURA_SUBMODULES = [
   submodule({
     order: 1,
-    title: 'Hortalizas: Clasificación y Fisiología',
-    description: 'Hortalizas de estación fría y cálida, el fotoperiodo y por qué una lechuga se "sube" o una cebolla no bulba.',
+    title: 'Estructuras y Materiales de Cubierta',
+    description: 'Túneles, invernaderos de capilla y multinave, y los plásticos que deciden cuánta luz y calor entran.',
     subboss: { name: 'Arquitecto de Túneles', title: 'Constructor del Ambiente Protegido' },
-    codexTitle: 'Fisiología de Hortalizas',
+    codexTitle: 'Estructuras y Cubiertas',
     sections: [
       {
-        heading: 'Estación fría y estación cálida',
+        heading: 'Tipos de estructura',
         body: [
-          'Las hortalizas de estación fría (lechuga, repollo, brócoli, arveja, espinaca, ajo) crecen mejor entre 15 y 20 °C y toleran heladas suaves. Las de estación cálida (tomate, pimiento, poroto, zapallo, melón, sandía) necesitan más de 18-20 °C y no toleran heladas.',
-          'Sembrar cada especie en su ventana térmica evita problemas como la emisión prematura del tallo floral o la mala cuaja.',
+          'El microtúnel o túnel bajo cubre una o dos hileras y se usa unas semanas para adelantar cultivos o protegerlos de heladas. El macrotúnel permite trabajar dentro y es común en berries y hortalizas. El invernadero de capilla (dos aguas) y el multicapilla o multitúnel cubren grandes superficies con varias naves unidas.',
+          'Más altura significa más volumen de aire: el ambiente cambia de temperatura más lento (mayor inercia térmica) y se ventila mejor. Los invernaderos bajos se calientan muy rápido de día y se enfrían muy rápido de noche.',
         ],
       },
       {
-        heading: 'Fotoperiodo y vernalización',
+        heading: 'Materiales de la estructura',
         body: [
-          'La cebolla forma bulbo cuando el día supera un largo crítico: hay cultivares de día corto (para siembras de otoño en el norte) y de día largo (para el sur o siembras de primavera). Un cultivar mal elegido no bulba o bulba antes de tiempo, con bulbos pequeños.',
-          'La lechuga y la espinaca se "suben" (emiten el tallo floral) con días largos y calor, y pierden calidad. Las brassicas bianuales, como el repollo, pueden florecer prematuramente si un frío prolongado las vernaliza cuando ya son plantas grandes.',
+          'En Chile son comunes las estructuras de madera, baratas pero de vida útil corta y con piezas gruesas que dan sombra. El acero galvanizado cuesta más, dura décadas y usa perfiles delgados que sombrean menos.',
+          'La estructura debe resistir el viento y, en el sur, la nieve. La orientación de las naves y de las hileras influye en la uniformidad de la luz dentro del invernadero.',
         ],
       },
       {
-        heading: 'Órganos cosechados',
+        heading: 'Materiales de cubierta',
         body: [
-          'Se cosechan hojas (lechuga, acelga), inflorescencias (brócoli, coliflor, alcachofa), raíces (zanahoria, betarraga), tubérculos (papa), bulbos (cebolla, ajo), frutos inmaduros (pepino, zapallo italiano, poroto verde) o maduros (tomate, melón).',
-          'El órgano cosechado define el manejo: las hortalizas de hoja necesitan más nitrógeno y agua constante; las de fruto, más potasio y una buena cuaja.',
+          'El más usado es el polietileno de baja densidad, de 100 a 200 micrones, con aditivos estabilizadores UV que le dan una vida de una a tres temporadas. El polietileno térmico (con EVA u otros aditivos) retiene el infrarrojo largo y reduce el enfriamiento nocturno; el antigoteo hace que el agua condensada escurra en película en vez de gotear sobre el cultivo; el difusor reparte la luz y evita quemaduras.',
+          'El policarbonato y el vidrio duran muchos años y transmiten bien la luz, pero cuestan mucho más. Con el tiempo, el polvo y el envejecimiento bajan la transmisión de luz de cualquier cubierta, por eso se lavan y se renuevan.',
         ],
       },
     ],
     checkpoint: {
       at: 115,
-      prompt: 'En el sur de Chile se sembró en primavera una cebolla de día corto. ¿Qué es esperable?',
-      options: [
-        'Bulbos grandes en otoño',
-        'Bulbificación prematura con bulbos pequeños',
-        'Que nunca germine',
-        'Que florezca en invierno',
-      ],
+      prompt:
+        'En un invernadero, el agua condensada gotea desde la cubierta sobre las plantas cada mañana. ¿Qué aditivo del plástico lo evita?',
+      options: ['Estabilizador UV', 'Antigoteo', 'Pigmento negro', 'Antiestático'],
       correctIndex: 1,
       explanation:
-        'Los días largos del verano austral superan con creces el umbral de un cultivar de día corto: bulba muy temprano y queda pequeño.',
+        'El aditivo antigoteo baja la tensión superficial del agua: el condensado escurre como película hacia los costados en vez de formar gotas que caen.',
     },
     questions: [
-      ['¿Qué hortaliza es de estación cálida?', 'Pimiento', ['Lechuga', 'Espinaca', 'Arveja']],
       [
-        '¿Qué gatilla la formación de bulbo en cebolla?',
-        'El largo del día (fotoperiodo)',
-        ['La lluvia', 'La fertilización potásica', 'El frío del suelo'],
+        '¿Qué ventaja tiene un invernadero alto sobre uno bajo?',
+        'Mayor inercia térmica y mejor ventilación',
+        ['Se calienta más rápido de día', 'No necesita cubierta', 'Usa menos estructura por metro cuadrado'],
       ],
       [
-        '¿Qué significa que una lechuga se "suba"?',
-        'Que emite el tallo floral y pierde calidad',
-        [
-          'Que forma una cabeza compacta y firme',
-          'Que crece más rápido por exceso de nitrógeno',
-          'Que se pudre en el cuello por exceso de agua',
-        ],
+        '¿Para qué se agregan estabilizadores UV al polietileno?',
+        'Para que el plástico dure más sin degradarse con el sol',
+        ['Para bloquear toda la luz visible', 'Para que el agua gotee más', 'Para subir la humedad'],
       ],
-      ['¿Qué órgano se cosecha en el brócoli?', 'La inflorescencia', ['La raíz', 'El bulbo', 'El fruto maduro']],
       [
-        '¿Qué necesitan especialmente las hortalizas de hoja?',
-        'Nitrógeno y agua constante',
-        ['Estrés hídrico', 'Poca luz', 'Mucho fósforo y sequía'],
+        '¿Qué hace el polietileno térmico?',
+        'Retiene el infrarrojo largo y reduce el enfriamiento nocturno',
+        ['Deja pasar más calor hacia afuera de noche', 'Bloquea la fotosíntesis', 'Elimina la condensación'],
+      ],
+      [
+        '¿Qué estructura cubre una o dos hileras por unas semanas para adelantar cultivos?',
+        'Microtúnel',
+        ['Multicapilla', 'Invernadero de vidrio', 'Macrotúnel'],
+      ],
+      [
+        '¿Qué desventaja tiene una estructura de madera frente a una de acero galvanizado?',
+        'Dura menos y sus piezas gruesas dan más sombra',
+        ['Es más cara de instalar', 'No se puede cubrir con plástico', 'Transmite el calor del suelo'],
       ],
     ],
   }),
 
   submodule({
     order: 2,
-    title: 'Almácigos y Establecimiento',
-    description: 'Semillas, sustratos, bandejas y trasplante: los primeros 30 días que deciden la temporada.',
-    subboss: { name: 'Absorbedor de Gas', title: 'Asfixiador de Almácigos' },
-    codexTitle: 'Almácigos y Trasplante',
+    title: 'Dinámica de CO₂ y Microclima',
+    description:
+      'Cómo el cultivo agota el CO₂ del invernadero cerrado, cuándo enriquecer y cómo varía el microclima dentro de la nave.',
+    subboss: { name: 'Absorbedor de Gas', title: 'Ladrón del Carbono' },
+    codexTitle: 'CO₂ y Microclima del Invernadero',
     sections: [
       {
-        heading: 'Siembra directa o almácigo',
+        heading: 'El ciclo diario del CO₂',
         body: [
-          'Algunas hortalizas se siembran directo porque su raíz no tolera el trasplante (zanahoria, rábano, arveja, poroto). Otras se producen en almácigo y se trasplantan (tomate, pimiento, lechuga, cebolla, brassicas), lo que ahorra semilla cara y acorta el tiempo en campo.',
-          'Las bandejas alveoladas (speedling) producen plantas con un pan de raíces que se trasplanta casi sin estrés.',
+          'El aire exterior tiene alrededor de 420 ppm de CO₂. De noche, la respiración de las plantas y del suelo lo acumula dentro del invernadero cerrado. Con la salida del sol empieza la fotosíntesis y, si no se ventila, el cultivo puede bajarlo a 200 ppm o menos en pocas horas.',
+          'Bajo unas 300 ppm la fotosíntesis cae fuertemente: en un día frío y soleado, con las ventanas cerradas para guardar calor, el CO₂ se vuelve el factor limitante.',
         ],
       },
       {
-        heading: 'Sustrato y ambiente',
+        heading: 'Enriquecimiento carbónico',
         body: [
-          'Un buen sustrato es liviano, poroso, retiene agua y está libre de patógenos y malezas: turba, fibra de coco, perlita o vermiculita. La temperatura óptima de germinación varía: el tomate germina mejor cerca de 25 °C; la lechuga se inhibe sobre unos 28 °C (termodormancia).',
-          'Antes del trasplante se "endurecen" las plantas: menos riego y más exposición al exterior, para que toleren el cambio.',
+          'Enriquecer hasta 700 a 1.000 ppm aumenta la fotosíntesis y el rendimiento en cultivos C3 como tomate, pepino y pimiento. Solo conviene mientras las ventanas están cerradas o casi cerradas: con ventilación abierta, el gas se escapa.',
+          'Las fuentes son el CO₂ líquido envasado (puro y seguro) y los gases de quemadores de gas natural o propano, que además calientan. La combustión incompleta genera etileno y monóxido de carbono, que dañan al cultivo y a las personas.',
+          'Sobre unas 1.500 ppm ya no hay beneficio y pueden aparecer daños; además, el CO₂ se mide con sensores ubicados a la altura del cultivo.',
         ],
       },
       {
-        heading: 'Caída de plántulas',
+        heading: 'Microclima dentro de la nave',
         body: [
-          'El damping-off (caída de almácigos) lo causan hongos y oomicetos del suelo como Pythium, Rhizoctonia y Fusarium: las plántulas se estrangulan en el cuello y caen.',
-          'Lo favorecen el exceso de riego, la mala ventilación, sembrar muy denso y usar sustratos o bandejas contaminadas. Se previene con sustrato nuevo, bandejas desinfectadas, riego moderado y buena aireación.',
+          'El invernadero no es homogéneo: el aire caliente sube y se estratifica, las zonas cercanas a las ventanas son más frescas y secas, y dentro de un follaje denso el aire queda quieto, húmedo y con menos CO₂.',
+          'Los ventiladores de circulación horizontal mueven el aire, uniforman temperatura y humedad, rompen la capa de aire quieto alrededor de las hojas y renuevan el CO₂ que cada hoja consume.',
         ],
       },
     ],
     checkpoint: {
       at: 130,
-      prompt: 'Un almácigo regado en exceso y muy denso muestra plántulas que se doblan en el cuello y caen. ¿Qué es?',
-      options: ['Termodormancia', 'Damping-off (Pythium, Rhizoctonia)', 'Falta de nitrógeno', 'Exceso de luz'],
+      prompt:
+        'Día frío y soleado: a las 11:00 el invernadero cerrado marca 180 ppm de CO₂ y el cultivo crece poco. ¿Qué limita la fotosíntesis y qué conviene hacer?',
+      options: [
+        'La luz: encender lámparas',
+        'El CO₂: enriquecer o ventilar en la medida que la temperatura lo permita',
+        'El agua: duplicar el riego',
+        'El nitrógeno: fertilizar foliar',
+      ],
       correctIndex: 1,
       explanation:
-        'El estrangulamiento del cuello en plántulas es el damping-off, favorecido por exceso de agua y poca ventilación.',
+        'El cultivo agotó el CO₂ del aire cerrado. Enriquecer, o ventilar algo si la temperatura lo permite, devuelve el CO₂ y reactiva la fotosíntesis.',
     },
     questions: [
-      ['¿Qué hortaliza conviene sembrar directo por no tolerar el trasplante?', 'Zanahoria', ['Tomate', 'Lechuga', 'Repollo']],
       [
-        '¿Qué ventaja tienen las bandejas alveoladas?',
-        'Plantas con pan de raíces que se trasplantan con poco estrés',
+        '¿Cuánto CO₂ tiene aproximadamente el aire exterior?',
+        'Alrededor de 420 ppm',
+        ['Alrededor de 4.000 ppm', 'Alrededor de 40 ppm', 'Alrededor de 21 %'],
+      ],
+      [
+        '¿Qué pasa con el CO₂ en un invernadero cerrado durante la mañana soleada?',
+        'Baja porque el cultivo lo consume en la fotosíntesis',
         [
-          'Plantas que no necesitan riego tras el trasplante',
-          'Plantas inmunes a las plagas del campo',
-          'Plantas que florecen antes de salir al campo',
+          'Sube porque las plantas respiran más de día',
+          'Se mantiene igual que afuera',
+          'Se transforma en oxígeno puro sin cambiar',
         ],
       ],
       [
-        '¿Qué patógenos causan el damping-off?',
-        'Pythium, Rhizoctonia y Fusarium',
-        ['Virus del mosaico', 'Bacterias fijadoras de N', 'Nematodos agalladores'],
+        '¿Cuándo conviene enriquecer con CO₂?',
+        'Cuando las ventanas están cerradas o casi cerradas',
+        ['Con todas las ventanas abiertas', 'Solo de noche', 'Solo cuando está nublado y frío'],
       ],
       [
-        '¿Qué es el endurecimiento de plántulas?',
-        'Reducir riego y exponerlas al exterior antes del trasplante',
-        [
-          'Aplicar calcio al sustrato una semana antes',
-          'Guardar las bandejas en frío hasta el trasplante',
-          'Podar las raíces para que crezcan más',
-        ],
+        '¿Qué gas dañino puede generar un quemador con combustión incompleta?',
+        'Etileno y monóxido de carbono',
+        ['Oxígeno puro', 'Nitrógeno', 'Vapor de agua solamente'],
       ],
       [
-        '¿Qué le pasa a la semilla de lechuga sobre unos 28 °C?',
-        'Entra en termodormancia y no germina',
-        ['Germina más rápido', 'Produce plantas gigantes', 'Se vuelve resistente a plagas'],
+        '¿Para qué sirven los ventiladores de circulación horizontal?',
+        'Para uniformar el microclima y renovar el CO₂ junto a las hojas',
+        ['Para sacar todo el aire del invernadero', 'Para regar por aspersión', 'Para calentar el suelo'],
       ],
     ],
   }),
 
   submodule({
     order: 3,
-    title: 'Clima del Invernadero',
-    description: 'Temperatura, humedad, DPV, CO₂ y ventilación: cómo se gobierna el ambiente protegido.',
+    title: 'Control Climático Pasivo y Activo',
+    description: 'Temperatura, humedad, DPV, ventilación, calefacción y sombreo: cómo se gobierna el ambiente protegido.',
     subboss: { name: 'El Vórtice Microclimático', title: 'Condensador del Rocío' },
     codexTitle: 'Control del Clima en Invernadero',
     sections: [
@@ -163,10 +171,10 @@ export const HORTICULTURA_SUBMODULES = [
         ],
       },
       {
-        heading: 'Ventilación y CO₂',
+        heading: 'Control pasivo y activo',
         body: [
-          'Ventilar renueva el aire, saca humedad y calor y repone el CO₂ que las plantas consumen. En un invernadero cerrado y soleado el CO₂ puede caer muy bajo y limitar la fotosíntesis; algunos productores lo enriquecen hasta 700-1.000 ppm.',
-          'Las ventanas cenitales son más eficientes que las laterales porque el aire caliente sube (efecto chimenea).',
+          'El control pasivo usa la propia estructura: ventanas, mallas sombra, blanqueo y pantallas. Ventilar renueva el aire y saca humedad y calor; las ventanas cenitales son más eficientes que las laterales porque el aire caliente sube (efecto chimenea).',
+          'El control activo usa energía: calefactores y tubos de agua caliente contra el frío nocturno, ventiladores extractores con paneles evaporativos (pad and fan) o nebulización para enfriar, y pantallas térmicas que de noche se cierran bajo la cubierta para guardar el calor.',
         ],
       },
     ],
@@ -210,9 +218,9 @@ export const HORTICULTURA_SUBMODULES = [
         ['Para dejar pasar más radiación UV', 'Para bajar la humedad del invernadero', 'Para atraer polinizadores al cultivo'],
       ],
       [
-        '¿Hasta qué nivel suelen enriquecer CO₂ algunos invernaderos?',
-        '700 a 1.000 ppm',
-        ['50 ppm', '5.000 a 10.000 ppm', '0 ppm'],
+        '¿Qué hace un sistema pad and fan?',
+        'Enfría el aire haciéndolo pasar por paneles húmedos',
+        ['Calienta el suelo con tubos de agua', 'Enriquece el aire con CO₂', 'Cierra las ventanas de noche'],
       ],
     ],
   }),

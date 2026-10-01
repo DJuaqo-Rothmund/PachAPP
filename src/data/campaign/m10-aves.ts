@@ -124,8 +124,9 @@ export const AVES_SUBMODULES = [
 
   submodule({
     order: 3,
-    title: 'Aves de Ambientes Agrícolas',
-    description: 'Las aves del potrero y el huerto: granívoras, insectívoras, polinizadoras y especies introducidas.',
+    title: 'Aves Granívoras y Frugívoras',
+    description:
+      'Chincoles, tórtolas, tordos, zorzales y raras: las aves que comen semillas, brotes y fruta, y las introducidas.',
     subboss: { name: 'La Bandada Voraz', title: 'Saqueadora del Maizal' },
     codexTitle: 'Aves del Campo Chileno',
     sections: [
@@ -137,10 +138,10 @@ export const AVES_SUBMODULES = [
         ],
       },
       {
-        heading: 'Aliadas del agricultor',
+        heading: 'Cuándo y dónde dañan',
         body: [
-          'Golondrinas, cachuditos y rayaditos consumen grandes cantidades de insectos. La loica (Leistes loyca) y el queltehue (Vanellus chilensis) comen larvas e insectos del suelo en praderas; la garza boyera (Bubulcus ibis) sigue al ganado para atrapar los insectos que este levanta.',
-          'El picaflor chico (Sephanoides sephaniodes) poliniza muchas plantas nativas del sur.',
+          'El daño se concentra en momentos clave: en la siembra, cuando las aves desentierran semillas y plántulas; en el grano lechoso del maíz y del trigo; y en la madurez de la fruta, cuando cerezas, arándanos y uvas toman color y azúcar.',
+          'Los bordes del cultivo junto a árboles, cercos y tendidos eléctricos, que sirven de percha y refugio, son los más atacados. Por eso el monitoreo se hace por sectores y en esas fechas críticas.',
         ],
       },
       {
@@ -166,88 +167,76 @@ export const AVES_SUBMODULES = [
         'Rara (Phytotoma rara)',
         ['Golondrina', 'Picaflor chico', 'Lechuza'],
       ],
-      ['¿Qué ave sigue al ganado para comer los insectos que levanta?', 'Garza boyera', ['Tordo', 'Diuca', 'Cotorra argentina']],
+      [
+        '¿En qué momento del maíz se concentra el daño de las aves granívoras?',
+        'En la siembra y en el grano lechoso',
+        ['Solo durante el invierno', 'Cuando la planta está seca y cosechada', 'Nunca, el maíz no es atacado'],
+      ],
       ['¿Qué especie es una invasora en Chile?', 'Cotorra argentina', ['Loica', 'Chincol', 'Queltehue']],
-      ['¿Qué ave de pecho rojo come larvas en praderas?', 'Loica', ['Zorzal', 'Diuca', 'Tórtola']],
+      ['¿Qué ave negra y gregaria forma bandadas en maizales y frutales?', 'Tordo', ['Loica', 'Chincol', 'Picaflor chico']],
       ['¿Qué ave consume fruta madura de cerezos y arándanos?', 'Zorzal', ['Cachudito', 'Garza boyera', 'Pato jergón']],
     ],
   }),
 
   submodule({
     order: 4,
-    title: 'Humedales y Aves Acuáticas',
-    description: 'Cisnes, taguas, patos, garzas y flamencos: los humedales y su valor para el agua y la biodiversidad.',
-    subboss: { name: 'Sílfide de las Corolas', title: 'Vigía del Humedal' },
-    codexTitle: 'Humedales y Aves Acuáticas',
+    title: 'Aves Insectívoras y Polinizadoras',
+    description: 'Golondrinas, cachuditos, chercanes y picaflores: las aves que controlan plagas y polinizan la flora nativa.',
+    subboss: { name: 'Sílfide de las Corolas', title: 'Vigía del Néctar' },
+    codexTitle: 'Aves Insectívoras y Polinizadoras',
     sections: [
       {
-        heading: 'Por qué importan los humedales',
+        heading: 'Cazadoras de insectos',
         body: [
-          'Los humedales regulan el agua (amortiguan crecidas y recargan acuíferos), filtran sedimentos y nutrientes que escurren de los campos y albergan una enorme biodiversidad.',
-          'La Convención de Ramsar protege humedales de importancia internacional. El primer sitio Ramsar de Chile fue el Santuario de la Naturaleza Carlos Anwandter, en el río Cruces de Valdivia.',
+          'Las golondrinas (la golondrina chilena y la golondrina bermeja, migratoria) cazan insectos en vuelo sobre potreros y cursos de agua. El cachudito y el rayadito buscan insectos entre las ramas; el chercán revisa matorrales y cercos; el fío-fío llega en primavera a alimentarse de insectos y frutos.',
+          'En praderas, la loica y el queltehue comen larvas del suelo como el gusano blanco y las cuncunillas; los carpinteros extraen larvas que barrenan la madera. Durante la crianza, una pareja de aves insectívoras captura cientos de insectos al día para sus polluelos.',
         ],
       },
       {
-        heading: 'Aves acuáticas',
+        heading: 'Picaflores polinizadores',
         body: [
-          'El cisne de cuello negro (Cygnus melancoryphus) se alimenta de plantas acuáticas como el luchecillo; su población del río Cruces colapsó en 2004 cuando esa vegetación desapareció por un cambio en la calidad del agua.',
-          'Las taguas (Fulica) nadan y bucean entre la vegetación; el pato jergón grande (Anas georgica) es el pato más común; la garza grande (Ardea alba) y el huairavo (Nycticorax nycticorax) cazan peces y anfibios. En los salares del altiplano habita el flamenco chileno.',
+          'El picaflor chico (Sephanoides sephaniodes) poliniza muchas plantas nativas del centro y sur de Chile, como el chilco, el copihue, el notro y el quintral. El picaflor gigante (Patagona gigas) es el picaflor más grande del mundo y visita flores en la zona central.',
+          'El picaflor de Juan Fernández es endémico del archipiélago y está en peligro de extinción.',
         ],
       },
       {
-        heading: 'Humedales y agricultura',
+        heading: 'Flores para aves y cómo atraer aliadas',
         body: [
-          'El drenaje de vegas y ñadis, la extracción de agua y la escorrentía con fertilizantes (eutrofización) son las principales amenazas que vienen del uso agrícola.',
-          'Franjas de vegetación ribereña, aplicaciones cuidadosas de agroquímicos lejos de cursos de agua y el respeto de las áreas protegidas ayudan a conservarlos.',
+          'Las flores polinizadas por aves (ornitofilia) suelen ser tubulares, rojas o anaranjadas, sin aroma y con abundante néctar diluido: las aves ven bien el rojo pero tienen poco olfato, al revés que muchas abejas.',
+          'Para atraer aves aliadas al predio se instalan cajas nido para golondrinas y chercanes, se mantienen cercos vivos y bosquetes nativos con flores en distintas épocas y se evitan los insecticidas de amplio espectro, que eliminan su alimento.',
         ],
       },
     ],
     checkpoint: {
       at: 125,
-      prompt: '¿Qué provocó el colapso de la población de cisnes de cuello negro del río Cruces en 2004?',
-      options: [
-        'La caza ilegal',
-        'La desaparición del luchecillo, su alimento, por un cambio en la calidad del agua',
-        'Una ola de frío',
-        'La llegada de un depredador introducido',
-      ],
-      correctIndex: 1,
+      prompt:
+        'Una flor nativa es tubular, roja, sin aroma y con mucho néctar diluido. ¿Qué polinizador la visita principalmente?',
+      options: ['Abejas', 'Polillas nocturnas', 'Picaflores', 'El viento'],
+      correctIndex: 2,
       explanation:
-        'El cisne depende del luchecillo (Egeria densa). Su desaparición dejó a la población sin alimento, con muertes y migración masiva.',
+        'Es el síndrome de ornitofilia: las aves ven bien el rojo, tienen poco olfato y necesitan mucha energía en forma de néctar.',
     },
     questions: [
       [
-        '¿Qué convención protege humedales de importancia internacional?',
-        'Convención de Ramsar',
-        ['Protocolo de Kioto', 'Convenio de Basilea', 'Tratado Antártico'],
+        '¿Qué ave poliniza muchas plantas nativas como el chilco y el copihue?',
+        'El picaflor chico',
+        ['La tórtola', 'El tordo', 'La lechuza'],
       ],
       [
-        '¿Cuál fue el primer sitio Ramsar de Chile?',
-        'Santuario Carlos Anwandter',
-        ['Lago Chungará', 'Laguna del Laja', 'Salar de Atacama'],
+        '¿Qué características tienen las flores polinizadas por aves?',
+        'Tubulares, rojas, sin aroma y con abundante néctar',
+        ['Blancas, muy perfumadas y nocturnas', 'Pequeñas, verdes y sin néctar', 'Planas, azules y con mucho polen seco'],
+      ],
+      ['¿Qué ave caza insectos en vuelo sobre potreros?', 'Golondrina', ['Diuca', 'Tórtola', 'Pato jergón']],
+      [
+        '¿Qué práctica ayuda a atraer aves insectívoras al predio?',
+        'Instalar cajas nido y mantener cercos vivos',
+        ['Aplicar insecticidas de amplio espectro', 'Eliminar todos los árboles nativos', 'Usar cañones de gas todo el año'],
       ],
       [
-        '¿De qué se alimenta principalmente el cisne de cuello negro?',
-        'De plantas acuáticas como el luchecillo',
-        ['De peces que captura buceando', 'De semillas de trigo en los rastrojos', 'De insectos que caza en vuelo'],
-      ],
-      [
-        '¿Qué es la eutrofización?',
-        'Exceso de nutrientes en el agua que favorece algas y baja el oxígeno',
-        [
-          'La desecación de un humedal por extracción de agua',
-          'La acumulación de sales en suelos regados',
-          'La llegada masiva de aves migratorias a un humedal',
-        ],
-      ],
-      [
-        '¿Dónde habita el flamenco chileno?',
-        'En salares y lagunas del altiplano, entre otros',
-        [
-          'Solo en los bosques lluviosos del sur',
-          'En las cumbres nevadas de la cordillera',
-          'En las dunas costeras sin agua dulce',
-        ],
+        '¿Qué picaflor endémico de Chile está en peligro de extinción?',
+        'El picaflor de Juan Fernández',
+        ['El picaflor gigante', 'El picaflor chico', 'El colibrí de Norteamérica'],
       ],
     ],
   }),

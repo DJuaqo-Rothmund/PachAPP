@@ -6,55 +6,73 @@ const { submodule, bossFinal } = campaignModule(12)
 export const AVICOLA_SUBMODULES = [
   submodule({
     order: 1,
-    title: 'Razas, Líneas y Sistemas',
-    description: 'Broilers, ponedoras y gallinas de campo: líneas genéticas, sistemas productivos e índices clave.',
-    subboss: { name: 'El Disparador del Fotoperiodo', title: 'Amo de las Líneas Comerciales' },
-    codexTitle: 'Sistemas de Producción Avícola',
+    title: 'Recría y Curvas de Postura',
+    description: 'La pollita de 0 a 18 semanas, el peso objetivo, la fotoestimulación y la curva de postura de la gallina.',
+    subboss: { name: 'El Disparador del Fotoperiodo', title: 'Amo de la Madurez Sexual' },
+    codexTitle: 'Recría y Curvas de Postura',
     sections: [
       {
-        heading: 'Carne y huevo',
+        heading: 'La recría',
         body: [
-          'La avicultura moderna usa híbridos comerciales seleccionados para un solo propósito. Los broilers (pollos de carne), como Ross o Cobb, alcanzan unos 2,5 a 3 kg en alrededor de 40-42 días. Las ponedoras comerciales, blancas o rojas (Hy-Line, Lohmann), producen más de 300 huevos por año.',
-          'Las razas de doble propósito (Plymouth Rock, Rhode Island Red) y la gallina mapuche de huevos azules (collonca) se crían en sistemas campesinos de traspatio.',
+          'La recría va desde el día de nacida hasta cerca de las 16 a 18 semanas, cuando la pollita pasa al galpón de postura. En esta etapa se forma el esqueleto, la musculatura y el aparato digestivo que sostendrán un año completo de producción.',
+          'La meta es seguir la curva de peso de la línea genética y lograr un lote uniforme: se pesa una muestra cada semana y se busca que al menos 80 a 85 % de las aves esté dentro de ±10 % del peso promedio. Un lote disparejo entra a postura de forma escalonada y rinde menos.',
         ],
       },
       {
-        heading: 'Sistemas productivos',
+        heading: 'Luz y madurez sexual',
         body: [
-          'Los broilers se crían en galpones sobre cama (viruta o paja). Las ponedoras se crían en jaulas convencionales, jaulas enriquecidas, sistemas libres de jaula en piso o aviario, o al aire libre con acceso a pastoreo (free range).',
-          'La tendencia del mercado y de la regulación es hacia sistemas libres de jaula, que mejoran el bienestar pero exigen más espacio y manejo sanitario.',
+          'La gallina responde al largo del día: los días que se alargan estimulan la madurez sexual. Por eso en la recría se usan días cortos y constantes (unas 8 a 10 horas) y nunca se alargan, para que la pollita no madure antes de tener el peso adecuado.',
+          'Cuando el lote alcanza el peso objetivo se fotoestimula: se aumenta la luz de forma gradual, por ejemplo una hora la primera semana y luego 15 a 30 minutos por semana, hasta unas 16 horas. Estimular pollitas livianas da huevos pequeños, prolapsos y una postura que no se sostiene.',
         ],
       },
       {
-        heading: 'Índices productivos',
+        heading: 'La curva de postura',
         body: [
-          'En carne, el índice clave es la conversión alimenticia: kilos de alimento por kilo de peso vivo, cercana a 1,5-1,7 en broilers modernos. También se miden ganancia diaria, mortalidad y uniformidad del lote.',
-          'En postura se miden el porcentaje de postura (huevos por gallina por día), el peso del huevo, la calidad de cáscara y los kilos de alimento por docena de huevos.',
+          'La postura parte cerca de las 18 a 20 semanas (5 % de postura), sube rápido y llega al peak, sobre 93 a 95 % en líneas modernas, alrededor de las 26 a 30 semanas. Luego baja lentamente: una buena persistencia mantiene más de 80 % hasta pasadas las 60 semanas.',
+          'El peso del huevo aumenta con la edad, mientras la calidad de la cáscara empeora. Comparar la curva real con el estándar de la línea permite detectar a tiempo problemas de alimentación, luz o sanidad.',
         ],
       },
     ],
     checkpoint: {
       at: 115,
       prompt:
-        'Un lote de broilers consumió 4.200 kg de alimento y produjo 2.800 kg de peso vivo. ¿Cuál es la conversión alimenticia?',
-      options: ['0,67', '1,5', '2,8', '4,2'],
+        'Un lote de pollitas de 15 semanas está 12 % bajo el peso estándar. El encargado quiere subir la luz ya. ¿Qué corresponde?',
+      options: [
+        'Fotoestimular ahora para adelantar la postura',
+        'Esperar a que alcancen el peso objetivo antes de alargar el día',
+        'Reducir el alimento para uniformar',
+        'Dar 24 horas de luz',
+      ],
       correctIndex: 1,
-      explanation: 'Conversión = alimento / peso producido = 4.200 / 2.800 = 1,5 kg de alimento por kg de peso vivo.',
+      explanation:
+        'Fotoestimular aves livianas adelanta la madurez sin reservas corporales: huevos chicos, prolapsos y mala persistencia. Primero el peso, después la luz.',
     },
     questions: [
       [
-        '¿Cuántos días tarda aproximadamente un broiler moderno en llegar a peso de faena?',
-        'Alrededor de 40 a 42 días',
-        ['Alrededor de 6 meses', '10 días', 'Un año'],
+        '¿Hasta qué edad aproximada dura la recría de una ponedora?',
+        'Hasta las 16 a 18 semanas',
+        ['Hasta los 42 días', 'Hasta las 80 semanas', 'Hasta la primera muda'],
       ],
       [
-        '¿Qué mide la conversión alimenticia?',
-        'Kilos de alimento por kilo de peso producido',
-        ['Huevos puestos por gallina en un día', 'Litros de agua por kilo de alimento', 'Aves alojadas por metro cuadrado'],
+        '¿Qué programa de luz se usa durante la recría?',
+        'Días cortos y constantes, sin alargarlos',
+        ['Luz continua las 24 horas', 'Días que se alargan cada semana', 'Oscuridad total'],
       ],
-      ['¿Qué gallina tradicional chilena pone huevos azules?', 'La collonca', ['La Leghorn', 'La Ross', 'La Cobb']],
-      ['¿Qué sistema de postura es libre de jaula?', 'Aviario o piso', ['Jaula convencional', 'Jaula enriquecida', 'Batería']],
-      ['¿Cuántos huevos al año puede poner una ponedora comercial?', 'Más de 300', ['Unos 50', 'Unos 100', 'Más de 1.000']],
+      [
+        '¿Cuándo se fotoestimula al lote?',
+        'Cuando alcanza el peso objetivo de la línea',
+        ['El primer día de vida', 'Apenas cumple 8 semanas, pese lo que pese', 'Después del peak de postura'],
+      ],
+      [
+        '¿A qué edad aproximada se alcanza el peak de postura?',
+        'Entre las 26 y 30 semanas',
+        ['A las 10 semanas', 'A las 70 semanas', 'El primer día de postura'],
+      ],
+      [
+        '¿Qué le pasa al huevo a medida que la gallina envejece?',
+        'Aumenta su peso y empeora la calidad de la cáscara',
+        ['Disminuye su peso y mejora la cáscara', 'Cambia el color de la cáscara a azul', 'No cambia nada'],
+      ],
     ],
   }),
 
@@ -122,8 +140,9 @@ export const AVICOLA_SUBMODULES = [
 
   submodule({
     order: 3,
-    title: 'Ambiente y Manejo del Galpón',
-    description: 'Temperatura de crianza, ventilación, amoníaco, cama y luz: el galpón como sistema.',
+    title: 'Sistemas Productivos y Galpón',
+    description:
+      'Broilers y ponedoras, jaula o piso, temperatura de crianza, ventilación, amoníaco y cama: el galpón como sistema.',
     subboss: { name: 'El Centinela del Galpón', title: 'Espíritu del Amoníaco' },
     codexTitle: 'Manejo Ambiental del Galpón',
     sections: [
@@ -142,10 +161,10 @@ export const AVICOLA_SUBMODULES = [
         ],
       },
       {
-        heading: 'Luz',
+        heading: 'Sistemas productivos',
         body: [
-          'En ponedoras, el fotoperiodo controla la madurez sexual y la postura: se cría con días cortos y constantes, y al llegar a la edad de postura se estimula con aumentos graduales hasta unas 16 horas de luz. Nunca se debe reducir la luz durante la postura.',
-          'En broilers, programas con algunas horas de oscuridad mejoran la salud de las patas y el bienestar.',
+          'Los broilers (Ross, Cobb) se crían en galpones sobre cama y llegan a unos 2,5 a 3 kg en cerca de 40 a 42 días, con una conversión alimenticia de 1,5 a 1,7 kg de alimento por kg de peso vivo. Las ponedoras se crían en jaulas convencionales, jaulas enriquecidas, sistemas libres de jaula en piso o aviario, o al aire libre (free range).',
+          'La tendencia del mercado y de la regulación es hacia sistemas libres de jaula, que mejoran el bienestar pero exigen más espacio y manejo sanitario. En los sistemas campesinos se crían razas de doble propósito y la collonca, la gallina mapuche de huevos azules.',
         ],
       },
     ],
@@ -173,7 +192,7 @@ export const AVICOLA_SUBMODULES = [
         'Amoníaco y lesiones en las patas',
         ['Mejor conversión alimenticia', 'Más postura en las gallinas', 'Menos enfermedades respiratorias'],
       ],
-      ['¿Cuántas horas de luz se usan en postura?', 'Alrededor de 16 horas', ['4 horas', '24 horas siempre', '8 horas']],
+      ['¿Qué sistema de postura es libre de jaula?', 'Aviario o piso', ['Jaula convencional', 'Jaula enriquecida', 'Batería']],
       [
         '¿Qué indica ver pollos jadeando con las alas abiertas?',
         'Estrés por calor',
