@@ -71,9 +71,15 @@ npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar a
 
 ### Campaña de 13 módulos
 
-Módulo → submódulos (Códice + subjefe individual) → jefe cooperativo semanal de 5.000 HP. El contenido vive en
-`src/data/seed.ts` y `src/data/campaign/` (Módulo 1 · Edafología es el piloto con sus 5 submódulos); `seed.sql` se
-genera desde ahí. Los módulos sin contenido aparecen bloqueados con el Códice "En preparación".
+Módulo → submódulos (Códice + subjefe individual) → jefe cooperativo semanal de 5.000 HP. Los 13 módulos tienen sus
+5 submódulos con Códice (3-4 secciones), un checkpoint interactivo, un subjefe y 5 preguntas (6 en Frambuesa 8.4), más
+la pregunta final de su jefe cooperativo: 65 submódulos y 339 preguntas en total.
+
+El contenido vive en `src/data/campaign/` (un archivo por módulo, `m01-edafologia.ts` … `m13-caprinos.ts`) y se arma en
+`src/data/seed.ts`; `seed.sql` se genera desde ahí con `npm run db:seed-sql`. Los módulos nuevos usan el ayudante
+`campaignModule()` de `campaign/helpers.ts`, que asigna ids estables (`m{n}-s{orden}`, `m{n}-s{orden}-q{k}`,
+`m{n}-boss`). Al inicio están abiertos M1, M7 (Cranberry) y M8 (Frambuesa); el resto se abre en cadena al derrotar al
+jefe anterior. Cranberry y Frambuesa conservan los ids de sus 25 preguntas (`m1-q*`, `m2-q*`) y su historial.
 
 Al re-ejecutar `schema.sql` sobre una base de la campaña anterior, Cranberry pasa a ser el módulo 7 y Frambuesa el 8
 (con su progreso, raids y daño acumulado) y el antiguo módulo Fundamentos queda archivado.

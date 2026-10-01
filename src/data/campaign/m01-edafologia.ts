@@ -373,8 +373,8 @@ export const EDAFOLOGIA_BOSS_FINAL: Question = {
     'Un suelo franco-arcilloso tiene Da = 1,62 g/cm³ y 3 MPa de resistencia a 30 cm; la cosecha mecanizada se hace con el suelo cerca de capacidad de campo. ¿Cuál es la intervención correcta?',
   correct: 'Subsolar con el suelo friable o seco y luego controlar el tránsito',
   distractors: [
-    'Subsolar de inmediato con el suelo húmedo',
-    'Aumentar la frecuencia de riego',
-    'Aplicar urea para ablandar la capa',
+    'Subsolar de inmediato, aprovechando que el suelo está húmedo',
+    'Aumentar la frecuencia de riego para ablandar la capa',
+    'Aplicar urea para que la capa compactada se descomponga',
   ],
 }
