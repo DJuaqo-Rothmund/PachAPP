@@ -1,11 +1,12 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import { RPG_CLASSES } from '@shared/data/classes'
-import { BadgeIcon, ClassAvatar } from '@/components/game'
+import { BadgeIcon, ClassAvatar, LivesHearts } from '@/components/game'
 import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
+import { useLives } from '@/context/LivesContext'
 import { useAsync } from '@/hooks/useAsync'
 import { loadBadgeCatalog } from '@/lib/badgeCatalog'
 import { gameApi, levelFromXp, resetDemo } from '@/lib/game'
@@ -14,6 +15,8 @@ import { colors, radius, space } from '@/theme'
 export default function ProfileScreen() {
   const { demoMode, user, signOut } = useAuth()
   const { profile, refresh } = useProfile()
+  const { lives, refresh: refreshLives } = useLives()
+  const [leavingMaster, setLeavingMaster] = useState(false)
   const badges = useAsync(() => Promise.all([loadBadgeCatalog(), gameApi.getMyBadges()]), [])
   useFocusEffect(useCallback(() => badges.reload(), [badges.reload]))
   if (!profile) return null
@@ -23,6 +26,16 @@ export default function ProfileScreen() {
 
   const cls = RPG_CLASSES.find((c) => c.id === profile.rpgClass)
   const level = levelFromXp(profile.totalXp)
+
+  const deactivateMaster = async () => {
+    setLeavingMaster(true)
+    try {
+      await gameApi.deactivateMasterMode()
+      await Promise.all([refresh(), refreshLives()])
+    } finally {
+      setLeavingMaster(false)
+    }
+  }
 
   const confirmReset = () =>
     Alert.alert('Reiniciar demo', '¿Borrar todo tu progreso de la demo?', [
@@ -50,6 +63,17 @@ export default function ProfileScreen() {
         <Body tone="mist" size={12}>
           {user?.email ?? cls?.specialty}
         </Body>
+        {profile.isTester && (
+          <PixelText size={8} tone="gold" style={{ marginTop: space.sm }}>
+            🔮 Modo maestro
+          </PixelText>
+        )}
+        <View style={[styles.row, styles.lives]}>
+          <Body tone="mist" size={12}>
+            Vidas de hoy
+          </Body>
+          <LivesHearts lives={lives} size={18} showCountdown />
+        </View>
 
         <View style={{ alignSelf: 'stretch', marginTop: space.lg }}>
           <View style={styles.row}>
@@ -106,6 +130,9 @@ export default function ProfileScreen() {
       </Panel>
 
       <Button label="Cambiar clase" variant="ghost" onPress={() => router.push('/onboarding')} />
+      {profile.isTester && (
+        <Button label="Desactivar modo maestro" variant="ghost" loading={leavingMaster} onPress={() => void deactivateMaster()} />
+      )}
       {demoMode ? (
         <Button label="Reiniciar demo" variant="ghost" onPress={confirmReset} />
       ) : (
@@ -116,6 +143,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  lives: { alignSelf: 'stretch', marginTop: space.md, backgroundColor: colors.stone, borderRadius: radius.md, padding: space.sm },
   avatarBox: {
     width: 128,
     height: 128,

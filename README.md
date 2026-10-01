@@ -93,6 +93,8 @@ Checkpoint interactivo de un Códice (`codices.interactive_checkpoints`, validad
 | `submodules`   | Submódulos de cada módulo, con su subjefe individual (nombre, título, HP) |
 | `codices`      | Códice de cada submódulo: secciones de texto, `video_url` y `interactive_checkpoints` (JSONB) |
 | `submodule_progress` | Progreso individual por submódulo: Códice leído, checkpoints y daño al subjefe |
+| `daily_lives`  | Errores del día por jugador (3 vidas; el día es el de Chile)        |
+| `master_settings` / `master_attempts` | Clave del modo maestro (hash bcrypt) e intentos fallidos por día |
 | `questions`    | Preguntas con respuesta correcta y 3 falsas (**solo admin la lee**); `submodule_id` opcional |
 | `bosses`       | Jefe por módulo: HP actual/máximo, daño por acierto, módulo que desbloquea |
 | `codex_reads`  | Qué Códices leyó cada usuario                                       |
@@ -113,6 +115,29 @@ Checkpoint interactivo de un Códice (`codices.interactive_checkpoints`, validad
 - Quien deja al jefe en 0 HP da el **golpe final** (+100 XP) y la comunidad desbloquea el siguiente módulo de forma permanente.
 - Las alternativas llegan barajadas y sin la respuesta correcta; `answer_question()` la valida en el servidor.
 - Ranking mensual: `get_monthly_leaderboard()` (mes calendario, hora de Chile).
+- **Submódulos**: se abren en orden. Cada uno tiene su Códice (`mark_submodule_codex_read()`) y un **subjefe
+  individual** (`start_subboss()` / `answer_subboss()`): 40–50 HP propios, −10 por acierto y 5 preguntas por duelo; si
+  no cae, el duelo se reinicia con HP completo. Derrotarlo abre el siguiente submódulo.
+- El **Boss Raid** de un módulo con submódulos exige haber derrotado a **todos sus subjefes**.
+- **Vidas**: 3 por día (`get_lives()`). Cada error en un duelo contra un subjefe o en el Boss Raid gasta una; sin vidas
+  no se puede combatir hasta las **00:00 (hora de Chile)**. Entrenar y los checkpoints del Códice no gastan vidas.
+
+### Modo maestro (cuenta de pruebas)
+
+En la pantalla de clases, **5 toques seguidos sobre el Brujo Fitosanitario** piden la clave. Con el modo maestro
+(`profiles.is_tester`) el jugador tiene vidas ilimitadas, todos los submódulos y Boss Raids abiertos y puede repetir el
+raid semanal. Se desactiva desde el perfil. El daño que hace **sí cuenta** para los jefes de la comunidad.
+
+La clave inicial es `1234` y vive hasheada (bcrypt) en `master_settings`; tras 5 intentos fallidos en el día la cuenta
+queda bloqueada hasta el día siguiente. **Cámbiala antes de abrir la app al público** (en el SQL Editor):
+
+```sql
+update public.master_settings set code_hash = extensions.crypt('NUEVA-CLAVE', extensions.gen_salt('bf'));
+-- o desactívalo por completo:
+update public.master_settings set enabled = false;
+```
+
+En la demo sin Supabase la clave es `1234` (`DEMO_MASTER_CODE` en `src/lib/game/lives.ts`).
 
 ## Clases, skins y desbloqueables
 
@@ -178,7 +203,10 @@ Las escrituras las protege RLS en Supabase (`is_admin()`): aunque alguien llame 
 | `/login`                    | Login con Google                     |
 | `/`                         | Mapa de campaña (dashboard)          |
 | `/onboarding`               | Elección de clase RPG                |
-| `/modulos/:id/codice`       | Texto de estudio del módulo          |
+| `/modulos/:id`              | Árbol del módulo: submódulos, subjefes y jefe cooperativo |
+| `/modulos/:id/submodulos/:sub` | Códice del submódulo con checkpoints |
+| `/modulos/:id/submodulos/:sub/combate` | Duelo contra el subjefe     |
+| `/modulos/:id/codice`       | Texto de estudio del módulo (módulos sin submódulos) |
 | `/modulos/:id/raid`         | Boss Raid semanal (máx. 15 preguntas) |
 | `/modulos/:id/entrenar`     | Entrenamiento (XP sin daño al jefe)  |
 | `/leaderboard`              | Ranking mensual por XP               |

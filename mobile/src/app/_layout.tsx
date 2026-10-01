@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ProfileProvider, useProfile } from '@/context/ProfileContext'
 import { ToastProvider } from '@/context/ToastContext'
+import { LivesProvider } from '@/context/LivesContext'
 import { Loader } from '@/components/ui'
 import { hydrateDemoStorage } from '@/lib/demoStorage'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -33,9 +34,11 @@ export default function RootLayout() {
       {fontsLoaded && storageReady ? (
         <AuthProvider>
           <ProfileProvider>
-            <ToastProvider>
-              <RootNavigator />
-            </ToastProvider>
+            <LivesProvider>
+              <ToastProvider>
+                <RootNavigator />
+              </ToastProvider>
+            </LivesProvider>
           </ProfileProvider>
         </AuthProvider>
       ) : (
@@ -69,6 +72,9 @@ function RootNavigator() {
         <Stack.Protected guard={authed}>
           <Stack.Protected guard={hasClass}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modulo/[id]/index" options={{ title: 'Módulo' }} />
+            <Stack.Screen name="modulo/[id]/submodulo/[sub]/index" options={{ title: 'Códice' }} />
+            <Stack.Screen name="modulo/[id]/submodulo/[sub]/combate" options={{ title: 'Subjefe' }} />
             <Stack.Screen name="modulo/[id]/codice" options={{ title: 'El Códice' }} />
             <Stack.Screen name="modulo/[id]/raid" options={{ title: 'Boss Raid' }} />
             <Stack.Screen name="modulo/[id]/entrenar" options={{ title: 'Entrenamiento' }} />

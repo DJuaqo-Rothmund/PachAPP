@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { BossSprite, HpBar } from '@/components/game'
+import { CoopBossFrame, HpBar, LivesHearts } from '@/components/game'
 import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components/ui'
 import { useProfile } from '@/context/ProfileContext'
+import { useLives } from '@/context/LivesContext'
 import { useAsync } from '@/hooks/useAsync'
 import { useClassTheme } from '@/hooks/useClassTheme'
 import { gameApi, levelFromXp, type CampaignModule } from '@/lib/game'
@@ -12,6 +13,7 @@ import { colors, radius, space } from '@/theme'
 
 export default function MapScreen() {
   const { profile } = useProfile()
+  const { lives } = useLives()
   const { data, error, loading, reload } = useAsync(
     () => Promise.all([gameApi.getCampaign(), gameApi.getLeaderboard(), gameApi.getMyBadges()]),
     [],
@@ -33,10 +35,18 @@ export default function MapScreen() {
   return (
     <Screen>
       <View>
-        <PixelText size={14}>Mapa de campaña</PixelText>
+        <View style={styles.row}>
+          <PixelText size={14}>Mapa de campaña</PixelText>
+          <LivesHearts lives={lives} size={18} />
+        </View>
         <Body tone="mist" style={{ marginTop: space.sm }}>
-          Lee el Códice, responde y derrota al jefe para avanzar.
+          Estudia cada Códice, vence a los subjefes y únete a la comunidad contra el jefe cooperativo.
         </Body>
+        {profile?.isTester && (
+          <PixelText size={8} tone="gold" style={{ marginTop: space.sm }}>
+            🔮 Modo maestro activo
+          </PixelText>
+        )}
       </View>
 
       <View style={styles.kpis}>
@@ -63,6 +73,9 @@ export default function MapScreen() {
 
 function ModuleCard({ module: m }: { module: CampaignModule }) {
   const { accent } = useClassTheme()
+  const { profile } = useProfile()
+  const hasTree = m.subbossesTotal > 0
+  const raidGated = hasTree && m.subbossesDefeated < m.subbossesTotal && !profile?.isTester
   const progress = m.questionCount > 0 ? (m.answeredCount / m.questionCount) * 100 : 0
   const boss = m.boss
 
@@ -90,12 +103,8 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
       </Body>
 
       {boss && (
-        <View style={styles.bossRow}>
-          <BossSprite bossId={boss.id} size={40} defeated={boss.defeated} />
-          <View style={{ flex: 1 }}>
-            <Body tone="blood" size={13} numberOfLines={1}>
-              {boss.name}
-            </Body>
+        <View style={{ marginTop: space.md }}>
+          <CoopBossFrame bossId={boss.id} name={boss.name} defeated={boss.defeated} spriteSize={44}>
             {boss.defeated ? (
               <PixelText size={8} tone="gold" style={{ marginTop: 4 }}>
                 Derrotado
@@ -108,11 +117,44 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
                 </Body>
               </View>
             )}
-          </View>
+          </CoopBossFrame>
         </View>
       )}
 
-      {m.unlocked ? (
+      {m.unlocked && hasTree ? (
+        <>
+          <View style={[styles.row, { marginTop: space.md }]}>
+            <Body tone="mist" size={11}>
+              Subjefes
+            </Body>
+            <Body tone="mist" size={11}>
+              {m.subbossesDefeated}/{m.subbossesTotal}
+            </Body>
+          </View>
+          <View style={styles.segments}>
+            {Array.from({ length: m.subbossesTotal }, (_, i) => (
+              <View key={i} style={[styles.segment, { backgroundColor: i < m.subbossesDefeated ? colors.gold : colors.rune }]} />
+            ))}
+          </View>
+          {boss &&
+            (raidGated ? (
+              <Body tone="mist" size={12} style={{ marginTop: space.md }}>
+                🔒 Derrota a los {m.subbossesTotal} subjefes para unirte al Boss Raid
+              </Body>
+            ) : (
+              <RaidStatusLine module={m} />
+            ))}
+          <Button label="Entrar al módulo" style={{ marginTop: space.md }} onPress={() => router.push(`/modulo/${m.id}`)} />
+          {!raidGated && (m.raid.status === 'available' || m.raid.status === 'in_progress') && (
+            <Button
+              label={m.raid.status === 'in_progress' ? 'Continuar raid' : 'Boss Raid semanal'}
+              variant="ghost"
+              style={{ marginTop: space.sm }}
+              onPress={() => router.push(`/modulo/${m.id}/raid`)}
+            />
+          )}
+        </>
+      ) : m.unlocked ? (
         <>
           <View style={[styles.row, { marginTop: space.md }]}>
             <Body tone="mist" size={11}>
@@ -168,14 +210,7 @@ const styles = StyleSheet.create({
   kpi: { width: '47.5%', flexGrow: 1, padding: space.md },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chip: { backgroundColor: 'rgba(74, 222, 128, 0.15)', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 2 },
-  bossRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-    marginTop: space.md,
-    backgroundColor: colors.stone,
-    borderRadius: radius.md,
-    padding: space.md,
-  },
+  segments: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  segment: { flex: 1, height: 6, borderRadius: 2 },
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.stone, overflow: 'hidden', marginTop: 4 },
 })

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Animated, Pressable, StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { BossSprite, HpBar } from '@/components/game'
+import { BossSprite, CoopBossFrame, HpBar, LivesHearts, OutOfLives } from '@/components/game'
 import { Body, Button, ErrorPanel, Loader, Panel, PixelText, Screen } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
+import { useLives } from '@/context/LivesContext'
 import { useToast } from '@/context/ToastContext'
 import { useAsync } from '@/hooks/useAsync'
 import { gameApi, type AnswerResult, type BossState, type CampaignModule, type PlayQuestion } from '@/lib/game'
@@ -16,6 +17,8 @@ export type BattleMode = 'raid' | 'training'
 
 export function BattleScreen({ mode }: { mode: BattleMode }) {
   const moduleId = Number(useLocalSearchParams<{ id: string }>().id)
+  const { profile } = useProfile()
+  const { lives } = useLives()
   const { data: campaign, error, loading, reload } = useAsync(() => gameApi.getCampaign(), [moduleId, mode])
 
   if (loading) return <Loader />
@@ -53,7 +56,28 @@ export function BattleScreen({ mode }: { mode: BattleMode }) {
     )
   }
 
-  if (mode === 'raid' && module.raid.status === 'done') {
+  if (mode === 'raid' && module.subbossesDefeated < module.subbossesTotal && !profile?.isTester) {
+    return (
+      <Gate
+        title="⚔ Primero, los subjefes"
+        text={`Para unirte al Boss Raid contra ${module.boss.name} debes derrotar a los ${module.subbossesTotal} subjefes del módulo (llevas ${module.subbossesDefeated}).`}
+      >
+        <Button label="Ir a los submódulos" onPress={() => router.replace(`/modulo/${module.id}`)} />
+      </Gate>
+    )
+  }
+  if (mode === 'raid' && lives && !lives.unlimited && lives.lives <= 0 && module.raid.status !== 'defeated') {
+    return (
+      <Screen>
+        <Panel style={{ gap: space.md }}>
+          <OutOfLives lives={lives} />
+          <Button label="Entrenar" variant="ghost" onPress={() => router.replace(`/modulo/${module.id}/entrenar`)} />
+        </Panel>
+      </Screen>
+    )
+  }
+
+  if (mode === 'raid' && module.raid.status === 'done' && !profile?.isTester) {
     return (
       <Gate
         title="⏳ Ya combatiste esta semana"
@@ -80,7 +104,7 @@ interface QuestionSet {
   raid: { id: number; total: number; answeredBefore: number } | null
 }
 
-function Gate({ title, text, children }: { title: string; text: string; children: ReactNode }) {
+export function Gate({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
     <Screen>
       <Panel style={{ alignItems: 'center', gap: space.md }}>
@@ -109,6 +133,7 @@ function Raid({
 }) {
   const isRaid = mode === 'raid'
   const { refresh } = useProfile()
+  const { lives, setLivesLeft } = useLives()
   const { announceBadges } = useToast()
   const { demoMode } = useAuth()
 
@@ -159,6 +184,7 @@ function Raid({
     try {
       const r = await gameApi.answer(current.id, option, raid?.id)
       setResult(r)
+      if (isRaid) setLivesLeft(r.livesLeft)
       setStats((s) => ({
         answered: s.answered + 1,
         correct: s.correct + (r.correct ? 1 : 0),
@@ -204,32 +230,37 @@ function Raid({
 
       {/* Jefe */}
       <Panel>
-        <View style={styles.bossRow}>
-          <View style={styles.bossBox}>
-            <Animated.View style={shakeStyle}>
-              <BossSprite bossId={boss.id} size={72} defeated={defeated} />
-            </Animated.View>
-            <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
-              <PixelText size={12} tone="gold">
-                −{damage}
-              </PixelText>
-            </Animated.View>
-          </View>
-          <View style={{ flex: 1 }}>
-            <PixelText size={10} tone="blood">
-              {boss.name}
-            </PixelText>
-            <Body tone="mist" size={13} style={{ marginTop: 2 }}>
-              {boss.title}
-            </Body>
-          </View>
-        </View>
+        <CoopBossFrame
+          bossId={boss.id}
+          name={boss.name}
+          title={boss.title}
+          sprite={
+            <View>
+              <Animated.View style={shakeStyle}>
+                <BossSprite bossId={boss.id} size={72} defeated={defeated} />
+              </Animated.View>
+              <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
+                <PixelText size={12} tone="gold">
+                  −{damage}
+                </PixelText>
+              </Animated.View>
+            </View>
+          }
+        />
         <View style={{ marginTop: space.md }}>
           <HpBar current={hp} max={boss.maxHp} />
         </View>
+        {isRaid && (
+          <View style={[styles.row, styles.livesRow]}>
+            <Body tone="mist" size={12}>
+              Vidas de hoy
+            </Body>
+            <LivesHearts lives={lives} size={20} />
+          </View>
+        )}
         <Body tone="mist" size={12} style={{ marginTop: space.sm, textAlign: 'center' }}>
           {isRaid
-            ? `Batalla semanal de ${questionTotal} preguntas: cada acierto de la comunidad resta HP.`
+            ? `Batalla semanal de ${questionTotal} preguntas: cada acierto de la comunidad resta HP y cada error gasta una vida.`
             : 'El entrenamiento no daña al jefe, pero cada primer acierto suma XP.'}
         </Body>
         {demoMode && isRaid && (
@@ -263,6 +294,13 @@ function Raid({
       ) : loading || !data ? (
         <Panel>
           <Body tone="mist">Invocando preguntas…</Body>
+        </Panel>
+      ) : isRaid && !finished && !result && lives && !lives.unlimited && lives.lives <= 0 ? (
+        <Panel style={{ gap: space.md }}>
+          <OutOfLives lives={lives} />
+          <Body tone="mist" size={12} style={{ textAlign: 'center' }}>
+            Tu batalla semanal queda en pausa: retómala mañana donde la dejaste.
+          </Body>
         </Panel>
       ) : finished ? (
         isRaid ? (
@@ -325,7 +363,7 @@ function Raid({
 }
 
 /** Sacudida del jefe y número de daño flotante en cada golpe. */
-function useHitAnimation() {
+export function useHitAnimation() {
   const shake = useRef(new Animated.Value(0)).current
   const float = useRef(new Animated.Value(1)).current
   const [damage, setDamage] = useState(0)
@@ -356,9 +394,9 @@ function useHitAnimation() {
   }
 }
 
-type OptionState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim'
+export type OptionState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim'
 
-function optionState(option: string, picked: string | null, result: AnswerResult | null): OptionState {
+export function optionState(option: string, picked: string | null, result: { correctAnswer: string } | null): OptionState {
   if (!result) return option === picked ? 'picked' : 'idle'
   if (option === result.correctAnswer) return 'correct'
   if (option === picked) return 'wrong'
@@ -373,7 +411,7 @@ const OPTION_STYLES: Record<OptionState, object> = {
   dim: { borderColor: colors.rune, opacity: 0.4 },
 }
 
-function OptionButton({
+export function OptionButton({
   label,
   letter,
   state,
@@ -415,7 +453,9 @@ function Feedback({ result, bossName, isRaid }: { result: AnswerResult; bossName
       </Body>
     )
   }
-  if (!result.correct) return <Body tone="blood">Fallaste. La respuesta correcta está marcada en verde.</Body>
+  if (!result.correct) {
+    return <Body tone="blood">Fallaste{isRaid ? ' y pierdes una vida' : ''}. La respuesta correcta está marcada en verde.</Body>
+  }
   const parts = [
     result.awarded ? `+${result.xpGained} XP` : 'sin XP (ya la habías acertado)',
     ...(result.damageDealt > 0 ? [`−${result.damageDealt} HP al jefe`] : []),
@@ -495,16 +535,8 @@ function Summary({ stats, nothingPending, onPractice }: { stats: Stats; nothingP
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bossRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  bossBox: {
-    width: 96,
-    height: 96,
-    borderRadius: radius.lg,
-    backgroundColor: colors.stone,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  damage: { position: 'absolute', top: 4 },
+  damage: { position: 'absolute', top: 0, alignSelf: 'center' },
+  livesRow: { marginTop: space.md, backgroundColor: colors.stone, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.sm },
   defeated: {
     marginTop: space.md,
     borderWidth: 1,
