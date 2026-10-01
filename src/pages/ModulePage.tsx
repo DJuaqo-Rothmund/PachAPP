@@ -102,6 +102,8 @@ function StepMarker({ label, tone }: { label: string; tone: 'done' | 'open' | 'l
 }
 
 function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNode }) {
+  const { profile } = useProfile()
+  const tester = Boolean(profile?.isTester)
   const base = `/modulos/${moduleId}/submodulos/${node.id}`
   const tone = node.subboss.defeated ? 'done' : node.unlocked ? 'open' : 'locked'
 
@@ -138,9 +140,9 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
               <Link to={base} className={node.codexRead ? 'btn-ghost text-sm' : 'btn-primary text-sm'}>
                 📜 {node.codexRead ? 'Repasar Códice' : 'Leer Códice'}
               </Link>
-              {node.codexRead && !node.subboss.defeated && (
+              {(node.codexRead || tester) && (!node.subboss.defeated || tester) && (
                 <Link to={`${base}/combate`} className="btn-primary text-sm">
-                  ⚔ Combatir
+                  {node.subboss.defeated ? '⚔ Repetir combate' : '⚔ Combatir'}
                 </Link>
               )}
               {node.checkpointsTotal > 0 && (

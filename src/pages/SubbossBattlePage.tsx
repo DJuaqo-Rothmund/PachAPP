@@ -19,6 +19,7 @@ export default function SubbossBattlePage() {
   const moduleId = Number(params.moduleId)
   const submoduleId = params.submoduleId ?? ''
   const [round, setRound] = useState(0)
+  const { profile } = useProfile()
   const { data: tree, error, loading, reload } = useAsync(() => gameApi.getModuleTree(moduleId), [moduleId])
 
   if (loading) return <FullScreenLoader />
@@ -28,7 +29,8 @@ export default function SubbossBattlePage() {
   if (!tree || !node) return <NotFoundPage />
   const back = `/modulos/${moduleId}`
 
-  if (!node.unlocked || !node.codexRead) {
+  // En modo maestro se puede combatir sin leer el Códice.
+  if (!node.unlocked || (!node.codexRead && !profile?.isTester)) {
     return (
       <div className="panel mx-auto max-w-lg text-center">
         <p className="pixel-title text-xs text-gold">📜 Primero, el Códice</p>

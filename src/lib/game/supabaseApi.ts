@@ -373,6 +373,11 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       if (error) throw error
     },
 
+    async testerReset(scope) {
+      const { error } = await sb.rpc('tester_reset', { p_scope: scope })
+      if (error) throw error
+    },
+
     subscribeBoss(bossId, onChange) {
       const channel = sb
         .channel(`boss-${bossId}`)

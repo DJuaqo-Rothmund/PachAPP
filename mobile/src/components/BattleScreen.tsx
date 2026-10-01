@@ -45,7 +45,7 @@ export function BattleScreen({ mode }: { mode: BattleMode }) {
       </Gate>
     )
   }
-  if (!module.codexRead) {
+  if (!module.codexRead && !profile?.isTester) {
     return (
       <Gate
         title="📜 Primero, el Códice"

@@ -21,6 +21,8 @@ export interface LivesStatus {
   unlimited: boolean
 }
 
+export type TesterResetScope = 'lives' | 'progress' | 'bosses' | 'all'
+
 export interface BossState {
   id: string
   moduleId: number
@@ -198,6 +200,12 @@ export interface GameApi {
   /** Activa el modo maestro con su clave. Devuelve false si la clave no coincide. */
   activateMasterMode(code: string): Promise<boolean>
   deactivateMasterMode(): Promise<void>
+  /**
+   * Herramientas del modo maestro. lives: mis vidas del día; progress: mi XP, lecturas,
+   * respuestas, raids, subjefes y emblemas; bosses: HP de todos los jefes y módulos
+   * desbloqueados por la comunidad (afecta a todos los jugadores); all: todo lo anterior.
+   */
+  testerReset(scope: TesterResetScope): Promise<void>
   /** Escucha cambios de HP del jefe en vivo. Devuelve la función para desuscribirse. */
   subscribeBoss(bossId: string, onChange: (boss: Pick<BossState, 'currentHp' | 'defeated'>) => void): () => void
 }

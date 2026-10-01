@@ -5,6 +5,7 @@ import { CoopBossFrame, HpBar, LivesHearts } from '@/components/game'
 import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components/ui'
 import { useProfile } from '@/context/ProfileContext'
 import { useLives } from '@/context/LivesContext'
+import { MasterPanel } from '@/components/MasterPanel'
 import { useAsync } from '@/hooks/useAsync'
 import { useClassTheme } from '@/hooks/useClassTheme'
 import { gameApi, levelFromXp, type CampaignModule } from '@/lib/game'
@@ -48,6 +49,8 @@ export default function MapScreen() {
           </PixelText>
         )}
       </View>
+
+      <MasterPanel onDone={reload} />
 
       <View style={styles.kpis}>
         {kpis.map((k) => (

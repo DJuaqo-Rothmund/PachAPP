@@ -3,6 +3,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { HpBar } from '../components/game/HpBar'
 import { CoopBossFrame } from '../components/game/BossFrames'
+import { MasterPanel } from '../components/game/MasterPanel'
 import { useProfile } from '../context/ProfileContext'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi, type CampaignModule } from '../lib/game'
@@ -35,6 +36,8 @@ export default function DashboardPage() {
         title="Mapa de campaña"
         subtitle="Estudia cada Códice, vence a los subjefes y únete a la comunidad contra el jefe cooperativo."
       />
+
+      <MasterPanel compact />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (

@@ -667,7 +667,8 @@ begin
   if not public.is_module_unlocked(p_module_id) then
     raise exception 'Módulo bloqueado' using errcode = 'P0001';
   end if;
-  if not exists (select 1 from public.codex_reads where user_id = v_uid and module_id = p_module_id) then
+  if not public.is_tester()
+     and not exists (select 1 from public.codex_reads where user_id = v_uid and module_id = p_module_id) then
     raise exception 'Debes leer el Códice antes de jugar' using errcode = 'P0001';
   end if;
 
@@ -789,7 +790,8 @@ begin
   if not public.is_module_unlocked(v_q.module_id) then
     raise exception 'Módulo bloqueado' using errcode = 'P0001';
   end if;
-  if not exists (select 1 from public.codex_reads where user_id = v_uid and module_id = v_q.module_id) then
+  if not public.is_tester()
+     and not exists (select 1 from public.codex_reads where user_id = v_uid and module_id = v_q.module_id) then
     raise exception 'Debes leer el Códice antes de jugar' using errcode = 'P0001';
   end if;
 
@@ -943,7 +945,8 @@ set search_path = public
 as $$
   select
     m.id,
-    (m.initially_unlocked or m.unlocked_at is not null),
+    -- Incluye el modo maestro: los testers ven todos los módulos abiertos.
+    public.is_module_unlocked(m.id),
     (select count(*)::integer from public.questions q where q.module_id = m.id),
     (select count(*)::integer from public.answers a
       where a.module_id = m.id and a.user_id = auth.uid() and a.awarded),
@@ -1132,7 +1135,13 @@ begin
 
   select * into v_sp from public.submodule_progress where user_id = v_uid and submodule_id = p_submodule_id for update;
   if v_sp.codex_read_at is null then
-    raise exception 'Debes leer el Códice antes de combatir' using errcode = 'P0001';
+    if not public.is_tester() then
+      raise exception 'Debes leer el Códice antes de combatir' using errcode = 'P0001';
+    end if;
+    -- Modo maestro: puede combatir sin leer; se crea su fila de progreso si no existe.
+    insert into public.submodule_progress (user_id, submodule_id) values (v_uid, p_submodule_id)
+    on conflict (user_id, submodule_id) do nothing;
+    select * into v_sp from public.submodule_progress where user_id = v_uid and submodule_id = p_submodule_id for update;
   end if;
   if v_sp.subboss_defeated_at is not null and not public.is_tester() then
     raise exception 'Ya derrotaste a este subjefe' using errcode = 'P0001';
@@ -1303,6 +1312,52 @@ security definer
 set search_path = public
 as $$
   update public.profiles set is_tester = false where id = auth.uid();
+$$;
+
+-- Herramientas de prueba del modo maestro.
+--   lives:    reinicia mis vidas del día.
+--   progress: borra mi XP, respuestas, lecturas, raids, subjefes, emblemas y vidas.
+--   bosses:   devuelve el HP completo a TODOS los jefes y vuelve a bloquear los módulos
+--             que la comunidad había abierto (afecta a todos los jugadores).
+--   all:      todo lo anterior.
+create or replace function public.tester_reset(p_scope text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  if not public.is_tester() then
+    raise exception 'Solo disponible en modo maestro' using errcode = '42501';
+  end if;
+  if p_scope not in ('lives', 'progress', 'bosses', 'all') then
+    raise exception 'Opción de reinicio desconocida' using errcode = '22023';
+  end if;
+
+  if p_scope in ('lives', 'progress', 'all') then
+    delete from public.daily_lives where user_id = v_uid;
+  end if;
+
+  if p_scope in ('progress', 'all') then
+    delete from public.answers where user_id = v_uid;
+    delete from public.raid_sessions where user_id = v_uid;
+    delete from public.codex_reads where user_id = v_uid;
+    delete from public.submodule_progress where user_id = v_uid;
+    delete from public.user_badges where user_id = v_uid;
+    update public.profiles set total_xp = 0 where id = v_uid;
+  end if;
+
+  if p_scope in ('bosses', 'all') then
+    update public.bosses set current_hp = max_hp, defeated_at = null, defeated_by = null
+    where current_hp <> max_hp or defeated_at is not null;
+    update public.modules set unlocked_at = null where unlocked_at is not null;
+  end if;
+end;
 $$;
 
 -- Ranking de XP del mes calendario actual (zona horaria de Chile).
@@ -1572,6 +1627,7 @@ revoke execute on function public.start_subboss(text) from public, anon;
 revoke execute on function public.answer_subboss(text, text, text) from public, anon;
 revoke execute on function public.activate_master_mode(text) from public, anon;
 revoke execute on function public.deactivate_master_mode() from public, anon;
+revoke execute on function public.tester_reset(text) from public, anon;
 grant execute on function public.get_lives() to authenticated;
 grant execute on function public.get_module_tree(integer) to authenticated;
 grant execute on function public.mark_submodule_codex_read(text) to authenticated;
@@ -1580,6 +1636,7 @@ grant execute on function public.start_subboss(text) to authenticated;
 grant execute on function public.answer_subboss(text, text, text) to authenticated;
 grant execute on function public.activate_master_mode(text) to authenticated;
 grant execute on function public.deactivate_master_mode() to authenticated;
+grant execute on function public.tester_reset(text) to authenticated;
 grant execute on function public.is_tester() to authenticated;
 grant select on public.module_status to authenticated;
 

@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
 import { useLives } from '../context/LivesContext'
 import { LivesHearts } from '../components/game/LivesHearts'
+import { MasterPanel } from '../components/game/MasterPanel'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi } from '../lib/game'
 import { resetDemo } from '../lib/game/demoApi'
@@ -133,6 +134,10 @@ export default function ProfilePage() {
             </ul>
           )}
         </section>
+      </div>
+
+      <div className="mt-4">
+        <MasterPanel />
       </div>
     </div>
   )

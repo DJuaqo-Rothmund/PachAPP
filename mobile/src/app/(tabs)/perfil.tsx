@@ -7,6 +7,7 @@ import { Body, Button, ErrorPanel, Panel, PixelText, Screen } from '@/components
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useLives } from '@/context/LivesContext'
+import { MasterPanel } from '@/components/MasterPanel'
 import { useAsync } from '@/hooks/useAsync'
 import { loadBadgeCatalog } from '@/lib/badgeCatalog'
 import { gameApi, levelFromXp, resetDemo } from '@/lib/game'
@@ -129,6 +130,7 @@ export default function ProfileScreen() {
         )}
       </Panel>
 
+      <MasterPanel onDone={badges.reload} />
       <Button label="Cambiar clase" variant="ghost" onPress={() => router.push('/onboarding')} />
       {profile.isTester && (
         <Button label="Desactivar modo maestro" variant="ghost" loading={leavingMaster} onPress={() => void deactivateMaster()} />

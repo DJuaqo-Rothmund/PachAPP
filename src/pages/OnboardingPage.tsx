@@ -44,6 +44,8 @@ export default function OnboardingPage() {
     }
   }
 
+  const selectedClass = RPG_CLASSES.find((c) => c.id === selected)
+
   const confirm = async () => {
     if (!selected) return
     setSaving(true)
@@ -63,7 +65,20 @@ export default function OnboardingPage() {
       <PageHeader
         title={isChange ? 'Cambiar de clase' : 'Elige tu clase'}
         subtitle="Tu clase define tu avatar y tu especialidad. Puedes cambiarla después desde tu perfil."
+        actions={
+          <div className="flex items-center gap-3">
+            {selectedClass && (
+              <span className="hidden text-sm text-mist sm:inline">
+                Elegida: <span style={{ color: selectedClass.theme.accent }}>{selectedClass.name}</span>
+              </span>
+            )}
+            <button type="button" className="btn-primary" disabled={!selected || saving} onClick={confirm}>
+              {saving ? 'Guardando…' : 'Confirmar clase'}
+            </button>
+          </div>
+        }
       />
+      {error && <p className="-mt-3 mb-4 text-right text-sm text-blood">{error}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RPG_CLASSES.map((c) => {
@@ -105,7 +120,6 @@ export default function OnboardingPage() {
       {masterOpen && <MasterCodeModal onClose={() => setMasterOpen(false)} />}
 
       <div className="mt-6 flex items-center justify-end gap-4">
-        {error && <p className="text-sm text-blood">{error}</p>}
         <button type="button" className="btn-primary" disabled={!selected || saving} onClick={confirm}>
           {saving ? 'Guardando…' : 'Confirmar clase'}
         </button>

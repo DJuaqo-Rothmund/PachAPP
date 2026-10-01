@@ -40,7 +40,7 @@ export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
     )
   }
 
-  if (!module.codexRead) {
+  if (!module.codexRead && !profile?.isTester) {
     return (
       <Gate title="📜 Primero, el Códice" text="Ningún aventurero enfrenta a un jefe sin estudiar. Lee el Códice del módulo para entrar a la batalla.">
         <Link to={`/modulos/${module.id}/codice`} className="btn-primary">

@@ -54,7 +54,17 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
-      <Body tone="mist">Tu clase define tu avatar y tu especialidad. Puedes cambiarla después desde tu perfil.</Body>
+      <View style={styles.header}>
+        <Body tone="mist" size={14} style={{ flex: 1 }}>
+          Tu clase define tu avatar y tu especialidad. Puedes cambiarla después desde tu perfil.
+        </Body>
+        <Button label="Confirmar" onPress={() => void confirm()} disabled={!selected} loading={saving} />
+      </View>
+      {selected && (
+        <Body tone="mist" size={13} style={{ marginTop: -space.sm }}>
+          Elegida: <Body size={13} style={{ color: RPG_CLASSES.find((c) => c.id === selected)?.theme.accent }}>{RPG_CLASSES.find((c) => c.id === selected)?.name}</Body>
+        </Body>
+      )}
 
       <View style={styles.grid}>
         {RPG_CLASSES.map((c) => {
@@ -108,6 +118,7 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   card: {
     width: '47.5%',

@@ -388,7 +388,7 @@ export function createDemoApi(): GameApi {
     async startRaid(moduleId) {
       const s = load()
       if (!isUnlocked(s, moduleId)) throw new Error('Módulo bloqueado')
-      if (!s.codexReads.includes(moduleId)) throw new Error('Debes leer el Códice antes de jugar')
+      if (!s.isTester && !s.codexReads.includes(moduleId)) throw new Error('Debes leer el Códice antes de jugar')
       const boss = s.bosses.find((b) => b.moduleId === moduleId)
       if (!boss) throw new Error('Este módulo no tiene jefe')
       if (boss.defeatedAt) throw new Error('El jefe ya fue derrotado')
@@ -450,7 +450,7 @@ export function createDemoApi(): GameApi {
       const q = s.questions.find((x) => x.id === questionId)
       if (!q) throw new Error('Pregunta no existe')
       if (!isUnlocked(s, q.moduleId)) throw new Error('Módulo bloqueado')
-      if (!s.codexReads.includes(q.moduleId)) throw new Error('Debes leer el Códice antes de jugar')
+      if (!s.isTester && !s.codexReads.includes(q.moduleId)) throw new Error('Debes leer el Códice antes de jugar')
 
       const raid = raidSessionId === undefined ? undefined : s.raids.find((r) => r.id === raidSessionId)
       if (raidSessionId !== undefined) {
@@ -600,7 +600,7 @@ export function createDemoApi(): GameApi {
       if (!sm) throw new Error('Submódulo no existe')
       if (!isSubUnlocked(s, submoduleId)) throw new Error('Submódulo bloqueado')
       const p = subProgress(s, submoduleId)
-      if (!p.codexRead) throw new Error('Debes leer el Códice antes de combatir')
+      if (!p.codexRead && !s.isTester) throw new Error('Debes leer el Códice antes de combatir')
       if (p.defeated && !s.isTester) throw new Error('Ya derrotaste a este subjefe')
       requireLives(s)
       if (p.fightIds.length === 0 || p.fightAnswered.length >= p.fightIds.length || p.defeated) {
@@ -690,6 +690,27 @@ export function createDemoApi(): GameApi {
     async deactivateMasterMode() {
       const s = load()
       s.isTester = false
+      save(s)
+    },
+
+    async testerReset(scope) {
+      const s = load()
+      if (!s.isTester) throw new Error('Solo disponible en modo maestro')
+      const fresh = initialState()
+      if (scope === 'lives' || scope === 'progress' || scope === 'all') s.lives = fresh.lives
+      if (scope === 'progress' || scope === 'all') {
+        s.totalXp = 0
+        s.codexReads = []
+        s.answers = []
+        s.badges = []
+        s.raids = []
+        s.submodules = {}
+      }
+      if (scope === 'bosses' || scope === 'all') {
+        // La demo vuelve a su estado inicial: jefes "malheridos" por la comunidad simulada.
+        s.bosses = s.bosses.map((b) => ({ ...b, currentHp: Math.min(DEMO_START_HP, b.maxHp), defeatedAt: null }))
+        s.unlockedModules = []
+      }
       save(s)
     },
 

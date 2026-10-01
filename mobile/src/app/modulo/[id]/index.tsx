@@ -86,6 +86,8 @@ export default function ModuleScreen() {
 }
 
 function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNode }) {
+  const { profile } = useProfile()
+  const tester = Boolean(profile?.isTester)
   const base = `/modulo/${moduleId}/submodulo/${node.id}`
   return (
     <Panel style={!node.unlocked && { opacity: 0.55 }}>
@@ -130,7 +132,9 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
             variant={node.codexRead ? 'ghost' : 'primary'}
             onPress={() => router.push(base)}
           />
-          {node.codexRead && !node.subboss.defeated && <Button label="⚔ Combatir" onPress={() => router.push(`${base}/combate`)} />}
+          {(node.codexRead || tester) && (!node.subboss.defeated || tester) && (
+            <Button label={node.subboss.defeated ? '⚔ Repetir combate' : '⚔ Combatir'} onPress={() => router.push(`${base}/combate`)} />
+          )}
           {node.checkpointsTotal > 0 && (
             <Body tone="mist" size={11}>
               Checkpoints {node.checkpointsPassed}/{node.checkpointsTotal}

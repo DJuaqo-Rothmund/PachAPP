@@ -17,6 +17,7 @@ export default function SubbossScreen() {
   const moduleId = Number(params.id)
   const submoduleId = params.sub ?? ''
   const [round, setRound] = useState(0)
+  const { profile } = useProfile()
   const { data: tree, error, loading, reload } = useAsync(() => gameApi.getModuleTree(moduleId), [moduleId])
 
   if (loading) return <Loader />
@@ -35,7 +36,8 @@ export default function SubbossScreen() {
       </Gate>
     )
   }
-  if (!node.unlocked || !node.codexRead) {
+  // En modo maestro se puede combatir sin leer el Códice.
+  if (!node.unlocked || (!node.codexRead && !profile?.isTester)) {
     return (
       <Gate title="📜 Primero, el Códice" text="Ningún aventurero enfrenta a un subjefe sin estudiar. Lee el Códice del submódulo.">
         <Button label="Leer el Códice" onPress={() => router.replace(`/modulo/${moduleId}/submodulo/${node.id}`)} />

@@ -132,7 +132,17 @@ Checkpoint interactivo de un Códice (`codices.interactive_checkpoints`, validad
 
 En la pantalla de clases, **5 toques seguidos sobre el Brujo Fitosanitario** piden la clave. Con el modo maestro
 (`profiles.is_tester`) el jugador tiene vidas ilimitadas, todos los submódulos y Boss Raids abiertos y puede repetir el
-raid semanal. Se desactiva desde el perfil. El daño que hace **sí cuenta** para los jefes de la comunidad.
+raid semanal, y puede combatir sin leer los Códices. Se desactiva desde el perfil. El daño que hace **sí cuenta**
+para los jefes de la comunidad.
+
+En el mapa y en el perfil aparece el **Panel del modo maestro** (`tester_reset()` en el servidor):
+
+| Botón | Qué reinicia |
+| --- | --- |
+| Recargar mis vidas | Las vidas del día del tester |
+| Reiniciar mi progreso y XP | XP, respuestas, lecturas, raids, subjefes, emblemas y vidas del tester |
+| Restaurar HP de todos los jefes | HP de todos los jefes y módulos abiertos por la comunidad (**afecta a todos**) |
+| Reiniciar todo | Todo lo anterior |
 
 La clave inicial es `1234` y vive hasheada (bcrypt) en `master_settings`; tras 5 intentos fallidos en el día la cuenta
 queda bloqueada hasta el día siguiente. **Cámbiala antes de abrir la app al público** (en el SQL Editor):
