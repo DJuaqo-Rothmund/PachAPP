@@ -25,7 +25,7 @@ export default function CodexPage() {
   if (!module.unlocked) {
     return (
       <div className="panel mx-auto max-w-lg text-center">
-        <p className="pixel-title text-xs text-mist">🔒 Códice sellado</p>
+        <p className="title-pixel text-3xl text-mist">🔒 Códice sellado</p>
         <p className="mt-4 text-sm text-mist">La comunidad debe derrotar al jefe anterior para abrir este módulo.</p>
         <Link to="/" className="btn-ghost mt-6">
           Volver al mapa
@@ -52,11 +52,11 @@ export default function CodexPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader title="El Códice" subtitle={`Módulo ${module.id} · ${module.title}`} />
 
-      <article className="panel space-y-8">
+      <article className="panel-parchment space-y-8">
         {module.codex.map((section) => (
           <section key={section.heading}>
-            <h2 className="pixel-title text-xs text-moss">{section.heading}</h2>
-            <div className="mt-4 space-y-3 leading-relaxed text-bone/90">
+            <h2 className="title-pixel text-3xl text-gold">{section.heading}</h2>
+            <div className="mt-3 space-y-3 leading-relaxed text-parchment-ink/90">
               {section.body.map((paragraph, i) => (
                 <p key={i}>{paragraph}</p>
               ))}

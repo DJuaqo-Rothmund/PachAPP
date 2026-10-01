@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { classTheme, RPG_CLASSES, type RpgClassId } from '../data/classes'
 import { PageHeader } from '../components/ui/PageHeader'
-import { ClassAvatar } from '../components/game/ClassAvatar'
+import { ClassCard } from '../components/game/ClassCard'
 import { useProfile } from '../context/ProfileContext'
 import { applyClassTheme } from '../components/layout/ClassThemeController'
 import { useAsync } from '../hooks/useAsync'
@@ -28,8 +28,8 @@ export default function OnboardingPage() {
 
   // Vista previa de la skin de la clase seleccionada; al salir vuelve la del perfil.
   const savedClass = profile?.rpgClass ?? null
-  useEffect(() => applyClassTheme(classTheme(selected ?? savedClass)), [selected, savedClass])
-  useEffect(() => () => applyClassTheme(classTheme(savedClass)), [savedClass])
+  useEffect(() => applyClassTheme(classTheme(selected ?? savedClass), selected ?? savedClass), [selected, savedClass])
+  useEffect(() => () => applyClassTheme(classTheme(savedClass), savedClass), [savedClass])
 
   // 5 toques seguidos al Brujo (sin tocar otra clase entre medio) piden la clave.
   const onCardTap = (id: RpgClassId) => {
@@ -69,7 +69,7 @@ export default function OnboardingPage() {
           <div className="flex items-center gap-3">
             {selectedClass && (
               <span className="hidden text-sm text-mist sm:inline">
-                Elegida: <span style={{ color: selectedClass.theme.accent }}>{selectedClass.name}</span>
+                Elegida: <span className="font-title text-xl" style={{ color: selectedClass.theme.accent }}>{selectedClass.name}</span>
               </span>
             )}
             <button type="button" className="btn-primary" disabled={!selected || saving} onClick={confirm}>
@@ -81,40 +81,9 @@ export default function OnboardingPage() {
       {error && <p className="-mt-3 mb-4 text-right text-sm text-blood">{error}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {RPG_CLASSES.map((c) => {
-          const unlock = unlocks[c.id]
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onCardTap(c.id)}
-              disabled={!unlock.selectable}
-              aria-pressed={selected === c.id}
-              style={{ '--class-accent': c.theme.accent } as CSSProperties}
-              className="panel class-card text-left transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <div className="class-card__stage relative flex h-36 items-end justify-center rounded-lg pb-2">
-                <span
-                  className="pixel-title absolute left-2 top-2 rounded px-1.5 py-0.5 text-[8px]"
-                  style={{ background: c.theme.accentDim, color: c.theme.accent }}
-                >
-                  {c.specialty}
-                </span>
-                <ClassAvatar rpgClass={c.id} className="h-28 w-28" />
-              </div>
-              <h2 className="pixel-title mt-4 text-[11px]" style={{ color: c.theme.accent }}>
-                {c.name}
-              </h2>
-              <p className="mt-2 text-sm text-mist">{c.description}</p>
-              {unlock.requirement && (
-                <p className="mt-3 rounded-md bg-stone px-2 py-1 text-xs text-mist">
-                  {unlock.earned ? '🔓 Recompensa obtenida' : `🔒 Recompensa: ${unlock.requirement}`}
-                  {!unlock.earned && unlock.selectable && <span className="text-gold"> · libre durante la beta</span>}
-                </p>
-              )}
-            </button>
-          )
-        })}
+        {RPG_CLASSES.map((c) => (
+          <ClassCard key={c.id} cls={c} unlock={unlocks[c.id]} selected={selected === c.id} onSelect={() => onCardTap(c.id)} />
+        ))}
       </div>
 
       {masterOpen && <MasterCodeModal onClose={() => setMasterOpen(false)} />}

@@ -49,10 +49,8 @@ export function CoopBossFrame({
           ) : null}
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className={`pixel-title leading-relaxed text-blood ${size === 'sm' ? 'text-[10px]' : 'text-xs sm:text-sm'}`}>
-            {name}
-          </h2>
-          {title && <p className="mt-1 text-sm text-mist">{title}</p>}
+          <h2 className={`boss-frame__name title-pixel ${size === 'sm' ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>{name}</h2>
+          {title && <p className="font-title mt-1 text-lg leading-none text-gold/80">{title}</p>}
           {children}
         </div>
       </div>
@@ -98,10 +96,8 @@ export function SubbossFrame({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className={`pixel-title leading-relaxed text-bone ${size === 'sm' ? 'text-[9px]' : 'text-[10px] sm:text-[11px]'}`}>
-            {name}
-          </h3>
-          {title && <p className="mt-1 text-xs text-mist">{title}</p>}
+          <h3 className={`boss-frame__name title-pixel ${size === 'sm' ? 'text-xl' : 'text-2xl sm:text-3xl'}`}>{name}</h3>
+          {title && <p className="font-title mt-1 text-base leading-none text-mist">{title}</p>}
           {children}
         </div>
       </div>

@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
-import { classTheme, type ClassTheme } from '../../data/classes'
+import { classTheme, type ClassTheme, type RpgClassId } from '../../data/classes'
 import { useProfile } from '../../context/ProfileContext'
+import { skinVars } from '../../lib/skin'
 
-/** Aplica la skin de una clase: acento (reemplaza los tokens moss) y fondo decorativo. */
-export function applyClassTheme(theme: ClassTheme) {
+/** Aplica la skin de una clase a toda la app: variables de acento, fondo decorativo y `html[data-skin]`. */
+export function applyClassTheme(theme: ClassTheme, id: RpgClassId | null = null) {
   const root = document.documentElement
-  root.style.setProperty('--color-moss', theme.accent)
-  root.style.setProperty('--color-moss-dim', theme.accentDim)
-  root.style.setProperty('--motif-color', theme.motifColor)
+  for (const [name, value] of Object.entries(skinVars(theme))) root.style.setProperty(name, value)
   root.dataset.motif = theme.motif
+  root.dataset.skin = id ?? 'default'
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.accentDim)
 }
 
@@ -16,6 +16,6 @@ export function applyClassTheme(theme: ClassTheme) {
 export function ClassThemeController() {
   const { profile } = useProfile()
   const rpgClass = profile?.rpgClass ?? null
-  useEffect(() => applyClassTheme(classTheme(rpgClass)), [rpgClass])
+  useEffect(() => applyClassTheme(classTheme(rpgClass), rpgClass), [rpgClass])
   return null
 }

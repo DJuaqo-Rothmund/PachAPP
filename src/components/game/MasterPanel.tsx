@@ -52,7 +52,7 @@ export function MasterPanel({ compact = false }: { compact?: boolean }) {
   return (
     <section className={`panel border-gold/40 bg-gold/5 ${compact ? 'mb-6' : ''}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="pixel-title text-[10px] text-gold">🔮 Panel del modo maestro</h2>
+        <h2 className="title-pixel text-2xl text-gold">🔮 Panel del modo maestro</h2>
         <span className="text-xs text-mist">Todo desbloqueado · vidas ilimitadas · raids sin límite</span>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

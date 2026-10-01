@@ -155,6 +155,23 @@ update public.master_settings set enabled = false;
 
 En la demo sin Supabase la clave es `1234` (`DEMO_MASTER_CODE` en `src/lib/game/lives.ts`).
 
+## Sistema visual (D&D agrícola · pixel art)
+
+- **Tokens** en el bloque `@theme` de `src/index.css` (Tailwind v4 no usa `tailwind.config.js`): paleta de piedra,
+  pergamino, hierro oxidado y magia; fuentes `font-pixel` (Press Start 2P), `font-title` (VT323) y `font-sans`
+  (Inter); sombras 3D `shadow-bevel`, `shadow-bevel-sm`, `shadow-inset`, `shadow-chunky` y `shadow-pressed`; radios
+  casi nulos para que todo sea pixelado.
+- **Componentes CSS**: `.panel` (bloque de piedra con bisel), `.panel-parchment` (Códices), `.well` (hueco tallado),
+  `.title-pixel` (nombres de jefes, subjefes y clases) y botones chunky `.btn-primary`/`.btn-ghost`/`.btn-danger`, que
+  se hunden al presionar.
+- **Skins por clase**: `src/lib/skin.ts` traduce el tema de una clase a variables (`--skin-accent`,
+  `--skin-accent-dim`, `--skin-glow`, `--skin-border`). `ClassThemeController` las aplica a toda la app y
+  `skinScope()` a un solo contenedor (como cada tarjeta de `ClassCard`). `html[data-skin]` permite detalles propios.
+- **Combate**: `CoopBossFrame` (hierro oxidado con remaches), `SubbossFrame` (piedra con raíces), `HpBar` segmentada
+  con rastro de daño y `BossCard` (retrato, HP y botón del raid).
+- **Android** replica lo mismo en `mobile/src/theme.ts`, `components/ui.tsx` (`Panel`, `Button`, `PixelText`) y
+  `components/game.tsx`.
+
 ## Logo e íconos
 
 El logo original está en `branding/pachapp-logo.jpg`. Todos los íconos salen de ahí con:

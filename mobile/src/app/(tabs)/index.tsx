@@ -89,9 +89,9 @@ function ModuleCard({ module: m }: { module: CampaignModule }) {
           <Body tone="mist" size={12}>
             Módulo {m.id}
           </Body>
-          <Body weight="semibold" size={17}>
+          <PixelText size={12} style={{ marginTop: 4 }}>
             {m.title}
-          </Body>
+          </PixelText>
         </View>
         {m.codexRead && (
           <View style={styles.chip}>

@@ -2,13 +2,13 @@ import { Link, useParams } from 'react-router-dom'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { FullScreenLoader } from '../components/ui/FullScreenLoader'
 import { HpBar } from '../components/game/HpBar'
-import { CoopBossFrame, SubbossFrame } from '../components/game/BossFrames'
+import { SubbossFrame } from '../components/game/BossFrames'
+import { BossCard } from '../components/game/BossCard'
 import { LivesHearts } from '../components/game/LivesHearts'
 import { useLives } from '../context/LivesContext'
 import { useProfile } from '../context/ProfileContext'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi, type CampaignModule, type SubmoduleNode } from '../lib/game'
-import { formatRaidReset } from '../lib/game/raid'
 import NotFoundPage from './NotFoundPage'
 
 /** Árbol del módulo: Submódulos (Códice + Subjefe) → Jefe Cooperativo. */
@@ -30,7 +30,7 @@ export default function ModulePage() {
   if (!module.unlocked) {
     return (
       <div className="panel mx-auto max-w-lg text-center">
-        <p className="pixel-title text-xs text-mist">🔒 Módulo sellado</p>
+        <p className="title-pixel text-3xl text-mist">🔒 Módulo sellado</p>
         <p className="mt-4 text-sm text-mist">La comunidad debe derrotar al jefe anterior para abrir este módulo.</p>
         <Link to="/" className="btn-ghost mt-6">
           Volver al mapa
@@ -49,7 +49,7 @@ export default function ModulePage() {
       <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs text-mist">Módulo {module.id}</p>
-          <h1 className="pixel-title mt-1 text-sm text-bone sm:text-base">{module.title}</h1>
+          <h1 className="title-pixel mt-1 text-4xl text-bone">{module.title}</h1>
           <p className="mt-2 max-w-xl text-sm text-mist">{module.summary}</p>
         </div>
         <LivesHearts lives={lives} showCountdown size="lg" />
@@ -79,7 +79,7 @@ export default function ModulePage() {
         {tree.map((node) => (
           <SubmoduleStep key={node.id} moduleId={module.id} node={node} />
         ))}
-        <BossStep module={module} ready={tree.length === 0 || defeated === tree.length} />
+        <BossStep module={module} />
       </ol>
     </div>
   )
@@ -112,7 +112,7 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
       <StepMarker label={node.subboss.defeated ? '✓' : String(node.order)} tone={tone} />
       <div className="panel">
         <p className="text-[11px] uppercase tracking-wide text-mist">Submódulo {node.order}</p>
-        <h2 className="mt-1 font-semibold">{node.title}</h2>
+        <h2 className="title-pixel mt-1 text-3xl text-bone">{node.title}</h2>
         <p className="mt-1 text-sm text-mist">{node.description}</p>
 
         <div className="mt-5">
@@ -158,48 +158,20 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
   )
 }
 
-function BossStep({ module, ready }: { module: CampaignModule; ready: boolean }) {
+function BossStep({ module }: { module: CampaignModule }) {
   const { profile } = useProfile()
   const boss = module.boss
   if (!boss) return null
-  const tester = Boolean(profile?.isTester)
-  const canRaid =
-    (ready || tester) &&
-    (module.raid.status === 'available' || module.raid.status === 'in_progress' || (tester && module.raid.status === 'done'))
 
   return (
     <li className="relative pl-16">
       <StepMarker label="♛" tone={boss.defeated ? 'done' : 'boss'} />
-      <CoopBossFrame bossId={boss.id} name={boss.name} title={boss.title} defeated={boss.defeated} size="md">
-        <div className="mt-3">
-          <HpBar current={boss.currentHp} max={boss.maxHp} size="sm" />
-          <p className="mt-1 text-[11px] text-mist">
-            {boss.defeated ? 'Derrotado por la comunidad' : `${boss.currentHp} / ${boss.maxHp} HP · toda la comunidad lo golpea`}
-          </p>
-        </div>
-      </CoopBossFrame>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {boss.defeated ? (
-          <span className="text-sm text-gold">🏆 La comunidad derrotó a este jefe</span>
-        ) : !ready && !tester ? (
-          <span className="text-sm text-mist">🔒 Derrota a todos los subjefes para unirte al Boss Raid</span>
-        ) : canRaid ? (
-          <Link to={`/modulos/${module.id}/raid`} className="btn-primary text-sm">
-            {module.raid.status === 'in_progress' ? '⚔ Continuar Boss Raid' : '⚔ Unirse al Boss Raid'}
-          </Link>
-        ) : module.raid.status === 'done' ? (
-          <span className="text-sm text-mist">
-            ⏳ Ya combatiste esta semana · vuelve el {formatRaidReset(module.raid.nextResetAt)}
-          </span>
-        ) : null}
-        {!ready && tester && !boss.defeated && <span className="text-[11px] text-gold">Modo maestro: acceso anticipado</span>}
-        {module.questionCount > 0 && (
-          <Link to={`/modulos/${module.id}/entrenar`} className="btn-ghost text-sm">
-            Entrenar
-          </Link>
-        )}
-      </div>
+      <BossCard module={module} tester={Boolean(profile?.isTester)} />
+      {module.questionCount > 0 && (
+        <Link to={`/modulos/${module.id}/entrenar`} className="btn-ghost mt-1">
+          Entrenar
+        </Link>
+      )}
     </li>
   )
 }

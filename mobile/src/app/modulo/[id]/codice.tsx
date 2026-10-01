@@ -69,8 +69,8 @@ export default function CodexScreen() {
       </Body>
 
       {module.codex.map((section) => (
-        <Panel key={section.heading}>
-          <PixelText size={10} tone="moss">
+        <Panel key={section.heading} parchment>
+          <PixelText size={12} tone="gold">
             {section.heading}
           </PixelText>
           <View style={{ gap: space.md, marginTop: space.md }}>

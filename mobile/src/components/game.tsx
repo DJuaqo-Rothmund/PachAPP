@@ -85,8 +85,10 @@ export function CoopBossFrame({
 }) {
   return (
     <View style={[styles.frame, styles.coop]}>
-      <View style={[styles.rivet, { left: 6 }]} />
-      <View style={[styles.rivet, { right: 6 }]} />
+      <View style={[styles.rivet, { left: 5 }]} />
+      <View style={[styles.rivet, { right: 5 }]} />
+      <View style={[styles.rivet, { left: 5, top: undefined, bottom: 5 }]} />
+      <View style={[styles.rivet, { right: 5, top: undefined, bottom: 5 }]} />
       <View style={[styles.seal, styles.coopSeal]}>
         <PixelText size={7} style={{ color: '#450a0a' }}>
           ♛ JEFE COOPERATIVO
@@ -97,7 +99,7 @@ export function CoopBossFrame({
           {sprite ?? <BossSprite bossId={bossId} size={spriteSize} defeated={defeated} />}
         </View>
         <View style={{ flex: 1 }}>
-          <PixelText size={10} tone="blood">
+          <PixelText size={10} style={{ color: '#ff6b5e' }}>
             {name}
           </PixelText>
           {title ? (
@@ -159,9 +161,21 @@ export function BadgeIcon({ icon, size, locked = false }: { icon: string; size: 
   return <PixelSprite rows={BADGE_SPRITES[icon] ?? BADGE_SPRITES.book} size={size} muted={locked} />
 }
 
-export function HpBar({ current, max, compact = false }: { current: number; max: number; compact?: boolean }) {
+/** Color de la vida según cuánto queda: rojo sangre → brasa → oro. */
+function hpColors(pct: number): [string, string] {
+  if (pct > 50) return ['#f0574a', '#a3241b']
+  if (pct > 20) return ['#f59a3c', '#b4521a']
+  return ['#f7d14d', '#b8860b']
+}
+
+/**
+ * Barra de HP segmentada en un marco de hierro, como en los juegos de pelea
+ * clásicos. compact: versión delgada para tarjetas.
+ */
+export function HpBar({ current, max, compact = false, segments }: { current: number; max: number; compact?: boolean; segments?: number }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0
-  const fill = pct > 50 ? colors.blood : pct > 20 ? colors.orange : colors.gold
+  const [light, dark] = hpColors(pct)
+  const count = segments ?? (compact ? 10 : 20)
   return (
     <View>
       {!compact && (
@@ -170,17 +184,28 @@ export function HpBar({ current, max, compact = false }: { current: number; max:
             HP
           </PixelText>
           <PixelText size={9}>
-            {current} / {max}
+            {current.toLocaleString('es-CL')} / {max.toLocaleString('es-CL')}
           </PixelText>
         </View>
       )}
-      <View
-        accessibilityRole="progressbar"
-        accessibilityLabel="HP del jefe"
-        accessibilityValue={{ min: 0, max, now: current }}
-        style={[styles.hpTrack, { height: compact ? 8 : 18 }]}
-      >
-        <View style={{ width: `${pct}%`, height: '100%', backgroundColor: fill }} />
+      <View style={[styles.hpFrame, { padding: compact ? 2 : 3 }]}>
+        <View
+          accessibilityRole="progressbar"
+          accessibilityLabel="HP del jefe"
+          accessibilityValue={{ min: 0, max, now: current }}
+          style={[styles.hpTrack, { height: compact ? 10 : 22 }]}
+        >
+          <View style={{ width: `${pct}%`, height: '100%', backgroundColor: dark }}>
+            <View style={{ height: '50%', backgroundColor: light }} />
+            <View style={styles.hpShine} />
+          </View>
+          {/* Separadores de segmentos */}
+          <View pointerEvents="none" style={styles.hpSegments}>
+            {Array.from({ length: count - 1 }, (_, i) => (
+              <View key={i} style={[styles.hpDivider, { left: `${((i + 1) * 100) / count}%` }]} />
+            ))}
+          </View>
+        </View>
       </View>
     </View>
   )
@@ -188,23 +213,41 @@ export function HpBar({ current, max, compact = false }: { current: number; max:
 
 const styles = StyleSheet.create({
   hearts: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  frame: { borderRadius: radius.lg, paddingTop: 18, paddingHorizontal: 12, paddingBottom: 12, marginTop: 8 },
+  frame: { paddingTop: 20, paddingHorizontal: 12, paddingBottom: 12, marginTop: 10 },
   frameRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  coop: { borderWidth: 3, borderColor: '#a16207', backgroundColor: '#1d1010' },
-  sub: { borderWidth: 2, borderColor: '#475569', backgroundColor: colors.crypt },
-  rivet: { position: 'absolute', top: 6, width: 6, height: 6, backgroundColor: colors.gold, borderWidth: 1, borderColor: '#713f12' },
-  seal: { position: 'absolute', top: -10, left: 12, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  coopSeal: { backgroundColor: colors.gold, borderWidth: 1, borderColor: '#713f12' },
-  subSeal: { backgroundColor: '#334155', borderWidth: 1, borderColor: '#0f172a' },
-  stage: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  coopStage: { backgroundColor: '#1a0b0b', borderWidth: 2, borderColor: '#7f1d1d' },
-  subStage: { backgroundColor: '#111827', borderWidth: 1, borderColor: '#334155' },
-  hpHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  hpTrack: {
-    backgroundColor: colors.stone,
-    borderColor: colors.rune,
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
+  // Jefe cooperativo: hierro oxidado con remaches.
+  coop: {
+    borderWidth: 4,
+    borderTopColor: colors.rustLight,
+    borderLeftColor: colors.rustLight,
+    borderBottomColor: '#3b1d0e',
+    borderRightColor: '#3b1d0e',
+    backgroundColor: '#1b1310',
   },
+  // Subjefe: piedra tallada con raíces en el borde superior.
+  sub: {
+    borderWidth: 3,
+    borderTopColor: '#6b8e3a',
+    borderLeftColor: '#6d665a',
+    borderBottomColor: '#24211c',
+    borderRightColor: '#24211c',
+    backgroundColor: colors.crypt,
+  },
+  rivet: { position: 'absolute', top: 5, width: 7, height: 7, backgroundColor: '#e0b15c', borderWidth: 2, borderColor: '#6b3f14' },
+  seal: { position: 'absolute', top: -12, left: 12, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 2, borderColor: colors.ink },
+  coopSeal: { backgroundColor: colors.gold },
+  subSeal: { backgroundColor: '#5a5449' },
+  stage: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.ink },
+  coopStage: { backgroundColor: '#170908' },
+  subStage: { backgroundColor: '#121110' },
+  hpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 },
+  hpFrame: {
+    backgroundColor: '#4f453c',
+    borderWidth: 2,
+    borderColor: colors.ink,
+  },
+  hpTrack: { backgroundColor: '#0d0b09', overflow: 'hidden' },
+  hpShine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255, 255, 255, 0.35)' },
+  hpSegments: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
+  hpDivider: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#0d0b09' },
 })

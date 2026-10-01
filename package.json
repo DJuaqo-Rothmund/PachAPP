@@ -14,6 +14,7 @@
     "db:batches-sql": "node --experimental-strip-types --no-warnings scripts/batches-to-sql.ts > supabase/batches.sql"
   },
   "dependencies": {
+    "@fontsource/vt323": "^5.3.0",
     "@supabase/supabase-js": "^2.117.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

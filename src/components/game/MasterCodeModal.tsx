@@ -38,7 +38,7 @@ export function MasterCodeModal({ onClose }: { onClose: () => void }) {
     <Modal title="🔮 Modo maestro" onClose={onClose}>
       {done ? (
         <div className="text-center">
-          <p className="pixel-title text-xs text-gold">Modo maestro activo</p>
+          <p className="title-pixel text-3xl text-gold">Modo maestro activo</p>
           <p className="mt-4 text-sm text-mist">
             Vidas ilimitadas, todos los submódulos y jefes abiertos y Boss Raid sin límite semanal. El daño que hagas sí cuenta para los jefes de la
             comunidad. Puedes desactivarlo desde tu perfil.

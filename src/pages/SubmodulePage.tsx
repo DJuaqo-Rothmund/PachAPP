@@ -36,7 +36,7 @@ export default function SubmodulePage() {
   if (!node.unlocked) {
     return (
       <div className="panel mx-auto max-w-lg text-center">
-        <p className="pixel-title text-xs text-mist">🔒 Códice sellado</p>
+        <p className="title-pixel text-3xl text-mist">🔒 Códice sellado</p>
         <p className="mt-4 text-sm text-mist">Derrota al subjefe anterior para abrir este submódulo.</p>
         <Link to={back} className="btn-ghost mt-6">
           Volver al módulo
@@ -69,16 +69,16 @@ export default function SubmodulePage() {
       </Link>
       <div className="mt-3">
         <p className="text-xs text-mist">Submódulo {node.order} · Códice</p>
-        <h1 className="pixel-title mt-1 text-sm text-moss sm:text-base">{codex.title}</h1>
+        <h1 className="title-pixel mt-1 text-4xl text-moss">{codex.title}</h1>
       </div>
 
       {codex.videoUrl && <CodexVideo url={codex.videoUrl} />}
 
-      <article className="panel mt-6 space-y-8">
+      <article className="panel-parchment mt-6 space-y-8">
         {codex.sections.map((section) => (
           <section key={section.heading}>
-            <h2 className="pixel-title text-xs text-moss">{section.heading}</h2>
-            <div className="mt-4 space-y-3 leading-relaxed text-bone/90">
+            <h2 className="title-pixel text-3xl text-gold">{section.heading}</h2>
+            <div className="mt-3 space-y-3 leading-relaxed text-parchment-ink/90">
               {section.body.map((paragraph, i) => (
                 <p key={i}>{paragraph}</p>
               ))}
@@ -89,7 +89,7 @@ export default function SubmodulePage() {
 
       {codex.checkpoints.length > 0 && (
         <section className="mt-6 space-y-4">
-          <h2 className="pixel-title text-[10px] text-gold">Checkpoints de control</h2>
+          <h2 className="title-pixel text-3xl text-gold">Checkpoints de control</h2>
           {codex.checkpoints.map((cp) => (
             <Checkpoint key={cp.id} checkpoint={cp} onPassed={() => onPassed(cp.id)} />
           ))}

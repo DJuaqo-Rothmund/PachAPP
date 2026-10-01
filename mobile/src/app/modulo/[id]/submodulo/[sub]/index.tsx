@@ -77,8 +77,8 @@ export default function SubmoduleCodexScreen() {
       {codex.videoUrl && <Button label="▶ Ver video del Códice" variant="ghost" onPress={() => void Linking.openURL(codex.videoUrl!)} />}
 
       {codex.sections.map((section) => (
-        <Panel key={section.heading}>
-          <PixelText size={10} tone="moss">
+        <Panel key={section.heading} parchment>
+          <PixelText size={12} tone="gold">
             {section.heading}
           </PixelText>
           <View style={{ gap: space.md, marginTop: space.md }}>

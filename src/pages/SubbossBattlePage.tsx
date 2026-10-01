@@ -33,7 +33,7 @@ export default function SubbossBattlePage() {
   if (!node.unlocked || (!node.codexRead && !profile?.isTester)) {
     return (
       <div className="panel mx-auto max-w-lg text-center">
-        <p className="pixel-title text-xs text-gold">📜 Primero, el Códice</p>
+        <p className="title-pixel text-3xl text-gold">📜 Primero, el Códice</p>
         <p className="mt-4 text-sm text-mist">
           Ningún aventurero enfrenta a un subjefe sin estudiar. Lee el Códice del submódulo.
         </p>
@@ -251,7 +251,7 @@ function FightSummary({
   if (result?.subbossDefeated) {
     return (
       <div className="text-center">
-        <p className="pixel-title text-xs text-gold">¡Subjefe derrotado!</p>
+        <p className="title-pixel text-3xl text-gold">¡Subjefe derrotado!</p>
         <p className="mt-4 text-sm text-mist">
           {node.subboss.name} cae.{' '}
           {nextNode
@@ -279,7 +279,7 @@ function FightSummary({
   const noLives = result && result.livesLeft <= 0 && !canRetry
   return (
     <div className="text-center">
-      <p className="pixel-title text-xs text-blood">{noLives ? 'Sin vidas por hoy' : 'El subjefe resistió'}</p>
+      <p className="title-pixel text-3xl text-blood">{noLives ? 'Sin vidas por hoy' : 'El subjefe resistió'}</p>
       <p className="mt-4 text-sm text-mist">
         {noLives
           ? 'Te quedaste sin vidas. Vuelven a las 00:00 (hora de Chile): repasa el Códice mientras tanto.'

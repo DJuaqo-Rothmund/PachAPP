@@ -8,11 +8,11 @@ export function optionState(option: string, picked: string | null, result: { cor
 }
 
 const OPTION_STYLES: Record<OptionState, string> = {
-  idle: 'border-rune hover:border-moss hover:bg-stone',
-  picked: 'border-moss bg-stone animate-pulse',
-  correct: 'border-moss bg-moss/15 text-bone',
-  wrong: 'border-blood bg-blood/15 text-bone',
-  dim: 'border-rune opacity-40',
+  idle: 'border-[#0a0907] bg-stone hover:border-[var(--skin-accent)] hover:brightness-110 active:translate-y-[3px] active:shadow-pressed',
+  picked: 'border-[var(--skin-accent)] bg-stone animate-pulse',
+  correct: 'border-moss bg-[color-mix(in_srgb,var(--color-moss)_22%,var(--color-stone))] text-bone',
+  wrong: 'border-blood bg-[color-mix(in_srgb,var(--color-blood)_22%,var(--color-stone))] text-bone',
+  dim: 'border-[#0a0907] bg-stone opacity-40',
 }
 
 export function AnswerOption({
@@ -33,9 +33,9 @@ export function AnswerOption({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition disabled:cursor-default ${OPTION_STYLES[state]}`}
+      className={`flex items-center gap-3 border-2 px-4 py-3 text-left shadow-bevel-sm transition disabled:cursor-default ${OPTION_STYLES[state]}`}
     >
-      <span className="pixel-title flex h-7 w-7 shrink-0 items-center justify-center rounded bg-void text-[10px] text-mist">
+      <span className="font-title well flex h-8 w-8 shrink-0 items-center justify-center text-xl leading-none text-gold">
         {letter}
       </span>
       <span className="text-sm">{label}</span>

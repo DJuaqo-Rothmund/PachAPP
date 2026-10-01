@@ -101,9 +101,7 @@ function SubmoduleStep({ moduleId, node }: { moduleId: number; node: SubmoduleNo
           <Body tone="mist" size={11} style={{ textTransform: 'uppercase' }}>
             Submódulo {node.order}
           </Body>
-          <Body weight="semibold" size={16}>
-            {node.title}
-          </Body>
+          <PixelText size={11}>{node.title}</PixelText>
         </View>
       </View>
       <Body tone="mist" size={13} style={{ marginTop: space.sm }}>

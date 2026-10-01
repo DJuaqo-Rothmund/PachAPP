@@ -55,7 +55,7 @@ export default function ProfilePage() {
           <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-xl bg-stone">
             <ClassAvatar rpgClass={profile.rpgClass} className="h-28 w-28" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold">{profile.displayName}</h2>
+          <h2 className="title-pixel mt-4 text-3xl text-bone">{profile.displayName}</h2>
           <p className="text-sm text-moss">{cls?.name}</p>
           <p className="mt-1 text-xs text-mist">{cls?.specialty}</p>
           {profile.isTester && (
@@ -69,7 +69,7 @@ export default function ProfilePage() {
 
           <div className="mt-6 text-left">
             <div className="flex items-baseline justify-between">
-              <span className="pixel-title text-xs text-gold">Nivel {level.level}</span>
+              <span className="title-pixel text-2xl text-gold">Nivel {level.level}</span>
               <span className="text-xs text-mist">{profile.totalXp} XP total</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded bg-stone">
@@ -102,7 +102,7 @@ export default function ProfilePage() {
 
         <section className="panel">
           <div className="flex items-baseline justify-between">
-            <h2 className="pixel-title text-xs text-bone">Emblemas</h2>
+            <h2 className="title-pixel text-3xl text-bone">Emblemas</h2>
             <span className="text-xs text-mist">
               {earnedMap.size} / {catalog.length}
             </span>

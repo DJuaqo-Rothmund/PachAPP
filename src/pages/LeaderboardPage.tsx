@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
                   </p>
                   <p className="text-xs text-mist">{cls?.name ?? 'Sin clase'}</p>
                 </div>
-                <span className="pixel-title text-xs text-gold">{row.monthlyXp} XP</span>
+                <span className="title-pixel text-3xl text-gold">{row.monthlyXp} XP</span>
               </li>
             )
           })}

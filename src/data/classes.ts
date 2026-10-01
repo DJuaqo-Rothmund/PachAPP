@@ -46,7 +46,7 @@ export const RPG_CLASSES: RpgClass[] = [
     name: 'Brujo Fitosanitario',
     specialty: 'Plagas y enfermedades',
     description: 'Domina los umbrales de daño y conjura el MIP contra hongos, insectos y malezas.',
-    theme: { accent: '#a78bfa', accentDim: '#4c1d95', motifColor: '#7c3aed', motif: 'arcane' },
+    theme: { accent: '#d946ef', accentDim: '#5b1a6b', motifColor: '#a21caf', motif: 'arcane' },
     unlock: { type: 'starter' },
   },
   {
@@ -54,7 +54,7 @@ export const RPG_CLASSES: RpgClass[] = [
     name: 'Paladín del Riego',
     specialty: 'Agua y clima',
     description: 'Guardián del Kc y la ETc. Defiende el huerto de heladas y del déficit hídrico.',
-    theme: { accent: '#38bdf8', accentDim: '#0c4a6e', motifColor: '#0ea5e9', motif: 'water' },
+    theme: { accent: '#22d3ee', accentDim: '#0e5567', motifColor: '#06b6d4', motif: 'water' },
     unlock: { type: 'starter' },
   },
   {
@@ -62,7 +62,7 @@ export const RPG_CLASSES: RpgClass[] = [
     name: 'Druida de Suelos',
     specialty: 'Suelo y nutrición',
     description: 'Lee texturas, CIC y pH como runas antiguas. La Ley del Mínimo es su credo.',
-    theme: { accent: '#4ade80', accentDim: '#166534', motifColor: '#b45309', motif: 'soil' },
+    theme: { accent: '#8fb34a', accentDim: '#7a3a1d', motifColor: '#c2562f', motif: 'soil' },
     unlock: { type: 'starter' },
   },
   {
@@ -108,7 +108,7 @@ export const RPG_CLASSES: RpgClass[] = [
 ]
 
 /** Skin por defecto (sin clase elegida): la paleta original de Pachapp. */
-export const DEFAULT_THEME: ClassTheme = { accent: '#4ade80', accentDim: '#166534', motifColor: '#4ade80', motif: 'soil' }
+export const DEFAULT_THEME: ClassTheme = { accent: '#7fbf4d', accentDim: '#3f5f23', motifColor: '#7fbf4d', motif: 'soil' }
 
 /**
  * Mientras sea false todas las clases se pueden elegir; las reglas `unlock` solo

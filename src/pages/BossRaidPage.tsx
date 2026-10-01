@@ -109,7 +109,7 @@ export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
 function Gate({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
     <div className="panel mx-auto max-w-lg text-center">
-      <p className="pixel-title text-xs text-gold">{title}</p>
+      <p className="title-pixel text-3xl text-gold">{title}</p>
       <p className="mt-4 text-sm text-mist">{text}</p>
       <div className="mt-6">{children}</div>
     </div>
@@ -271,7 +271,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
 
         {defeated && (
           <div className="mt-4 rounded-lg border border-gold/50 bg-gold/10 p-4 text-center">
-            <p className="pixel-title text-[10px] text-gold">¡Jefe derrotado!</p>
+            <p className="title-pixel text-3xl text-gold">¡Jefe derrotado!</p>
             {unlockedModule ? (
               <Link to={`/modulos/${unlockedModule.id}/codice`} className="btn-primary mt-3 text-sm">
                 Abrir Módulo {unlockedModule.id}: {unlockedModule.title}
@@ -385,12 +385,12 @@ function StatTiles({ stats, showDamage }: { stats: Stats; showDamage: boolean })
     <div className={`mt-6 grid gap-3 ${showDamage ? 'grid-cols-2' : 'grid-cols-1'}`}>
       <div className="rounded-lg bg-stone p-4">
         <p className="text-xs text-mist">XP ganada</p>
-        <p className="pixel-title mt-2 text-lg text-gold">+{stats.xp}</p>
+        <p className="title-pixel mt-2 text-4xl text-gold">+{stats.xp}</p>
       </div>
       {showDamage && (
         <div className="rounded-lg bg-stone p-4">
           <p className="text-xs text-mist">Daño al jefe</p>
-          <p className="pixel-title mt-2 text-lg text-blood">−{stats.damage}</p>
+          <p className="title-pixel mt-2 text-4xl text-blood">−{stats.damage}</p>
         </div>
       )}
     </div>
@@ -400,7 +400,7 @@ function StatTiles({ stats, showDamage }: { stats: Stats; showDamage: boolean })
 function RaidSummary({ stats, moduleId, nextResetAt }: { stats: Stats; moduleId: number; nextResetAt: string }) {
   return (
     <div className="text-center">
-      <p className="pixel-title text-xs text-moss">Batalla semanal terminada</p>
+      <p className="title-pixel text-3xl text-moss">Batalla semanal terminada</p>
       <p className="mt-4 text-sm text-mist">
         {stats.answered > 0 ? `Acertaste ${stats.correct} de ${stats.answered} preguntas. ` : ''}
         Tu próxima batalla estará disponible el {formatRaidReset(nextResetAt)}.
@@ -416,7 +416,7 @@ function RaidSummary({ stats, moduleId, nextResetAt }: { stats: Stats; moduleId:
 function TrainingSummary({ stats, nothingPending, onPractice }: { stats: Stats; nothingPending: boolean; onPractice: () => void }) {
   return (
     <div className="text-center">
-      <p className="pixel-title text-xs text-moss">{nothingPending ? 'Módulo dominado' : 'Entrenamiento terminado'}</p>
+      <p className="title-pixel text-3xl text-moss">{nothingPending ? 'Módulo dominado' : 'Entrenamiento terminado'}</p>
       <p className="mt-4 text-sm text-mist">
         {nothingPending
           ? 'Ya acertaste todas las preguntas de este módulo. Puedes practicarlas de nuevo, pero no sumarán XP.'
