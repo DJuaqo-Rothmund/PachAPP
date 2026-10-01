@@ -8,7 +8,7 @@ export const AVICOLA_SUBMODULES = [
     order: 1,
     title: 'Razas, Líneas y Sistemas',
     description: 'Broilers, ponedoras y gallinas de campo: líneas genéticas, sistemas productivos e índices clave.',
-    subboss: { name: 'El Híbrido Comercial', title: 'Señor de la Línea Pesada' },
+    subboss: { name: 'El Disparador del Fotoperiodo', title: 'Amo de las Líneas Comerciales' },
     codexTitle: 'Sistemas de Producción Avícola',
     sections: [
       {
@@ -62,7 +62,7 @@ export const AVICOLA_SUBMODULES = [
     order: 2,
     title: 'Nutrición y Alimentación',
     description: 'Energía, proteína, aminoácidos y calcio: cómo se formula la dieta de cada etapa.',
-    subboss: { name: 'El Comedero Desbalanceado', title: 'Tirano de la Energía Metabolizable' },
+    subboss: { name: 'La Tolva Segregada', title: 'Tirana de la Energía Metabolizable' },
     codexTitle: 'Nutrición de Aves',
     sections: [
       {
@@ -124,7 +124,7 @@ export const AVICOLA_SUBMODULES = [
     order: 3,
     title: 'Ambiente y Manejo del Galpón',
     description: 'Temperatura de crianza, ventilación, amoníaco, cama y luz: el galpón como sistema.',
-    subboss: { name: 'El Amoníaco Asfixiante', title: 'Espíritu de la Cama Húmeda' },
+    subboss: { name: 'El Centinela del Galpón', title: 'Espíritu del Amoníaco' },
     codexTitle: 'Manejo Ambiental del Galpón',
     sections: [
       {
@@ -186,7 +186,7 @@ export const AVICOLA_SUBMODULES = [
     order: 4,
     title: 'Sanidad y Bioseguridad',
     description: 'Influenza aviar, Newcastle, Marek, coccidiosis y las barreras que evitan que la enfermedad entre.',
-    subboss: { name: 'El Heraldo de Newcastle', title: 'Portador del Paramixovirus' },
+    subboss: { name: 'El Vector Patógeno', title: 'Portador del Paramixovirus' },
     codexTitle: 'Sanidad Avícola',
     sections: [
       {
@@ -257,7 +257,7 @@ export const AVICOLA_SUBMODULES = [
     order: 5,
     title: 'Huevo, Calidad y Bienestar',
     description: 'Formación y calidad del huevo, la muda, el picaje y los principios de bienestar animal.',
-    subboss: { name: 'La Gallina Desplumada', title: 'Señora del Picaje' },
+    subboss: { name: 'La Espiral del Magno', title: 'Forjadora de Cáscaras' },
     codexTitle: 'Producción de Huevos y Bienestar Animal',
     sections: [
       {

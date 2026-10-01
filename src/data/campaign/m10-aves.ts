@@ -8,7 +8,7 @@ export const AVES_SUBMODULES = [
     order: 1,
     title: 'Anatomía e Identificación',
     description: 'Topografía del ave, forma del pico, dimorfismo y las claves para identificar en terreno.',
-    subboss: { name: 'El Plumaje Engañoso', title: 'Maestro del Dimorfismo' },
+    subboss: { name: 'Espejismo de Plumaje', title: 'Maestro del Dimorfismo' },
     codexTitle: 'Cómo Identificar un Ave',
     sections: [
       {
@@ -58,7 +58,7 @@ export const AVES_SUBMODULES = [
     order: 2,
     title: 'Rapaces y Control Biológico',
     description: 'Lechuzas, cernícalos, tiuques y aguiluchos: aliados naturales contra roedores e insectos.',
-    subboss: { name: 'La Lechuza Fantasma', title: 'Cazadora de la Medianoche' },
+    subboss: { name: 'Halcón del Alambre', title: 'Cazador de Roedores' },
     codexTitle: 'Aves Rapaces en el Agroecosistema',
     sections: [
       {
@@ -126,7 +126,7 @@ export const AVES_SUBMODULES = [
     order: 3,
     title: 'Aves de Ambientes Agrícolas',
     description: 'Las aves del potrero y el huerto: granívoras, insectívoras, polinizadoras y especies introducidas.',
-    subboss: { name: 'La Bandada de Tordos', title: 'Saqueadores del Maizal' },
+    subboss: { name: 'La Bandada Voraz', title: 'Saqueadora del Maizal' },
     codexTitle: 'Aves del Campo Chileno',
     sections: [
       {
@@ -177,7 +177,7 @@ export const AVES_SUBMODULES = [
     order: 4,
     title: 'Humedales y Aves Acuáticas',
     description: 'Cisnes, taguas, patos, garzas y flamencos: los humedales y su valor para el agua y la biodiversidad.',
-    subboss: { name: 'La Garza Centinela', title: 'Vigía del Humedal' },
+    subboss: { name: 'Sílfide de las Corolas', title: 'Vigía del Humedal' },
     codexTitle: 'Humedales y Aves Acuáticas',
     sections: [
       {
@@ -256,7 +256,7 @@ export const AVES_SUBMODULES = [
     order: 5,
     title: 'Manejo de Daños y Conservación',
     description: 'Ley de Caza, especies protegidas y métodos para reducir el daño de aves sin dañar la biodiversidad.',
-    subboss: { name: 'El Choroy Saqueador', title: 'Señor de la Bandada Verde' },
+    subboss: { name: 'El Anillador Invisible', title: 'Guardián de la Ley de Caza' },
     codexTitle: 'Manejo de Daño por Aves y Conservación',
     sections: [
       {

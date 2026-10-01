@@ -8,7 +8,7 @@ export const FISIOLOGIA_SUBMODULES = [
     order: 1,
     title: 'Fotosíntesis C3, C4 y CAM',
     description: 'Cómo la planta convierte luz en azúcares, la fotorrespiración y las tres estrategias para fijar carbono.',
-    subboss: { name: 'El Rubisco Confundido', title: 'Fijador de Oxígeno' },
+    subboss: { name: 'Guardián del Complejo Antena', title: 'Escudo de Clorofila' },
     codexTitle: 'Fotosíntesis y Metabolismo del Carbono',
     sections: [
       {
@@ -74,7 +74,7 @@ export const FISIOLOGIA_SUBMODULES = [
     order: 2,
     title: 'Agua en la Planta: Potencial Hídrico',
     description: 'El potencial hídrico, el camino del agua del suelo a la atmósfera y cómo se mide el estrés en terreno.',
-    subboss: { name: 'La Cámara de Scholander', title: 'Medidora del Potencial Xilemático' },
+    subboss: { name: 'Tensión Xilemática Extrema', title: 'Medidor del Potencial Hídrico' },
     codexTitle: 'Potencial Hídrico y Transporte de Agua',
     sections: [
       {
@@ -136,7 +136,7 @@ export const FISIOLOGIA_SUBMODULES = [
     order: 3,
     title: 'Transpiración y Estomas',
     description: 'Cómo la planta equilibra la entrada de CO₂ con la pérdida de agua: la regulación de los estomas.',
-    subboss: { name: 'El Estoma Sellado', title: 'Guardián del Ácido Abscísico' },
+    subboss: { name: 'Sombra Osmótica', title: 'Emisaria del Ácido Abscísico' },
     codexTitle: 'Estomas y Transpiración',
     sections: [
       {
@@ -199,7 +199,7 @@ export const FISIOLOGIA_SUBMODULES = [
     order: 4,
     title: 'Hormonas Vegetales',
     description: 'Auxinas, giberelinas, citoquininas, etileno y ABA: las señales que coordinan crecimiento, cuaja y maduración.',
-    subboss: { name: 'El Etileno Maduro', title: 'Señor de la Abscisión' },
+    subboss: { name: 'Quimera de Apicalidad', title: 'Bestia de la Dominancia Apical' },
     codexTitle: 'Reguladores del Crecimiento',
     sections: [
       {
@@ -253,7 +253,7 @@ export const FISIOLOGIA_SUBMODULES = [
     order: 5,
     title: 'Fenología, Dormancia y Floración',
     description: 'Los estados fenológicos, la dormancia de yemas y los factores que inducen la floración.',
-    subboss: { name: 'El Durmiente Endodormido', title: 'Guardián del Receso Invernal' },
+    subboss: { name: 'Dren de Azúcares', title: 'Vampiro del Añerismo' },
     codexTitle: 'Fenología y Desarrollo',
     sections: [
       {

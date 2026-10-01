@@ -16,7 +16,7 @@ export const CRANBERRY_SUBMODULES = [
     order: 1,
     title: 'Biología y Suelo',
     description: 'Una ericácea de turbera: runners, uprights, raíces superficiales y un suelo ácido con nitrógeno amoniacal.',
-    subboss: { name: 'El Runner Errante', title: 'Tejedor de Estolones' },
+    subboss: { name: 'Centinela de la Turba', title: 'Guardián de las Camas Ácidas' },
     codexTitle: 'Biología del Cranberry y su Suelo',
     sections: [
       {
@@ -70,7 +70,7 @@ export const CRANBERRY_SUBMODULES = [
     order: 2,
     title: 'Agua, Heladas y Clima',
     description: 'Riego de una raíz superficial, aspersión contra heladas, golpe de sol y el frío que colorea la fruta.',
-    subboss: { name: 'El Aspersor Congelado', title: 'Guardián del Calor Latente' },
+    subboss: { name: 'Leviatán del Dique', title: 'Señor del Calor Latente' },
     codexTitle: 'Riego y Manejo Térmico',
     sections: [
       {
@@ -142,7 +142,7 @@ export const CRANBERRY_SUBMODULES = [
     order: 3,
     title: 'Manejo de las Camas',
     description: 'Arenado, poda de runners, peinado y nitrógeno: cómo mantener una cama productiva por décadas.',
-    subboss: { name: 'El Arenador Implacable', title: 'Sepultador de Runners' },
+    subboss: { name: 'Sílfide del Botón Floral', title: 'Danzante de los Uprights' },
     codexTitle: 'Manejo de Camas de Cranberry',
     sections: [
       {
@@ -203,7 +203,7 @@ export const CRANBERRY_SUBMODULES = [
     order: 4,
     title: 'Plagas, Enfermedades y Malezas',
     description: 'Phytophthora, fruitworm, mosquita de la yema, Fairy Ring y la cuscuta parásita.',
-    subboss: { name: 'La Cuscuta Estranguladora', title: 'Parásita de las Camas' },
+    subboss: { name: 'Picudo de la Corona', title: 'Plaga de las Camas' },
     codexTitle: 'Sanidad del Cranberry',
     sections: [
       {
@@ -256,7 +256,7 @@ export const CRANBERRY_SUBMODULES = [
     order: 5,
     title: 'Polinización, Cosecha y Calidad',
     description: 'Abejas, cosecha en agua y en seco, antocianinas y los hongos que atacan la baya.',
-    subboss: { name: 'El Batidor de la Inundación', title: 'Cosechador de Bayas Flotantes' },
+    subboss: { name: 'El Clasificador Óptico', title: 'Juez de los Floats' },
     codexTitle: 'Polinización, Cosecha y Calidad de Fruta',
     sections: [
       {

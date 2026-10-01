@@ -8,7 +8,7 @@ export const AGROMETEOROLOGIA_SUBMODULES = [
     order: 1,
     title: 'Radiación y Balance de Energía',
     description: 'Onda corta, onda larga, albedo y radiación neta: la energía que mueve la fotosíntesis y el clima del huerto.',
-    subboss: { name: 'El Espejo del Albedo', title: 'Ladrón de Onda Larga' },
+    subboss: { name: 'Prisma Solar Descalibrado', title: 'Ladrón de Onda Larga' },
     codexTitle: 'Radiación Solar y Balance de Energía',
     sections: [
       {
@@ -76,7 +76,7 @@ export const AGROMETEOROLOGIA_SUBMODULES = [
     order: 2,
     title: 'Temperatura, Grados Día y Horas Frío',
     description: 'Cómo la temperatura marca el ritmo del cultivo: sumas térmicas para crecer y frío invernal para despertar.',
-    subboss: { name: 'El Contador de Horas Frío', title: 'Guardián del Receso' },
+    subboss: { name: 'Criomante del Meristema', title: 'Contador de Horas Frío' },
     codexTitle: 'Temperatura y Sumas Térmicas',
     sections: [
       {
@@ -142,7 +142,7 @@ export const AGROMETEOROLOGIA_SUBMODULES = [
     order: 3,
     title: 'Heladas: Tipos y Control',
     description: 'Heladas radiativas y advectivas, la inversión térmica y los métodos activos y pasivos para proteger el huerto.',
-    subboss: { name: 'El Espectro de la Helada Radiativa', title: 'Señor de la Noche Despejada' },
+    subboss: { name: 'El Inversor Térmico', title: 'Señor de la Noche Despejada' },
     codexTitle: 'Heladas y su Control',
     sections: [
       {
@@ -218,7 +218,7 @@ export const AGROMETEOROLOGIA_SUBMODULES = [
     order: 4,
     title: 'Humedad, Viento y Evapotranspiración',
     description: 'Del vapor de agua en el aire a la ET de referencia: cuánta agua pide la atmósfera y cuánta usa el cultivo.',
-    subboss: { name: 'El Djinn de Penman-Monteith', title: 'Amo de la ET₀' },
+    subboss: { name: 'Viento Psicrométrico', title: 'Amo de la ET₀' },
     codexTitle: 'Humedad, Viento y Evapotranspiración',
     sections: [
       {
@@ -285,7 +285,7 @@ export const AGROMETEOROLOGIA_SUBMODULES = [
     order: 5,
     title: 'Clima de Chile y Riesgo Agroclimático',
     description: 'Los climas del país, El Niño y La Niña, la sequía y el cambio climático en la planificación agrícola.',
-    subboss: { name: 'La Sombra de La Niña', title: 'Hija de la Oscilación del Sur' },
+    subboss: { name: 'Autómata de la Caseta Meteorológica', title: 'Vigía del Riesgo Climático' },
     codexTitle: 'Clima de Chile y Riesgo',
     sections: [
       {

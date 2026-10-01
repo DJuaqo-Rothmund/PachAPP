@@ -8,7 +8,7 @@ export const HONGOS_SUBMODULES = [
     order: 1,
     title: 'Biología y Morfología Fúngica',
     description: 'Hifas, micelio, quitina y nutrición por absorción: qué es un hongo y por qué no es una planta.',
-    subboss: { name: 'La Hifa Tabicada', title: 'Tejedora del Micelio' },
+    subboss: { name: 'El Sombrero del Velo', title: 'Tejedor del Micelio' },
     codexTitle: 'Qué es un Hongo',
     sections: [
       {
@@ -68,7 +68,7 @@ export const HONGOS_SUBMODULES = [
     order: 2,
     title: 'Reproducción y Ciclos de Vida',
     description: 'Esporas sexuales y asexuales, conidios, esclerocios y cómo sobreviven los hongos entre temporadas.',
-    subboss: { name: 'La Espora Durmiente', title: 'Heraldo del Conidio' },
+    subboss: { name: 'Clamor de Conidiosporas', title: 'Heraldo del Conidio' },
     codexTitle: 'Reproducción de los Hongos',
     sections: [
       {
@@ -139,7 +139,7 @@ export const HONGOS_SUBMODULES = [
     order: 3,
     title: 'Hongos Benéficos',
     description: 'Micorrizas, Trichoderma, entomopatógenos y descomponedores: los hongos que trabajan a favor del cultivo.',
-    subboss: { name: 'El Trichoderma Mercenario', title: 'Cazador de Patógenos' },
+    subboss: { name: 'Red de Simbiosis', title: 'Pacto de las Micorrizas' },
     codexTitle: 'Hongos Benéficos para la Agricultura',
     sections: [
       {
@@ -206,7 +206,7 @@ export const HONGOS_SUBMODULES = [
     order: 4,
     title: 'Hongos Fitopatógenos',
     description: 'Botrytis, oídio, royas, pudriciones de raíz y el triángulo de la enfermedad.',
-    subboss: { name: 'La Botrytis Gris', title: 'Señora de la Pudrición' },
+    subboss: { name: 'El Cancro Negro', title: 'Señor de la Pudrición' },
     codexTitle: 'Enfermedades Fúngicas de los Cultivos',
     sections: [
       {
@@ -273,7 +273,7 @@ export const HONGOS_SUBMODULES = [
     order: 5,
     title: 'Setas Silvestres de Chile',
     description: 'Digüeñes, changles, loyos y callampas de pino, y las especies tóxicas que hay que aprender a reconocer.',
-    subboss: { name: 'La Amanita Embustera', title: 'Imitadora Mortal' },
+    subboss: { name: 'El Cáliz Amatoxina', title: 'Imitador Mortal' },
     codexTitle: 'Hongos Silvestres Comestibles y Tóxicos',
     sections: [
       {

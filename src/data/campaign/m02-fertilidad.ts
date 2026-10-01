@@ -8,7 +8,7 @@ export const FERTILIDAD_SUBMODULES = [
     order: 1,
     title: 'CIC y Coloides del Suelo',
     description: 'Arcillas, humus y la capacidad de intercambio catiónico: la despensa que retiene los nutrientes.',
-    subboss: { name: 'El Coloide Avaro', title: 'Acaparador de Cationes' },
+    subboss: { name: 'Coloso de Adsorción', title: 'Devorador de Cationes' },
     codexTitle: 'Capacidad de Intercambio Catiónico',
     sections: [
       {
@@ -77,7 +77,7 @@ export const FERTILIDAD_SUBMODULES = [
     order: 2,
     title: 'pH, Encalado y Disponibilidad',
     description: 'La acidez del suelo, el aluminio tóxico y cómo el pH abre o cierra la puerta a cada nutriente.',
-    subboss: { name: 'La Bruja de la Acidez', title: 'Tejedora del Aluminio Intercambiable' },
+    subboss: { name: 'Alquimista Acidófilo', title: 'Señor del Aluminio Tóxico' },
     codexTitle: 'pH del Suelo y Encalado',
     sections: [
       {
@@ -134,7 +134,7 @@ export const FERTILIDAD_SUBMODULES = [
     order: 3,
     title: 'Nitrógeno, Fósforo y Potasio',
     description: 'Los tres macronutrientes primarios: su ciclo en el suelo, sus pérdidas y cómo los usa la planta.',
-    subboss: { name: 'El Lixiviador de Nitratos', title: 'Fugitivo del Perfil' },
+    subboss: { name: 'Hidra del Nitrato Lixiviado', title: 'Fugitiva del Perfil' },
     codexTitle: 'Macronutrientes Primarios',
     sections: [
       {
@@ -203,7 +203,7 @@ export const FERTILIDAD_SUBMODULES = [
     order: 4,
     title: 'Secundarios y Micronutrientes',
     description: 'Calcio, magnesio y azufre, y los micronutrientes que faltan en poca cantidad pero frenan todo el cultivo.',
-    subboss: { name: 'El Clorótico Intervenal', title: 'Heraldo de la Carencia de Hierro' },
+    subboss: { name: 'Sombras Cloróticas', title: 'Heraldos de la Carencia' },
     codexTitle: 'Nutrientes Secundarios y Micronutrientes',
     sections: [
       {
@@ -265,7 +265,7 @@ export const FERTILIDAD_SUBMODULES = [
     title: 'Diagnóstico y Programas de Fertilización',
     description:
       'Análisis de suelo y foliar, balance de nutrientes y salinidad: cómo decidir cuánto, cuándo y con qué fertilizar.',
-    subboss: { name: 'El Oráculo del Análisis Foliar', title: 'Guardián de los Rangos Críticos' },
+    subboss: { name: 'Auditor de Espectrometría', title: 'Juez de los Rangos Críticos' },
     codexTitle: 'Diagnóstico Nutricional y Fertilización',
     sections: [
       {

@@ -8,7 +8,7 @@ export const CAPRINOS_SUBMODULES = [
     order: 1,
     title: 'Razas y Sistemas Caprinos de Chile',
     description: 'La cabra criolla, las razas lecheras y de carne, y la crianza trashumante del secano.',
-    subboss: { name: 'La Cabra Criolla Trashumante', title: 'Señora de las Veranadas' },
+    subboss: { name: 'El Guardián de la Raza Pura', title: 'Señor de las Veranadas' },
     codexTitle: 'Sistemas de Producción Caprina',
     sections: [
       {
@@ -63,7 +63,7 @@ export const CAPRINOS_SUBMODULES = [
     order: 2,
     title: 'Alimentación y Rumia',
     description: 'El rumen, la fibra, la acidosis y cómo alimentar un rebaño en el secano.',
-    subboss: { name: 'El Rumen Acidótico', title: 'Tirano del Almidón' },
+    subboss: { name: 'El Protozoo Ruminal', title: 'Tirano del Almidón' },
     codexTitle: 'Nutrición de Rumiantes Menores',
     sections: [
       {
@@ -131,7 +131,7 @@ export const CAPRINOS_SUBMODULES = [
     order: 3,
     title: 'Reproducción y Manejo del Rebaño',
     description: 'Estacionalidad, efecto macho, gestación, partos y calostro.',
-    subboss: { name: 'El Macho Estacional', title: 'Señor del Efecto Macho' },
+    subboss: { name: 'El Reloj Melatonínico', title: 'Señor del Efecto Macho' },
     codexTitle: 'Reproducción Caprina',
     sections: [
       {
@@ -202,7 +202,7 @@ export const CAPRINOS_SUBMODULES = [
     order: 4,
     title: 'Sanidad Caprina',
     description: 'Parásitos gastrointestinales, FAMACHA, CAE, linfadenitis caseosa, brucelosis y mastitis.',
-    subboss: { name: 'El Vampiro del Cuajar', title: 'Haemonchus Insaciable' },
+    subboss: { name: 'La Larva L3 Enquistada', title: 'Vampira del Cuajar' },
     codexTitle: 'Sanidad de Cabras y Ovejas',
     sections: [
       {
@@ -278,7 +278,7 @@ export const CAPRINOS_SUBMODULES = [
     order: 5,
     title: 'Leche, Quesos y Productos',
     description: 'Composición de la leche de cabra, higiene de ordeña, pasteurización y elaboración de quesos.',
-    subboss: { name: 'El Cuajo Rebelde', title: 'Señor del Queso sin Pasteurizar' },
+    subboss: { name: 'El Filtro de Células Somáticas', title: 'Señor del Queso sin Pasteurizar' },
     codexTitle: 'Leche y Quesos de Cabra',
     sections: [
       {

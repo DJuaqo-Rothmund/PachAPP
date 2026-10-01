@@ -16,7 +16,7 @@ export const FRAMBUESA_SUBMODULES = [
     order: 1,
     title: 'Biología y Tipos de Caña',
     description: 'Raíz perenne, cañas bianuales y la diferencia entre variedades remontantes y no remontantes.',
-    subboss: { name: 'La Caña Bienal', title: 'Señora del Doble Ciclo' },
+    subboss: { name: 'Vástago de la Corona', title: 'Señor del Doble Ciclo' },
     codexTitle: 'Biología de la Frambuesa',
     sections: [
       {
@@ -88,7 +88,7 @@ export const FRAMBUESA_SUBMODULES = [
     order: 2,
     title: 'Suelo, Riego y Nutrición',
     description: 'Camellones contra la asfixia, goteo con doble cinta y una nutrición cuidadosa con el cloro y el calcio.',
-    subboss: { name: 'El Camellón Anegado', title: 'Ahogador de Raíces' },
+    subboss: { name: 'El Tensor Roto', title: 'Azote de los Camellones' },
     codexTitle: 'Establecimiento, Riego y Nutrición',
     sections: [
       {
@@ -155,7 +155,7 @@ export const FRAMBUESA_SUBMODULES = [
     order: 3,
     title: 'Conducción y Manejo de Cañas',
     description: 'Sistemas en V, raleo de primocanes y eliminación de floricanes para una hilera ventilada.',
-    subboss: { name: 'El Primocane Desbocado', title: 'Señor de la Espesura' },
+    subboss: { name: 'La Podadera Mecánica', title: 'Raleadora de Primocanes' },
     codexTitle: 'Conducción y Manejo de Cañas',
     sections: [
       {
@@ -226,7 +226,7 @@ export const FRAMBUESA_SUBMODULES = [
     order: 4,
     title: 'Plagas y Enfermedades',
     description: 'Botrytis, arañita, agalla del cuello, tizón de la yema, burrito y los virus transmitidos por pulgones.',
-    subboss: { name: 'El Burrito Barrenador', title: 'Devorador de Coronas' },
+    subboss: { name: 'Moho Grisáceo', title: 'Señor de la Pudrición Gris' },
     codexTitle: 'Sanidad de la Frambuesa',
     sections: [
       {
@@ -285,7 +285,7 @@ export const FRAMBUESA_SUBMODULES = [
     title: 'Cosecha y Postcosecha',
     description:
       'Una fruta frágil de respiración altísima: cosecha temprana, pre-frío inmediato y la amenaza de Drosophila suzukii.',
-    subboss: { name: 'La Mosca de Alas Manchadas', title: 'Reina de la Fruta Blanda' },
+    subboss: { name: 'El Sensor de Deformación', title: 'Verdugo de la Fruta Blanda' },
     codexTitle: 'Cosecha y Postcosecha',
     sections: [
       {

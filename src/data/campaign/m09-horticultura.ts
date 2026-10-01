@@ -8,7 +8,7 @@ export const HORTICULTURA_SUBMODULES = [
     order: 1,
     title: 'Hortalizas: Clasificación y Fisiología',
     description: 'Hortalizas de estación fría y cálida, el fotoperiodo y por qué una lechuga se "sube" o una cebolla no bulba.',
-    subboss: { name: 'El Bulbo Prematuro', title: 'Señor del Fotoperiodo' },
+    subboss: { name: 'Arquitecto de Túneles', title: 'Constructor del Ambiente Protegido' },
     codexTitle: 'Fisiología de Hortalizas',
     sections: [
       {
@@ -75,7 +75,7 @@ export const HORTICULTURA_SUBMODULES = [
     order: 2,
     title: 'Almácigos y Establecimiento',
     description: 'Semillas, sustratos, bandejas y trasplante: los primeros 30 días que deciden la temporada.',
-    subboss: { name: 'El Damping-off', title: 'Segador de Plántulas' },
+    subboss: { name: 'Absorbedor de Gas', title: 'Asfixiador de Almácigos' },
     codexTitle: 'Almácigos y Trasplante',
     sections: [
       {
@@ -145,7 +145,7 @@ export const HORTICULTURA_SUBMODULES = [
     order: 3,
     title: 'Clima del Invernadero',
     description: 'Temperatura, humedad, DPV, CO₂ y ventilación: cómo se gobierna el ambiente protegido.',
-    subboss: { name: 'La Niebla del Invernadero', title: 'Condensadora del Rocío' },
+    subboss: { name: 'El Vórtice Microclimático', title: 'Condensador del Rocío' },
     codexTitle: 'Control del Clima en Invernadero',
     sections: [
       {
@@ -221,7 +221,7 @@ export const HORTICULTURA_SUBMODULES = [
     order: 4,
     title: 'Fertirriego y Cultivo sin Suelo',
     description: 'Solución nutritiva, CE y pH del gotero, sustratos e hidroponía.',
-    subboss: { name: 'El Gotero Obstruido', title: 'Tirano de la Conductividad' },
+    subboss: { name: 'Espectro de la Lana de Roca', title: 'Tirano de la Conductividad' },
     codexTitle: 'Fertirriego e Hidroponía',
     sections: [
       {
@@ -300,7 +300,7 @@ export const HORTICULTURA_SUBMODULES = [
     order: 5,
     title: 'Plagas y Manejo Integrado',
     description: 'Mosquita blanca, trips, polilla del tomate y control biológico en ambiente protegido.',
-    subboss: { name: 'La Mosquita Blanca Legionaria', title: 'Reina del Envés' },
+    subboss: { name: 'Nube de Trialeurodes', title: 'Reina del Envés' },
     codexTitle: 'Manejo Integrado de Plagas en Hortalizas',
     sections: [
       {

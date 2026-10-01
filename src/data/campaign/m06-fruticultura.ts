@@ -8,7 +8,7 @@ export const FRUTICULTURA_SUBMODULES = [
     order: 1,
     title: 'Portainjertos e Injertación',
     description: 'Por qué los frutales se injertan, cómo se elige el portainjerto y qué falla cuando la unión es incompatible.',
-    subboss: { name: 'El Injerto Incompatible', title: 'Quebrador de la Unión' },
+    subboss: { name: 'El Callo Desfasado', title: 'Quebrador de la Unión' },
     codexTitle: 'Portainjertos e Injertos',
     sections: [
       {
@@ -76,7 +76,7 @@ export const FRUTICULTURA_SUBMODULES = [
     order: 2,
     title: 'Sistemas de Conducción y Densidad',
     description: 'Vaso, eje central, ejes múltiples y parronales: cómo la forma del árbol administra la luz.',
-    subboss: { name: 'El Eje Central Torcido', title: 'Señor de la Sombra Interior' },
+    subboss: { name: 'La Lamburda Ciega', title: 'Señor de la Sombra Interior' },
     codexTitle: 'Conducción y Arquitectura del Huerto',
     sections: [
       {
@@ -148,7 +148,7 @@ export const FRUTICULTURA_SUBMODULES = [
     order: 3,
     title: 'Poda y Equilibrio del Árbol',
     description: 'Poda de formación, producción y verano: cómo equilibrar crecimiento y fruta sin desbocar el vigor.',
-    subboss: { name: 'El Chupón Indómito', title: 'Ladrón de Carbohidratos' },
+    subboss: { name: 'La Tijera Descompensada', title: 'Despertadora de Chupones' },
     codexTitle: 'Poda y Balance Vegetativo-Reproductivo',
     sections: [
       {
@@ -232,7 +232,7 @@ export const FRUTICULTURA_SUBMODULES = [
     order: 4,
     title: 'Polinización, Cuaja y Raleo',
     description: 'Polinizantes compatibles, abejas, cuaja y raleo de frutos para lograr calibre y evitar el añerismo.',
-    subboss: { name: 'El Polinizador Ausente', title: 'Señor de la Flor Vacía' },
+    subboss: { name: 'El Fruto Abortivo', title: 'Enjambre de la Cuaja Fallida' },
     codexTitle: 'Polinización, Cuaja y Raleo',
     sections: [
       {
@@ -303,7 +303,7 @@ export const FRUTICULTURA_SUBMODULES = [
     order: 5,
     title: 'Madurez, Cosecha y Postcosecha',
     description: 'Índices de madurez, frutos climatéricos, cadena de frío y almacenaje en atmósfera controlada.',
-    subboss: { name: 'El Climatérico Desatado', title: 'Heraldo del Etileno' },
+    subboss: { name: 'La Yema Invernante', title: 'Guardiana de la Cámara de Frío' },
     codexTitle: 'Madurez y Postcosecha',
     sections: [
       {

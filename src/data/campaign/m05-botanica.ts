@@ -9,7 +9,7 @@ export const BOTANICA_SUBMODULES = [
     title: 'Raíz, Tallo y Hoja',
     description:
       'La morfología vegetativa: tipos de raíz, tallos modificados y las partes de la hoja que sirven para identificar.',
-    subboss: { name: 'El Rizoma Laberíntico', title: 'Arquitecto Subterráneo' },
+    subboss: { name: 'El Meristema Bifurcado', title: 'Arquitecto de Raíz, Tallo y Hoja' },
     codexTitle: 'Morfología Vegetativa',
     sections: [
       {
@@ -74,7 +74,7 @@ export const BOTANICA_SUBMODULES = [
     order: 2,
     title: 'Flor, Fruto y Semilla',
     description: 'Las partes de la flor, la polinización y los tipos de fruto, de la baya al pomo.',
-    subboss: { name: 'El Ovario Ínfero', title: 'Custodio del Pomo' },
+    subboss: { name: 'Flor de Sépalos Caducos', title: 'Bruja del Ovario Ínfero' },
     codexTitle: 'Morfología Reproductiva',
     sections: [
       {
@@ -129,7 +129,7 @@ export const BOTANICA_SUBMODULES = [
     order: 3,
     title: 'Taxonomía y Nomenclatura',
     description: 'Cómo se nombran y clasifican las plantas: binomios, familias y las familias clave de la agricultura.',
-    subboss: { name: 'El Binomio Linneano', title: 'Juez de los Nombres Científicos' },
+    subboss: { name: 'El Taxónomo Categórico', title: 'Juez de los Nombres Científicos' },
     codexTitle: 'Taxonomía Vegetal',
     sections: [
       {
@@ -183,7 +183,7 @@ export const BOTANICA_SUBMODULES = [
     order: 4,
     title: 'Flora Nativa de Chile',
     description: 'Endemismo, bosque esclerófilo, bosque templado y especies nativas con valor productivo.',
-    subboss: { name: 'El Espino Centinela', title: 'Guardián del Bosque Esclerófilo' },
+    subboss: { name: 'Cariópside Indehiscente', title: 'Fortaleza del Bosque Nativo' },
     codexTitle: 'Flora Nativa de Chile',
     sections: [
       {
@@ -243,7 +243,7 @@ export const BOTANICA_SUBMODULES = [
     order: 5,
     title: 'Reconocimiento de Malezas',
     description: 'Malezas anuales y perennes, de hoja ancha y angosta: cómo reconocerlas y por qué importa para su control.',
-    subboss: { name: 'La Correhuela Enredadora', title: 'Reina de los Rizomas Profundos' },
+    subboss: { name: 'La Raíz Gemífera', title: 'Reina de los Rizomas' },
     codexTitle: 'Malezas: Biología e Identificación',
     sections: [
       {
