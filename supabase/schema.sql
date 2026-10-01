@@ -256,6 +256,48 @@ create table if not exists public.submodule_progress (
   primary key (user_id, submodule_id)
 );
 create index if not exists submodule_progress_submodule_idx on public.submodule_progress (submodule_id);
+-- Combate en curso contra el subjefe: preguntas de la pelea y las ya respondidas.
+alter table public.submodule_progress add column if not exists fight_question_ids text[] not null default '{}';
+alter table public.submodule_progress add column if not exists fight_answered_ids text[] not null default '{}';
+
+-- -----------------------------------------------------------------------------
+-- Vidas diarias y modo maestro (pruebas)
+-- -----------------------------------------------------------------------------
+
+-- 3 vidas por día (hora de Chile): cada error en un combate (subjefe o Boss Raid)
+-- gasta una. Sin vidas no se puede combatir hasta las 00:00. El entrenamiento es libre.
+create table if not exists public.daily_lives (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  day date not null,
+  mistakes integer not null default 0 check (mistakes >= 0),
+  primary key (user_id, day)
+);
+
+-- Modo maestro: cuenta de pruebas sin límites (vidas, bloqueos, raid semanal).
+alter table public.profiles add column if not exists is_tester boolean not null default false;
+
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
+
+-- Clave del modo maestro (hash bcrypt). Cambiarla desde el SQL Editor:
+--   update public.master_settings set code_hash = extensions.crypt('NUEVA', extensions.gen_salt('bf'));
+-- Desactivarlo: update public.master_settings set enabled = false;
+create table if not exists public.master_settings (
+  id boolean primary key default true check (id),
+  code_hash text not null,
+  enabled boolean not null default true
+);
+insert into public.master_settings (code_hash)
+values (extensions.crypt('1234', extensions.gen_salt('bf')))
+on conflict (id) do nothing;
+
+-- Intentos fallidos de clave por día (máximo 5).
+create table if not exists public.master_attempts (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  day date not null,
+  failed integer not null default 0,
+  primary key (user_id, day)
+);
 
 -- -----------------------------------------------------------------------------
 -- Helpers
@@ -274,6 +316,16 @@ as $$
   );
 $$;
 
+create or replace function public.is_tester()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select is_tester from public.profiles where id = auth.uid()), false);
+$$;
+
 create or replace function public.is_module_unlocked(p_module_id integer)
 returns boolean
 language sql
@@ -283,7 +335,8 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.modules
-    where id = p_module_id and not archived and (initially_unlocked or unlocked_at is not null)
+    where id = p_module_id and not archived
+      and (initially_unlocked or unlocked_at is not null or public.is_tester())
   );
 $$;
 
@@ -311,6 +364,77 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+create or replace function public.max_lives()
+returns integer language sql immutable as $$ select 3 $$;
+
+-- Día de juego en hora de Chile: las vidas vuelven a las 00:00.
+create or replace function public.lives_day()
+returns date language sql stable as $$ select (now() at time zone 'America/Santiago')::date $$;
+
+create or replace function public.next_lives_reset()
+returns timestamptz language sql stable as $$
+  select ((public.lives_day() + 1)::timestamp at time zone 'America/Santiago')
+$$;
+
+create or replace function public.lives_left(p_uid uuid)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when coalesce((select is_tester from public.profiles where id = p_uid), false) then public.max_lives()
+    else greatest(0, public.max_lives() - coalesce(
+      (select mistakes from public.daily_lives where user_id = p_uid and day = public.lives_day()), 0))
+  end;
+$$;
+
+-- Gasta una vida (no aplica a cuentas de prueba) y devuelve las que quedan.
+create or replace function public.consume_life(p_uid uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not coalesce((select is_tester from public.profiles where id = p_uid), false) then
+    insert into public.daily_lives (user_id, day, mistakes) values (p_uid, public.lives_day(), 1)
+    on conflict (user_id, day) do update set mistakes = public.daily_lives.mistakes + 1;
+  end if;
+  return public.lives_left(p_uid);
+end;
+$$;
+
+create or replace function public.require_lives(p_uid uuid)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if public.lives_left(p_uid) <= 0 then
+    raise exception 'Sin vidas: vuelve mañana a las 00:00' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+create or replace function public.get_lives()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'lives', public.lives_left(auth.uid()),
+    'max_lives', public.max_lives(),
+    'resets_at', public.next_lives_reset(),
+    'unlimited', public.is_tester()
+  );
+$$;
 
 -- -----------------------------------------------------------------------------
 -- Vista de estado de módulos (desbloqueo comunitario)
@@ -557,15 +681,33 @@ begin
   if not exists (select 1 from public.questions where module_id = p_module_id and not is_boss_final) then
     raise exception 'Este módulo aún no tiene preguntas' using errcode = 'P0001';
   end if;
+  -- El jefe cooperativo se enfrenta después de vencer a todos los subjefes del módulo.
+  if not public.is_tester() and exists (
+    select 1 from public.submodules sm
+    where sm.module_id = p_module_id
+      and not exists (
+        select 1 from public.submodule_progress sp
+        where sp.user_id = v_uid and sp.submodule_id = sm.id and sp.subboss_defeated_at is not null
+      )
+  ) then
+    raise exception 'Derrota primero a todos los subjefes del módulo' using errcode = 'P0001';
+  end if;
+  perform public.require_lives(v_uid);
 
   select * into v_session from public.raid_sessions
   where user_id = v_uid and boss_id = v_boss.id and week_start = v_week;
 
-  if found and v_session.finished_at is not null then
-    raise exception 'Ya combatiste contra este jefe esta semana' using errcode = 'P0001';
+  if v_session.id is not null and v_session.finished_at is not null then
+    if public.is_tester() then
+      -- Cuenta de prueba: puede repetir la batalla de la semana.
+      delete from public.raid_sessions where id = v_session.id;
+      v_session := null;
+    else
+      raise exception 'Ya combatiste contra este jefe esta semana' using errcode = 'P0001';
+    end if;
   end if;
 
-  if not found then
+  if v_session.id is null then
     select id into v_final from public.questions
     where module_id = p_module_id and is_boss_final
     order by sort_order limit 1;
@@ -598,6 +740,7 @@ begin
     'answered', coalesce(array_length(v_session.answered_ids, 1), 0),
     'correct', v_session.correct_count,
     'damage', v_session.damage_dealt,
+    'lives', public.lives_left(v_uid),
     'questions', public.raid_pending_questions(v_session)
   );
 end;
@@ -633,6 +776,7 @@ declare
   v_raid_finished boolean := false;
   v_new_badges text[] := '{}';
   v_participant uuid;
+  v_lives integer;
 begin
   if v_uid is null then
     raise exception 'No autenticado' using errcode = '28000';
@@ -666,10 +810,16 @@ begin
     if v_q.id = any (v_session.answered_ids) then
       raise exception 'Ya respondiste esta pregunta en la batalla' using errcode = 'P0001';
     end if;
+    perform public.require_lives(v_uid);
   end if;
 
   v_correct := trim(p_answer) = trim(v_q.correct_answer);
   select * into v_boss from public.bosses where module_id = v_q.module_id;
+  -- Un error dentro del Boss Raid gasta una vida (el entrenamiento es libre).
+  v_lives := case
+    when v_session.id is not null and not v_correct then public.consume_life(v_uid)
+    else public.lives_left(v_uid)
+  end;
 
   if v_correct and v_session.id is not null and v_boss.id is not null and v_boss.defeated_at is null then
     v_damage := case when v_q.is_boss_final then v_boss.damage_per_hit * 5 else v_boss.damage_per_hit end;
@@ -763,6 +913,7 @@ begin
     'final_blow', v_final_blow,
     'unlocked_module_id', case when v_final_blow then v_boss.unlocks_module_id end,
     'raid_finished', v_raid_finished,
+    'lives_left', v_lives,
     'new_badges', to_jsonb(v_new_badges)
   );
 end;
@@ -781,7 +932,9 @@ returns table (
   raid_status text,
   raid_answered integer,
   raid_total integer,
-  raid_next_reset timestamptz
+  raid_next_reset timestamptz,
+  subbosses_total integer,
+  subbosses_defeated integer
 )
 language sql
 stable
@@ -805,13 +958,351 @@ as $$
     coalesce(array_length(s.answered_ids, 1), 0),
     coalesce(array_length(s.question_ids, 1),
       least(public.raid_question_limit(), (select count(*)::integer from public.questions q where q.module_id = m.id))),
-    public.next_raid_reset()
+    public.next_raid_reset(),
+    (select count(*)::integer from public.submodules sm where sm.module_id = m.id),
+    (select count(*)::integer from public.submodules sm
+      join public.submodule_progress sp on sp.submodule_id = sm.id and sp.user_id = auth.uid()
+      where sm.module_id = m.id and sp.subboss_defeated_at is not null)
   from public.modules m
   left join public.bosses b on b.module_id = m.id
   left join public.raid_sessions s
     on s.boss_id = b.id and s.user_id = auth.uid() and s.week_start = public.current_raid_week()
   where not m.archived
   order by m.id;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Submódulos y subjefes individuales
+-- -----------------------------------------------------------------------------
+-- Un submódulo se abre al derrotar al subjefe anterior (el primero, con el módulo).
+-- Cada combate usa todas las preguntas del submódulo: el subjefe cae si el jugador
+-- acierta lo suficiente para dejarlo en 0 HP; cada error gasta una vida del día.
+
+create or replace function public.is_submodule_unlocked(p_uid uuid, p_submodule_id text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.submodules sm
+    where sm.id = p_submodule_id
+      and public.is_module_unlocked(sm.module_id)
+      and (
+        public.is_tester()
+        or not exists (
+          select 1 from public.submodules prev
+          where prev.module_id = sm.module_id and prev.sort_order < sm.sort_order
+            and not exists (
+              select 1 from public.submodule_progress sp
+              where sp.user_id = p_uid and sp.submodule_id = prev.id and sp.subboss_defeated_at is not null
+            )
+        )
+      )
+  );
+$$;
+
+-- Árbol del módulo para el jugador: submódulos, estado del Códice y del subjefe.
+create or replace function public.get_module_tree(p_module_id integer)
+returns table (
+  submodule_id text,
+  sort_order integer,
+  title text,
+  description text,
+  subboss_name text,
+  subboss_title text,
+  subboss_max_hp integer,
+  subboss_hp integer,
+  subboss_defeated boolean,
+  unlocked boolean,
+  codex_read boolean,
+  checkpoints_total integer,
+  checkpoints_passed integer,
+  question_count integer
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    sm.id, sm.sort_order, sm.title, sm.description,
+    sm.subboss_name, sm.subboss_title, sm.subboss_max_hp,
+    case when sp.subboss_defeated_at is not null then 0
+      else sm.subboss_max_hp - coalesce(sp.subboss_damage, 0) end,
+    sp.subboss_defeated_at is not null,
+    public.is_submodule_unlocked(auth.uid(), sm.id),
+    sp.codex_read_at is not null,
+    coalesce(jsonb_array_length(c.interactive_checkpoints), 0),
+    coalesce(array_length(sp.checkpoints_passed, 1), 0),
+    (select count(*)::integer from public.questions q where q.submodule_id = sm.id)
+  from public.submodules sm
+  join public.modules m on m.id = sm.module_id and not m.archived
+  left join public.codices c on c.submodule_id = sm.id
+  left join public.submodule_progress sp on sp.submodule_id = sm.id and sp.user_id = auth.uid()
+  where sm.module_id = p_module_id
+  order by sm.sort_order;
+$$;
+
+create or replace function public.mark_submodule_codex_read(p_submodule_id text)
+returns text[]
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_module integer;
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  if not public.is_submodule_unlocked(v_uid, p_submodule_id) then
+    raise exception 'Submódulo bloqueado' using errcode = 'P0001';
+  end if;
+  select module_id into v_module from public.submodules where id = p_submodule_id;
+
+  insert into public.submodule_progress (user_id, submodule_id, codex_read_at)
+  values (v_uid, p_submodule_id, now())
+  on conflict (user_id, submodule_id) do update
+    set codex_read_at = coalesce(public.submodule_progress.codex_read_at, now()), updated_at = now();
+  -- Leer un Códice de submódulo cuenta como lectura del módulo (emblemas y Boss Raid).
+  insert into public.codex_reads (user_id, module_id) values (v_uid, v_module) on conflict do nothing;
+
+  return coalesce(array(select public.evaluate_badges(v_uid)), '{}');
+end;
+$$;
+
+-- Registra un checkpoint del video respondido correctamente (práctica: sin XP).
+create or replace function public.pass_checkpoint(p_submodule_id text, p_checkpoint_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  if not exists (
+    select 1 from public.codices c, jsonb_array_elements(c.interactive_checkpoints) cp
+    where c.submodule_id = p_submodule_id and cp ->> 'id' = p_checkpoint_id
+  ) then
+    raise exception 'Checkpoint no existe' using errcode = 'P0002';
+  end if;
+  insert into public.submodule_progress (user_id, submodule_id, checkpoints_passed)
+  values (v_uid, p_submodule_id, array[p_checkpoint_id])
+  on conflict (user_id, submodule_id) do update
+    set checkpoints_passed = case
+          when p_checkpoint_id = any (public.submodule_progress.checkpoints_passed)
+            then public.submodule_progress.checkpoints_passed
+          else array_append(public.submodule_progress.checkpoints_passed, p_checkpoint_id)
+        end,
+        updated_at = now();
+end;
+$$;
+
+-- Inicia (o retoma) el combate contra el subjefe: devuelve las preguntas pendientes
+-- con las alternativas barajadas y sin la respuesta correcta.
+create or replace function public.start_subboss(p_submodule_id text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_sm public.submodules;
+  v_sp public.submodule_progress;
+  v_ids text[];
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  select * into v_sm from public.submodules where id = p_submodule_id;
+  if not found then
+    raise exception 'Submódulo no existe' using errcode = 'P0002';
+  end if;
+  if not public.is_submodule_unlocked(v_uid, p_submodule_id) then
+    raise exception 'Submódulo bloqueado' using errcode = 'P0001';
+  end if;
+
+  select * into v_sp from public.submodule_progress where user_id = v_uid and submodule_id = p_submodule_id for update;
+  if v_sp.codex_read_at is null then
+    raise exception 'Debes leer el Códice antes de combatir' using errcode = 'P0001';
+  end if;
+  if v_sp.subboss_defeated_at is not null and not public.is_tester() then
+    raise exception 'Ya derrotaste a este subjefe' using errcode = 'P0001';
+  end if;
+  perform public.require_lives(v_uid);
+
+  -- Combate nuevo si no hay uno en curso (o si ya terminó).
+  if coalesce(array_length(v_sp.fight_question_ids, 1), 0) = 0
+     or coalesce(array_length(v_sp.fight_answered_ids, 1), 0) >= array_length(v_sp.fight_question_ids, 1)
+     or v_sp.subboss_defeated_at is not null then
+    v_ids := array(select id from public.questions where submodule_id = p_submodule_id order by random());
+    if coalesce(array_length(v_ids, 1), 0) = 0 then
+      raise exception 'Este submódulo aún no tiene preguntas' using errcode = 'P0001';
+    end if;
+    update public.submodule_progress
+    set fight_question_ids = v_ids, fight_answered_ids = '{}', subboss_damage = 0,
+        subboss_defeated_at = null, updated_at = now()
+    where user_id = v_uid and submodule_id = p_submodule_id
+    returning * into v_sp;
+  end if;
+
+  return jsonb_build_object(
+    'submodule_id', p_submodule_id,
+    'hp', v_sm.subboss_max_hp - v_sp.subboss_damage,
+    'max_hp', v_sm.subboss_max_hp,
+    'total', array_length(v_sp.fight_question_ids, 1),
+    'answered', coalesce(array_length(v_sp.fight_answered_ids, 1), 0),
+    'lives', public.lives_left(v_uid),
+    'questions', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', q.id,
+        'prompt', q.prompt,
+        'options', to_jsonb(array(
+          select opt from unnest(array_append(q.distractors, q.correct_answer)) opt order by random()
+        ))
+      ) order by array_position(v_sp.fight_question_ids, q.id))
+      from public.questions q
+      where q.id = any (v_sp.fight_question_ids) and not (q.id = any (v_sp.fight_answered_ids))
+    ), '[]'::jsonb)
+  );
+end;
+$$;
+
+create or replace function public.answer_subboss(p_submodule_id text, p_question_id text, p_answer text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_sm public.submodules;
+  v_sp public.submodule_progress;
+  v_q public.questions;
+  v_correct boolean;
+  v_answer_id bigint;
+  v_awarded boolean := false;
+  v_xp integer := 0;
+  v_damage integer := 0;
+  v_lives integer;
+  v_fight_over boolean;
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  select * into v_sm from public.submodules where id = p_submodule_id;
+  select * into v_sp from public.submodule_progress
+  where user_id = v_uid and submodule_id = p_submodule_id
+  for update;  -- serializa respuestas simultáneas al mismo combate
+  if v_sp.user_id is null or not (p_question_id = any (v_sp.fight_question_ids)) then
+    raise exception 'La pregunta no pertenece a este combate' using errcode = 'P0001';
+  end if;
+  if p_question_id = any (v_sp.fight_answered_ids) then
+    raise exception 'Ya respondiste esta pregunta en el combate' using errcode = 'P0001';
+  end if;
+  if v_sp.subboss_defeated_at is not null then
+    raise exception 'Este subjefe ya fue derrotado' using errcode = 'P0001';
+  end if;
+  perform public.require_lives(v_uid);
+
+  select * into v_q from public.questions where id = p_question_id;
+  v_correct := trim(p_answer) = trim(v_q.correct_answer);
+
+  if v_correct then
+    v_damage := least(v_sm.subboss_damage_per_hit, v_sm.subboss_max_hp - v_sp.subboss_damage);
+    v_xp := 10;
+    insert into public.answers (user_id, question_id, module_id, is_correct, awarded, xp_awarded)
+    values (v_uid, v_q.id, v_q.module_id, true, true, v_xp)
+    on conflict (user_id, question_id) where awarded do nothing
+    returning id into v_answer_id;
+    v_awarded := v_answer_id is not null;
+    v_lives := public.lives_left(v_uid);
+  else
+    v_lives := public.consume_life(v_uid);
+  end if;
+  if not v_awarded then
+    v_xp := 0;
+    insert into public.answers (user_id, question_id, module_id, is_correct)
+    values (v_uid, v_q.id, v_q.module_id, v_correct);
+  end if;
+
+  update public.submodule_progress
+  set fight_answered_ids = array_append(fight_answered_ids, p_question_id),
+      subboss_damage = subboss_damage + v_damage,
+      subboss_defeated_at = case when subboss_damage + v_damage >= v_sm.subboss_max_hp then now() end,
+      updated_at = now()
+  where user_id = v_uid and submodule_id = p_submodule_id
+  returning * into v_sp;
+
+  if v_xp > 0 then
+    update public.profiles set total_xp = total_xp + v_xp where id = v_uid;
+  end if;
+  v_fight_over := v_sp.subboss_defeated_at is not null
+    or array_length(v_sp.fight_answered_ids, 1) >= array_length(v_sp.fight_question_ids, 1)
+    or v_lives <= 0;
+
+  return jsonb_build_object(
+    'correct', v_correct,
+    'correct_answer', v_q.correct_answer,
+    'awarded', v_awarded,
+    'xp_gained', v_xp,
+    'damage_dealt', v_damage,
+    'subboss_hp', v_sm.subboss_max_hp - v_sp.subboss_damage,
+    'subboss_max_hp', v_sm.subboss_max_hp,
+    'subboss_defeated', v_sp.subboss_defeated_at is not null,
+    'fight_over', v_fight_over,
+    'lives_left', v_lives,
+    'new_badges', to_jsonb(coalesce(array(select public.evaluate_badges(v_uid)), '{}'))
+  );
+end;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Modo maestro (cuenta de pruebas)
+-- -----------------------------------------------------------------------------
+-- Activa el modo maestro si la clave coincide. Máximo 5 intentos fallidos por día.
+create or replace function public.activate_master_mode(p_code text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_settings public.master_settings;
+begin
+  if v_uid is null then
+    raise exception 'No autenticado' using errcode = '28000';
+  end if;
+  if coalesce((select failed from public.master_attempts where user_id = v_uid and day = public.lives_day()), 0) >= 5 then
+    raise exception 'Demasiados intentos. Vuelve a intentarlo mañana' using errcode = 'P0001';
+  end if;
+  select * into v_settings from public.master_settings where id;
+  if v_settings.enabled and extensions.crypt(coalesce(p_code, ''), v_settings.code_hash) = v_settings.code_hash then
+    update public.profiles set is_tester = true where id = v_uid;
+    return true;
+  end if;
+  insert into public.master_attempts (user_id, day, failed) values (v_uid, public.lives_day(), 1)
+  on conflict (user_id, day) do update set failed = public.master_attempts.failed + 1;
+  return false;
+end;
+$$;
+
+create or replace function public.deactivate_master_mode()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.profiles set is_tester = false where id = auth.uid();
 $$;
 
 -- Ranking de XP del mes calendario actual (zona horaria de Chile).
@@ -938,6 +1429,9 @@ alter table public.raid_sessions enable row level security;
 alter table public.submodules    enable row level security;
 alter table public.codices       enable row level security;
 alter table public.submodule_progress enable row level security;
+alter table public.daily_lives   enable row level security;
+alter table public.master_settings enable row level security;
+alter table public.master_attempts enable row level security;
 
 -- admin_emails: sin políticas → inaccesible desde el cliente.
 
@@ -997,6 +1491,12 @@ create policy codices_admin on public.codices
 -- escritura: solo lo modifican funciones security definer del servidor.
 drop policy if exists submodule_progress_select on public.submodule_progress;
 create policy submodule_progress_select on public.submodule_progress
+  for select to authenticated using (user_id = auth.uid() or public.is_admin());
+
+-- Vidas: cada jugador ve las suyas. master_settings y master_attempts no tienen
+-- políticas: solo las leen funciones del servidor.
+drop policy if exists daily_lives_select on public.daily_lives;
+create policy daily_lives_select on public.daily_lives
   for select to authenticated using (user_id = auth.uid() or public.is_admin());
 
 drop policy if exists bosses_select on public.bosses;
@@ -1059,6 +1559,28 @@ grant execute on function public.admin_overview() to authenticated;
 grant execute on function public.admin_question_stats() to authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.is_module_unlocked(integer) to authenticated;
+
+revoke execute on function public.consume_life(uuid) from public, anon, authenticated;
+revoke execute on function public.require_lives(uuid) from public, anon, authenticated;
+revoke execute on function public.lives_left(uuid) from public, anon, authenticated;
+revoke execute on function public.is_submodule_unlocked(uuid, text) from public, anon, authenticated;
+revoke execute on function public.get_lives() from public, anon;
+revoke execute on function public.get_module_tree(integer) from public, anon;
+revoke execute on function public.mark_submodule_codex_read(text) from public, anon;
+revoke execute on function public.pass_checkpoint(text, text) from public, anon;
+revoke execute on function public.start_subboss(text) from public, anon;
+revoke execute on function public.answer_subboss(text, text, text) from public, anon;
+revoke execute on function public.activate_master_mode(text) from public, anon;
+revoke execute on function public.deactivate_master_mode() from public, anon;
+grant execute on function public.get_lives() to authenticated;
+grant execute on function public.get_module_tree(integer) to authenticated;
+grant execute on function public.mark_submodule_codex_read(text) to authenticated;
+grant execute on function public.pass_checkpoint(text, text) to authenticated;
+grant execute on function public.start_subboss(text) to authenticated;
+grant execute on function public.answer_subboss(text, text, text) to authenticated;
+grant execute on function public.activate_master_mode(text) to authenticated;
+grant execute on function public.deactivate_master_mode() to authenticated;
+grant execute on function public.is_tester() to authenticated;
 grant select on public.module_status to authenticated;
 
 -- -----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import type { RpgClassId } from '../../data/classes'
-import type { Badge, CodexSection } from '../../data/types'
+import type { Badge, CodexCheckpoint, CodexSection } from '../../data/types'
 
 export interface Profile {
   id: string
@@ -7,6 +7,18 @@ export interface Profile {
   avatarUrl: string | null
   rpgClass: RpgClassId | null
   totalXp: number
+  /** Modo maestro: cuenta de pruebas sin vidas limitadas, bloqueos ni límite semanal. */
+  isTester: boolean
+}
+
+/** Vidas del día: cada error en combate gasta una; vuelven a las 00:00 (hora de Chile). */
+export interface LivesStatus {
+  lives: number
+  maxLives: number
+  /** Próximo reinicio (ISO). */
+  resetsAt: string
+  /** Modo maestro: vidas ilimitadas. */
+  unlimited: boolean
 }
 
 export interface BossState {
@@ -46,6 +58,64 @@ export interface CampaignModule {
   codexRead: boolean
   boss: BossState | null
   raid: RaidStatus
+  /** Subjefes del módulo y cuántos derrotó el jugador (el Boss Raid exige todos). */
+  subbossesTotal: number
+  subbossesDefeated: number
+}
+
+/** Un submódulo en el árbol del módulo, con el progreso del jugador. */
+export interface SubmoduleNode {
+  id: string
+  order: number
+  title: string
+  description: string
+  unlocked: boolean
+  codexRead: boolean
+  checkpointsTotal: number
+  checkpointsPassed: number
+  questionCount: number
+  subboss: {
+    name: string
+    title: string
+    maxHp: number
+    hp: number
+    defeated: boolean
+  }
+}
+
+/** Códice de un submódulo: texto, video opcional y checkpoints interactivos. */
+export interface SubmoduleCodex {
+  submoduleId: string
+  title: string
+  sections: CodexSection[]
+  videoUrl: string | null
+  checkpoints: CodexCheckpoint[]
+}
+
+/** Combate en curso contra un subjefe: solo trae las preguntas pendientes. */
+export interface SubbossFight {
+  submoduleId: string
+  hp: number
+  maxHp: number
+  total: number
+  answered: number
+  lives: number
+  questions: PlayQuestion[]
+}
+
+export interface SubbossAnswerResult {
+  correct: boolean
+  correctAnswer: string
+  awarded: boolean
+  xpGained: number
+  damageDealt: number
+  subbossHp: number
+  subbossMaxHp: number
+  subbossDefeated: boolean
+  /** Terminó el combate: subjefe derrotado, preguntas agotadas o sin vidas. */
+  fightOver: boolean
+  livesLeft: number
+  newBadges: string[]
 }
 
 /** Batalla semanal en curso: solo trae las preguntas pendientes. */
@@ -55,6 +125,7 @@ export interface RaidSession {
   answered: number
   correct: number
   damage: number
+  lives: number
   questions: PlayQuestion[]
 }
 
@@ -79,6 +150,8 @@ export interface AnswerResult {
   unlockedModuleId: number | null
   /** true cuando esta respuesta completó la batalla semanal. */
   raidFinished: boolean
+  /** Vidas restantes del día (un error en el Boss Raid gasta una). */
+  livesLeft: number
   newBadges: string[]
 }
 
@@ -111,6 +184,20 @@ export interface GameApi {
   getMyBadges(): Promise<EarnedBadge[]>
   /** Catálogo completo de emblemas (editable desde el panel admin). */
   getBadges(): Promise<Badge[]>
+  /** Vidas del día. */
+  getLives(): Promise<LivesStatus>
+  /** Submódulos del módulo con el progreso del jugador. */
+  getModuleTree(moduleId: number): Promise<SubmoduleNode[]>
+  getSubmoduleCodex(submoduleId: string): Promise<SubmoduleCodex>
+  /** Marca el Códice del submódulo como leído. Devuelve emblemas nuevos. */
+  markSubmoduleCodexRead(submoduleId: string): Promise<string[]>
+  passCheckpoint(submoduleId: string, checkpointId: string): Promise<void>
+  /** Inicia o retoma el combate individual contra el subjefe. */
+  startSubboss(submoduleId: string): Promise<SubbossFight>
+  answerSubboss(submoduleId: string, questionId: string, answer: string): Promise<SubbossAnswerResult>
+  /** Activa el modo maestro con su clave. Devuelve false si la clave no coincide. */
+  activateMasterMode(code: string): Promise<boolean>
+  deactivateMasterMode(): Promise<void>
   /** Escucha cambios de HP del jefe en vivo. Devuelve la función para desuscribirse. */
   subscribeBoss(bossId: string, onChange: (boss: Pick<BossState, 'currentHp' | 'defeated'>) => void): () => void
 }

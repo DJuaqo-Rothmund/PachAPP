@@ -16,7 +16,9 @@ import type {
   GameApi,
   LeaderboardRow,
   RaidStatus,
+  SubbossAnswerResult,
 } from './types'
+import { DEMO_MASTER_CODE, MAX_LIVES, livesDayKey, nextLivesReset } from './lives'
 import { RAID_QUESTION_LIMIT, nextRaidReset, raidWeekKey } from './raid'
 
 const STORAGE_KEY = 'pachapp-demo-v3'
@@ -66,7 +68,25 @@ interface DemoState {
   answers: DemoAnswer[]
   badges: { badgeId: string; earnedAt: string }[]
   raids: DemoRaid[]
+  /** Modo maestro activo. */
+  isTester: boolean
+  /** Errores en combate del día (las vidas se calculan con esto). */
+  lives: { day: string; mistakes: number }
+  masterAttempts: { day: string; failed: number }
+  submodules: Record<string, DemoSubProgress>
 }
+
+interface DemoSubProgress {
+  codexRead: boolean
+  checkpoints: string[]
+  damage: number
+  defeated: boolean
+  fightIds: string[]
+  fightAnswered: string[]
+}
+
+/** Submódulos de la campaña (contenido fijo de seed.ts). */
+const SUBMODULES = MODULES.flatMap((m) => m.submodules.map((sm) => ({ ...sm, moduleId: m.id })))
 
 function initialState(): DemoState {
   return {
@@ -121,6 +141,10 @@ function initialState(): DemoState {
     answers: [],
     badges: [],
     raids: [],
+    isTester: false,
+    lives: { day: livesDayKey(), mistakes: 0 },
+    masterAttempts: { day: livesDayKey(), failed: 0 },
+    submodules: {},
   }
 }
 
@@ -181,7 +205,42 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 const isUnlocked = (s: DemoState, moduleId: number) =>
-  s.modules.some((m) => m.id === moduleId && (m.initiallyUnlocked || s.unlockedModules.includes(moduleId)))
+  s.modules.some((m) => m.id === moduleId && (s.isTester || m.initiallyUnlocked || s.unlockedModules.includes(moduleId)))
+
+function livesLeft(s: DemoState): number {
+  if (s.isTester) return MAX_LIVES
+  if (s.lives.day !== livesDayKey()) s.lives = { day: livesDayKey(), mistakes: 0 }
+  return Math.max(0, MAX_LIVES - s.lives.mistakes)
+}
+
+function consumeLife(s: DemoState): number {
+  if (!s.isTester) {
+    livesLeft(s)
+    s.lives.mistakes++
+  }
+  return livesLeft(s)
+}
+
+function requireLives(s: DemoState) {
+  if (livesLeft(s) <= 0) throw new Error('Sin vidas: vuelve mañana a las 00:00')
+}
+
+const subProgress = (s: DemoState, id: string): DemoSubProgress =>
+  (s.submodules[id] ??= { codexRead: false, checkpoints: [], damage: 0, defeated: false, fightIds: [], fightAnswered: [] })
+
+function isSubUnlocked(s: DemoState, id: string): boolean {
+  const sm = SUBMODULES.find((x) => x.id === id)
+  if (!sm || !isUnlocked(s, sm.moduleId)) return false
+  if (s.isTester) return true
+  return SUBMODULES.filter((x) => x.moduleId === sm.moduleId && x.order < sm.order).every(
+    (prev) => s.submodules[prev.id]?.defeated,
+  )
+}
+
+const subbossesOf = (s: DemoState, moduleId: number) => {
+  const subs = SUBMODULES.filter((x) => x.moduleId === moduleId)
+  return { total: subs.length, defeated: subs.filter((x) => s.submodules[x.id]?.defeated).length }
+}
 
 const moduleQuestions = (s: DemoState, moduleId: number) =>
   s.questions
@@ -267,7 +326,14 @@ export function createDemoApi(): GameApi {
   return {
     async getProfile() {
       const s = load()
-      return { id: DEMO_USER_ID, displayName: 'Aventurero Demo', avatarUrl: null, rpgClass: s.rpgClass, totalXp: s.totalXp }
+      return {
+        id: DEMO_USER_ID,
+        displayName: 'Aventurero Demo',
+        avatarUrl: null,
+        rpgClass: s.rpgClass,
+        totalXp: s.totalXp,
+        isTester: s.isTester,
+      }
     },
 
     async setRpgClass(rpgClass) {
@@ -292,6 +358,8 @@ export function createDemoApi(): GameApi {
             codexRead: s.codexReads.includes(m.id),
             boss: boss ? toBossState(boss) : null,
             raid: raidStatus(s, m.id, boss),
+            subbossesTotal: subbossesOf(s, m.id).total,
+            subbossesDefeated: subbossesOf(s, m.id).defeated,
           }
         })
     },
@@ -324,8 +392,16 @@ export function createDemoApi(): GameApi {
       const boss = s.bosses.find((b) => b.moduleId === moduleId)
       if (!boss) throw new Error('Este módulo no tiene jefe')
       if (boss.defeatedAt) throw new Error('El jefe ya fue derrotado')
+      const subs = subbossesOf(s, moduleId)
+      if (!s.isTester && subs.defeated < subs.total) throw new Error('Derrota primero a todos los subjefes del módulo')
+      requireLives(s)
 
       let raid = currentRaid(s, boss.id)
+      if (raid?.finished && s.isTester) {
+        // Modo maestro: puede repetir la batalla de la semana.
+        s.raids = s.raids.filter((r) => r.id !== raid!.id)
+        raid = undefined
+      }
       if (raid?.finished) throw new Error('Ya combatiste contra este jefe esta semana')
       if (!raid) {
         const pool = moduleQuestions(s, moduleId)
@@ -350,6 +426,7 @@ export function createDemoApi(): GameApi {
 
       return {
         id: raid.id,
+        lives: livesLeft(s),
         total: raid.questionIds.length,
         answered: raid.answeredIds.length,
         correct: raid.correct,
@@ -381,10 +458,13 @@ export function createDemoApi(): GameApi {
         if (raid.finished || raid.weekKey !== raidWeekKey()) throw new Error('Esta batalla ya terminó')
         if (!raid.questionIds.includes(q.id)) throw new Error('La pregunta no pertenece a esta batalla')
         if (raid.answeredIds.includes(q.id)) throw new Error('Ya respondiste esta pregunta en la batalla')
+        requireLives(s)
       }
 
       const boss = s.bosses.find((b) => b.moduleId === q.moduleId)
       const correct = answer.trim() === q.correct.trim()
+      // Un error dentro del Boss Raid gasta una vida (el entrenamiento es libre).
+      const lives = raid && !correct ? consumeLife(s) : livesLeft(s)
       const firstCorrect = correct && !s.answers.some((a) => a.questionId === q.id && a.awarded)
       let xp = firstCorrect ? (q.isBossFinal ? 50 : 10) : 0
       let damage = 0
@@ -442,8 +522,175 @@ export function createDemoApi(): GameApi {
         finalBlow,
         unlockedModuleId: finalBlow ? (boss?.unlocksModuleId ?? null) : null,
         raidFinished: raid?.finished ?? false,
+        livesLeft: lives,
         newBadges: fresh,
       }
+    },
+
+    async getLives() {
+      const s = load()
+      return {
+        lives: livesLeft(s),
+        maxLives: MAX_LIVES,
+        resetsAt: nextLivesReset().toISOString(),
+        unlimited: s.isTester,
+      }
+    },
+
+    async getModuleTree(moduleId) {
+      const s = load()
+      return SUBMODULES.filter((sm) => sm.moduleId === moduleId)
+        .sort((a, b) => a.order - b.order)
+        .map((sm) => {
+          const p = s.submodules[sm.id]
+          return {
+            id: sm.id,
+            order: sm.order,
+            title: sm.title,
+            description: sm.description,
+            unlocked: isSubUnlocked(s, sm.id),
+            codexRead: Boolean(p?.codexRead),
+            checkpointsTotal: sm.codex.checkpoints.length,
+            checkpointsPassed: p?.checkpoints.length ?? 0,
+            questionCount: sm.questions.length,
+            subboss: {
+              name: sm.subboss.name,
+              title: sm.subboss.title,
+              maxHp: sm.subboss.maxHp,
+              hp: p?.defeated ? 0 : sm.subboss.maxHp - (p?.damage ?? 0),
+              defeated: Boolean(p?.defeated),
+            },
+          }
+        })
+    },
+
+    async getSubmoduleCodex(submoduleId) {
+      const sm = SUBMODULES.find((x) => x.id === submoduleId)
+      if (!sm) throw new Error('Submódulo no existe')
+      return {
+        submoduleId,
+        title: sm.codex.title,
+        sections: sm.codex.sections,
+        videoUrl: sm.codex.videoUrl,
+        checkpoints: sm.codex.checkpoints,
+      }
+    },
+
+    async markSubmoduleCodexRead(submoduleId) {
+      const s = load()
+      const sm = SUBMODULES.find((x) => x.id === submoduleId)
+      if (!sm || !isSubUnlocked(s, submoduleId)) throw new Error('Submódulo bloqueado')
+      subProgress(s, submoduleId).codexRead = true
+      if (!s.codexReads.includes(sm.moduleId)) s.codexReads.push(sm.moduleId)
+      const fresh = evaluateBadges(s)
+      save(s)
+      return fresh
+    },
+
+    async passCheckpoint(submoduleId, checkpointId) {
+      const s = load()
+      const p = subProgress(s, submoduleId)
+      if (!p.checkpoints.includes(checkpointId)) p.checkpoints.push(checkpointId)
+      save(s)
+    },
+
+    async startSubboss(submoduleId) {
+      const s = load()
+      const sm = SUBMODULES.find((x) => x.id === submoduleId)
+      if (!sm) throw new Error('Submódulo no existe')
+      if (!isSubUnlocked(s, submoduleId)) throw new Error('Submódulo bloqueado')
+      const p = subProgress(s, submoduleId)
+      if (!p.codexRead) throw new Error('Debes leer el Códice antes de combatir')
+      if (p.defeated && !s.isTester) throw new Error('Ya derrotaste a este subjefe')
+      requireLives(s)
+      if (p.fightIds.length === 0 || p.fightAnswered.length >= p.fightIds.length || p.defeated) {
+        if (sm.questions.length === 0) throw new Error('Este submódulo aún no tiene preguntas')
+        p.fightIds = shuffle(sm.questions.map((q) => q.id))
+        p.fightAnswered = []
+        p.damage = 0
+        p.defeated = false
+      }
+      save(s)
+      return {
+        submoduleId,
+        hp: sm.subboss.maxHp - p.damage,
+        maxHp: sm.subboss.maxHp,
+        total: p.fightIds.length,
+        answered: p.fightAnswered.length,
+        lives: livesLeft(s),
+        questions: p.fightIds
+          .filter((id) => !p.fightAnswered.includes(id))
+          .map((id) => sm.questions.find((q) => q.id === id)!)
+          .map((q) => ({
+            id: q.id,
+            prompt: q.prompt,
+            options: shuffle([q.correct, ...q.distractors]),
+            isBossFinal: false,
+            alreadyAnswered: false,
+          })),
+      }
+    },
+
+    async answerSubboss(submoduleId, questionId, answer): Promise<SubbossAnswerResult> {
+      const s = load()
+      const sm = SUBMODULES.find((x) => x.id === submoduleId)
+      const p = s.submodules[submoduleId]
+      if (!sm || !p || !p.fightIds.includes(questionId)) throw new Error('La pregunta no pertenece a este combate')
+      if (p.fightAnswered.includes(questionId)) throw new Error('Ya respondiste esta pregunta en el combate')
+      if (p.defeated) throw new Error('Este subjefe ya fue derrotado')
+      requireLives(s)
+
+      const q = sm.questions.find((x) => x.id === questionId)!
+      const correct = answer.trim() === q.correct.trim()
+      const firstCorrect = correct && !s.answers.some((a) => a.questionId === q.id && a.awarded)
+      const xp = firstCorrect ? 10 : 0
+      const damage = correct ? Math.min(sm.subboss.damagePerHit, sm.subboss.maxHp - p.damage) : 0
+      const lives = correct ? livesLeft(s) : consumeLife(s)
+      p.damage += damage
+      p.defeated = p.damage >= sm.subboss.maxHp
+      p.fightAnswered.push(questionId)
+      s.totalXp += xp
+      s.answers.push({
+        questionId,
+        moduleId: sm.moduleId,
+        correct,
+        awarded: firstCorrect,
+        xp,
+        damage: 0,
+        at: new Date().toISOString(),
+      })
+      const fresh = evaluateBadges(s)
+      save(s)
+      return {
+        correct,
+        correctAnswer: q.correct,
+        awarded: firstCorrect,
+        xpGained: xp,
+        damageDealt: damage,
+        subbossHp: sm.subboss.maxHp - p.damage,
+        subbossMaxHp: sm.subboss.maxHp,
+        subbossDefeated: p.defeated,
+        fightOver: p.defeated || p.fightAnswered.length >= p.fightIds.length || lives <= 0,
+        livesLeft: lives,
+        newBadges: fresh,
+      }
+    },
+
+    async activateMasterMode(code) {
+      const s = load()
+      if (s.masterAttempts.day !== livesDayKey()) s.masterAttempts = { day: livesDayKey(), failed: 0 }
+      if (s.masterAttempts.failed >= 5) throw new Error('Demasiados intentos. Vuelve a intentarlo mañana')
+      const ok = code === DEMO_MASTER_CODE
+      if (ok) s.isTester = true
+      else s.masterAttempts.failed++
+      save(s)
+      return ok
+    },
+
+    async deactivateMasterMode() {
+      const s = load()
+      s.isTester = false
+      save(s)
     },
 
     async getLeaderboard() {

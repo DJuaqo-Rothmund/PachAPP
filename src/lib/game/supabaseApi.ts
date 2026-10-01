@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { RpgClassId } from '../../data/classes'
-import type { Badge, CodexSection } from '../../data/types'
-import type { AnswerResult, BossState, GameApi, RaidStatusCode } from './types'
+import type { Badge, CodexCheckpoint, CodexSection } from '../../data/types'
+import type { AnswerResult, BossState, GameApi, PlayQuestion, RaidStatusCode, SubbossAnswerResult } from './types'
 
 interface CampaignRow {
   module_id: number
@@ -13,7 +13,43 @@ interface CampaignRow {
   raid_answered: number
   raid_total: number
   raid_next_reset: string
+  subbosses_total: number
+  subbosses_defeated: number
 }
+
+interface TreeRow {
+  submodule_id: string
+  sort_order: number
+  title: string
+  description: string
+  subboss_name: string
+  subboss_title: string
+  subboss_max_hp: number
+  subboss_hp: number
+  subboss_defeated: boolean
+  unlocked: boolean
+  codex_read: boolean
+  checkpoints_total: number
+  checkpoints_passed: number
+  question_count: number
+}
+
+interface CheckpointRow {
+  id: string
+  timestamp_seconds: number
+  prompt: string
+  options: string[]
+  correct_index: number
+  explanation: string
+}
+
+const toPlayQuestion = (q: { id: string; prompt: string; options: string[]; is_boss_final?: boolean }): PlayQuestion => ({
+  id: q.id,
+  prompt: q.prompt,
+  options: q.options,
+  isBossFinal: Boolean(q.is_boss_final),
+  alreadyAnswered: false,
+})
 
 interface BossRow {
   id: string
@@ -50,7 +86,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
       const id = await currentUserId(sb)
       const { data, error } = await sb
         .from('profiles')
-        .select('id, display_name, avatar_url, rpg_class, total_xp')
+        .select('id, display_name, avatar_url, rpg_class, total_xp, is_tester')
         .eq('id', id)
         .single()
       if (error) throw error
@@ -60,6 +96,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         avatarUrl: data.avatar_url,
         rpgClass: data.rpg_class,
         totalXp: data.total_xp,
+        isTester: Boolean(data.is_tester),
       }
     },
 
@@ -100,6 +137,8 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
             total: s?.raid_total ?? 0,
             nextResetAt: s?.raid_next_reset ?? new Date().toISOString(),
           },
+          subbossesTotal: s?.subbosses_total ?? 0,
+          subbossesDefeated: s?.subbosses_defeated ?? 0,
         }
       })
     },
@@ -133,6 +172,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         answered: number
         correct: number
         damage: number
+        lives: number
         questions: { id: string; prompt: string; options: string[]; is_boss_final: boolean }[]
       }
       return {
@@ -141,13 +181,8 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         answered: r.answered,
         correct: r.correct,
         damage: r.damage,
-        questions: r.questions.map((q) => ({
-          id: q.id,
-          prompt: q.prompt,
-          options: q.options,
-          isBossFinal: q.is_boss_final,
-          alreadyAnswered: false,
-        })),
+        lives: r.lives,
+        questions: r.questions.map(toPlayQuestion),
       }
     },
 
@@ -171,6 +206,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         finalBlow: r.final_blow as boolean,
         unlockedModuleId: (r.unlocked_module_id as number | null) ?? null,
         raidFinished: Boolean(r.raid_finished),
+        livesLeft: Number(r.lives_left ?? 0),
         newBadges: (r.new_badges as string[]) ?? [],
       } satisfies AnswerResult
     },
@@ -212,6 +248,129 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
         .order('id')
       if (error) throw error
       return data as Badge[]
+    },
+
+    async getLives() {
+      const { data, error } = await sb.rpc('get_lives')
+      if (error) throw error
+      const r = data as { lives: number; max_lives: number; resets_at: string; unlimited: boolean }
+      return { lives: r.lives, maxLives: r.max_lives, resetsAt: r.resets_at, unlimited: r.unlimited }
+    },
+
+    async getModuleTree(moduleId) {
+      const { data, error } = await sb.rpc('get_module_tree', { p_module_id: moduleId })
+      if (error) throw error
+      return (data as TreeRow[]).map((r) => ({
+        id: r.submodule_id,
+        order: r.sort_order,
+        title: r.title,
+        description: r.description,
+        unlocked: r.unlocked,
+        codexRead: r.codex_read,
+        checkpointsTotal: r.checkpoints_total,
+        checkpointsPassed: r.checkpoints_passed,
+        questionCount: r.question_count,
+        subboss: {
+          name: r.subboss_name,
+          title: r.subboss_title,
+          maxHp: r.subboss_max_hp,
+          hp: r.subboss_hp,
+          defeated: r.subboss_defeated,
+        },
+      }))
+    },
+
+    async getSubmoduleCodex(submoduleId) {
+      const { data, error } = await sb
+        .from('codices')
+        .select('submodule_id, title, sections, video_url, interactive_checkpoints')
+        .eq('submodule_id', submoduleId)
+        .single()
+      if (error) throw error
+      return {
+        submoduleId: data.submodule_id,
+        title: data.title,
+        sections: data.sections as CodexSection[],
+        videoUrl: data.video_url,
+        checkpoints: (data.interactive_checkpoints as CheckpointRow[]).map(
+          (cp): CodexCheckpoint => ({
+            id: cp.id,
+            timestampSeconds: cp.timestamp_seconds,
+            prompt: cp.prompt,
+            options: cp.options,
+            correctIndex: cp.correct_index,
+            explanation: cp.explanation,
+          }),
+        ),
+      }
+    },
+
+    async markSubmoduleCodexRead(submoduleId) {
+      const { data, error } = await sb.rpc('mark_submodule_codex_read', { p_submodule_id: submoduleId })
+      if (error) throw error
+      return (data as string[]) ?? []
+    },
+
+    async passCheckpoint(submoduleId, checkpointId) {
+      const { error } = await sb.rpc('pass_checkpoint', { p_submodule_id: submoduleId, p_checkpoint_id: checkpointId })
+      if (error) throw error
+    },
+
+    async startSubboss(submoduleId) {
+      const { data, error } = await sb.rpc('start_subboss', { p_submodule_id: submoduleId })
+      if (error) throw error
+      const r = data as {
+        submodule_id: string
+        hp: number
+        max_hp: number
+        total: number
+        answered: number
+        lives: number
+        questions: { id: string; prompt: string; options: string[] }[]
+      }
+      return {
+        submoduleId: r.submodule_id,
+        hp: r.hp,
+        maxHp: r.max_hp,
+        total: r.total,
+        answered: r.answered,
+        lives: r.lives,
+        questions: r.questions.map(toPlayQuestion),
+      }
+    },
+
+    async answerSubboss(submoduleId, questionId, answer) {
+      const { data, error } = await sb.rpc('answer_subboss', {
+        p_submodule_id: submoduleId,
+        p_question_id: questionId,
+        p_answer: answer,
+      })
+      if (error) throw error
+      const r = data as Record<string, unknown>
+      return {
+        correct: r.correct as boolean,
+        correctAnswer: r.correct_answer as string,
+        awarded: r.awarded as boolean,
+        xpGained: r.xp_gained as number,
+        damageDealt: r.damage_dealt as number,
+        subbossHp: r.subboss_hp as number,
+        subbossMaxHp: r.subboss_max_hp as number,
+        subbossDefeated: r.subboss_defeated as boolean,
+        fightOver: r.fight_over as boolean,
+        livesLeft: r.lives_left as number,
+        newBadges: (r.new_badges as string[]) ?? [],
+      } satisfies SubbossAnswerResult
+    },
+
+    async activateMasterMode(code) {
+      const { data, error } = await sb.rpc('activate_master_mode', { p_code: code })
+      if (error) throw error
+      return Boolean(data)
+    },
+
+    async deactivateMasterMode() {
+      const { error } = await sb.rpc('deactivate_master_mode')
+      if (error) throw error
     },
 
     subscribeBoss(bossId, onChange) {

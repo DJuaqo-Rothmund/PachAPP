@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/ui/PageHeader'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
@@ -6,6 +7,8 @@ import { BadgeIcon } from '../components/game/BadgeIcon'
 import { RPG_CLASSES } from '../data/classes'
 import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
+import { useLives } from '../context/LivesContext'
+import { LivesHearts } from '../components/game/LivesHearts'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi } from '../lib/game'
 import { resetDemo } from '../lib/game/demoApi'
@@ -14,7 +17,9 @@ import { levelFromXp } from '../lib/game/level'
 
 export default function ProfilePage() {
   const { user, demoMode, isAdmin } = useAuth()
-  const { profile } = useProfile()
+  const { profile, refresh } = useProfile()
+  const { lives, refresh: refreshLives } = useLives()
+  const [leavingMaster, setLeavingMaster] = useState(false)
   const { data, error, reload } = useAsync(() => Promise.all([loadBadgeCatalog(), gameApi.getMyBadges()]), [])
   const [catalog, earned] = data ?? [[], []]
 
@@ -23,6 +28,16 @@ export default function ProfilePage() {
   const cls = RPG_CLASSES.find((c) => c.id === profile.rpgClass)
   const level = levelFromXp(profile.totalXp)
   const earnedMap = new Map((earned ?? []).map((b) => [b.badgeId, b.earnedAt]))
+
+  const handleDeactivateMaster = async () => {
+    setLeavingMaster(true)
+    try {
+      await gameApi.deactivateMasterMode()
+      await Promise.all([refresh(), refreshLives()])
+    } finally {
+      setLeavingMaster(false)
+    }
+  }
 
   const handleResetDemo = () => {
     if (!window.confirm('¿Borrar todo tu progreso de la demo?')) return
@@ -42,6 +57,14 @@ export default function ProfilePage() {
           <h2 className="mt-4 text-lg font-semibold">{profile.displayName}</h2>
           <p className="text-sm text-moss">{cls?.name}</p>
           <p className="mt-1 text-xs text-mist">{cls?.specialty}</p>
+          {profile.isTester && (
+            <p className="pixel-title mx-auto mt-3 w-fit rounded bg-gold/15 px-2 py-1 text-[9px] text-gold">🔮 Modo maestro</p>
+          )}
+
+          <div className="mt-4 flex items-center justify-between rounded-lg bg-stone px-3 py-2">
+            <span className="text-xs text-mist">Vidas de hoy</span>
+            <LivesHearts lives={lives} showCountdown />
+          </div>
 
           <div className="mt-6 text-left">
             <div className="flex items-baseline justify-between">
@@ -62,6 +85,11 @@ export default function ProfilePage() {
               <Link to="/admin" className="btn-ghost text-sm text-gold">
                 Panel Admin
               </Link>
+            )}
+            {profile.isTester && (
+              <button type="button" onClick={() => void handleDeactivateMaster()} disabled={leavingMaster} className="btn-ghost text-sm text-gold">
+                {leavingMaster ? 'Desactivando…' : 'Desactivar modo maestro'}
+              </button>
             )}
             {demoMode && (
               <button type="button" onClick={handleResetDemo} className="btn-ghost text-sm text-blood">

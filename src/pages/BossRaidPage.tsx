@@ -3,8 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { FullScreenLoader } from '../components/ui/FullScreenLoader'
 import { HpBar } from '../components/game/HpBar'
-import { PixelSprite } from '../components/pixel/PixelSprite'
-import { bossSprite } from '../components/pixel/sprites'
+import { AnswerOption, optionState } from '../components/game/AnswerOption'
+import { CoopBossFrame } from '../components/game/BossFrames'
+import { LivesHearts, OutOfLives } from '../components/game/LivesHearts'
+import { useLives } from '../context/LivesContext'
 import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../context/ProfileContext'
 import { useToast } from '../context/ToastContext'
@@ -18,6 +20,8 @@ type Mode = 'raid' | 'training'
 
 export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
   const moduleId = Number(useParams().moduleId)
+  const { profile } = useProfile()
+  const { lives } = useLives()
   const { data: campaign, error, loading, reload } = useAsync(() => gameApi.getCampaign(), [moduleId, mode])
 
   if (loading) return <FullScreenLoader />
@@ -46,7 +50,31 @@ export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
     )
   }
 
-  if (mode === 'raid' && module.raid.status === 'done') {
+  if (mode === 'raid' && module.subbossesDefeated < module.subbossesTotal && !profile?.isTester) {
+    return (
+      <Gate
+        title="⚔ Primero, los subjefes"
+        text={`Para unirte al Boss Raid contra ${module.boss.name} debes derrotar a los ${module.subbossesTotal} subjefes del módulo (llevas ${module.subbossesDefeated}).`}
+      >
+        <Link to={`/modulos/${module.id}`} className="btn-primary">
+          Ir a los submódulos
+        </Link>
+      </Gate>
+    )
+  }
+
+  if (mode === 'raid' && lives && !lives.unlimited && lives.lives <= 0 && module.raid.status !== 'defeated') {
+    return (
+      <div className="panel mx-auto max-w-lg">
+        <OutOfLives lives={lives} />
+        <div className="mt-6">
+          <TrainingLinks moduleId={module.id} />
+        </div>
+      </div>
+    )
+  }
+
+  if (mode === 'raid' && module.raid.status === 'done' && !profile?.isTester) {
     return (
       <Gate
         title="⏳ Ya combatiste esta semana"
@@ -116,6 +144,7 @@ interface QuestionSet {
 
 function Raid({ module, boss, campaign, mode }: RaidProps) {
   const { refresh } = useProfile()
+  const { lives, setLivesLeft } = useLives()
   const { demoMode } = useAuth()
   const { announceBadges } = useToast()
   const isRaid = mode === 'raid'
@@ -168,6 +197,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
     try {
       const r = await gameApi.answer(current.id, option, raid?.id)
       setResult(r)
+      if (isRaid) setLivesLeft(r.livesLeft)
       setStats((s) => ({
         answered: s.answered + 1,
         correct: s.correct + (r.correct ? 1 : 0),
@@ -213,38 +243,25 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
       {/* Jefe */}
       <section className="panel h-fit">
         <p className="text-xs text-mist">
-          {isRaid ? 'Boss Raid semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
+          {isRaid ? 'Boss Raid cooperativo semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
         </p>
-        {/* En móvil: sprite y nombre en fila para que la pregunta quede a la vista */}
-        <div className="mt-4 flex items-center gap-4 lg:block">
-          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-stone lg:mx-auto lg:h-40 lg:w-40">
-            <div key={hitKey} className={hitKey > 0 ? 'animate-hit' : ''}>
-              <PixelSprite
-                rows={bossSprite(boss.id)}
-                title={boss.name}
-                className={`h-20 w-20 lg:h-32 lg:w-32 ${defeated ? 'rotate-12 opacity-40 grayscale' : ''}`}
-              />
+        <div className="mt-5">
+          <CoopBossFrame bossId={boss.id} name={boss.name} title={boss.title} defeated={defeated} hitKey={hitKey} damage={lastDamage}>
+            <div className="mt-3">
+              <HpBar current={hp} max={boss.maxHp} />
             </div>
-            {hitKey > 0 && (
-              <span key={`dmg-${hitKey}`} className="animate-float-up pixel-title absolute top-1 text-sm text-gold">
-                −{lastDamage}
-              </span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="pixel-title text-[11px] leading-relaxed text-blood lg:mt-4 lg:text-center lg:text-sm">
-              {boss.name}
-            </h1>
-            <p className="mt-1 text-sm text-mist lg:text-center">{boss.title}</p>
-          </div>
+          </CoopBossFrame>
         </div>
-        <div className="mt-4">
-          <HpBar current={hp} max={boss.maxHp} />
-        </div>
+        {isRaid && (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-stone px-3 py-2">
+            <span className="text-xs text-mist">Vidas de hoy</span>
+            <LivesHearts lives={lives} size="lg" />
+          </div>
+        )}
         <p className="mt-3 hidden text-center text-xs text-mist sm:block">
           {isRaid
-            ? `Una batalla por semana de ${questionTotal} preguntas. Cada acierto de cualquier aventurero resta HP; si llega a 0, la comunidad desbloquea el siguiente módulo.`
-            : 'El entrenamiento no daña al jefe, pero cada primer acierto suma XP. Tu batalla semanal está en Boss Raid.'}
+            ? `Una batalla por semana de ${questionTotal} preguntas. Cada acierto de cualquier aventurero resta HP; si llega a 0, la comunidad desbloquea el siguiente módulo. Cada error gasta una vida.`
+            : 'El entrenamiento no daña al jefe ni gasta vidas, pero cada primer acierto suma XP. Tu batalla semanal está en Boss Raid.'}
         </p>
         {demoMode && isRaid && (
           <p className="mt-2 text-center text-[11px] text-gold/80">
@@ -272,6 +289,14 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
           <ErrorPanel error={error} onRetry={reload} />
         ) : loading || !data ? (
           <p className="animate-pulse text-sm text-mist">Invocando preguntas…</p>
+        ) : isRaid && !finished && !result && lives && !lives.unlimited && lives.lives <= 0 ? (
+          <div>
+            <OutOfLives lives={lives} />
+            <p className="mt-3 text-center text-xs text-mist">Tu batalla semanal queda en pausa: retómala mañana donde la dejaste.</p>
+            <div className="mt-6">
+              <TrainingLinks moduleId={module.id} />
+            </div>
+          </div>
         ) : finished ? (
           isRaid ? (
             <RaidSummary stats={stats} moduleId={module.id} nextResetAt={module.raid.nextResetAt} />
@@ -299,7 +324,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
 
             <div className="mt-6 grid gap-3">
               {current.options.map((option, i) => (
-                <OptionButton
+                <AnswerOption
                   key={option}
                   label={option}
                   letter={String.fromCharCode(65 + i)}
@@ -327,51 +352,6 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
   )
 }
 
-type OptionState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim'
-
-function optionState(option: string, picked: string | null, result: AnswerResult | null): OptionState {
-  if (!result) return option === picked ? 'picked' : 'idle'
-  if (option === result.correctAnswer) return 'correct'
-  if (option === picked) return 'wrong'
-  return 'dim'
-}
-
-const OPTION_STYLES: Record<OptionState, string> = {
-  idle: 'border-rune hover:border-moss hover:bg-stone',
-  picked: 'border-moss bg-stone animate-pulse',
-  correct: 'border-moss bg-moss/15 text-bone',
-  wrong: 'border-blood bg-blood/15 text-bone',
-  dim: 'border-rune opacity-40',
-}
-
-function OptionButton({
-  label,
-  letter,
-  state,
-  disabled,
-  onClick,
-}: {
-  label: string
-  letter: string
-  state: OptionState
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition disabled:cursor-default ${OPTION_STYLES[state]}`}
-    >
-      <span className="pixel-title flex h-7 w-7 shrink-0 items-center justify-center rounded bg-void text-[10px] text-mist">
-        {letter}
-      </span>
-      <span className="text-sm">{label}</span>
-    </button>
-  )
-}
-
 function Feedback({ result, bossName, isRaid }: { result: AnswerResult; bossName: string; isRaid: boolean }) {
   if (result.finalBlow) {
     return (
@@ -381,7 +361,11 @@ function Feedback({ result, bossName, isRaid }: { result: AnswerResult; bossName
     )
   }
   if (!result.correct) {
-    return <p className="text-sm text-blood">Fallaste. La respuesta correcta está marcada en verde.</p>
+    return (
+      <p className="text-sm text-blood">
+        Fallaste{isRaid ? ' y pierdes una vida' : ''}. La respuesta correcta está marcada en verde.
+      </p>
+    )
   }
   const parts = [
     result.awarded ? `+${result.xpGained} XP` : 'sin XP (ya la habías acertado)',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { classTheme, RPG_CLASSES, type RpgClassId } from '../data/classes'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -8,6 +8,11 @@ import { applyClassTheme } from '../components/layout/ClassThemeController'
 import { useAsync } from '../hooks/useAsync'
 import { gameApi } from '../lib/game'
 import { classUnlocks } from '../lib/game/classUnlocks'
+import { MasterCodeModal } from '../components/game/MasterCodeModal'
+
+/** Toques seguidos sobre el Brujo Fitosanitario que abren la clave del modo maestro. */
+const MASTER_TAPS = 5
+const MASTER_TAP_WINDOW_MS = 1500
 
 export default function OnboardingPage() {
   const { profile, refresh } = useProfile()
@@ -17,12 +22,27 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const isChange = Boolean(profile?.rpgClass)
   const { data: campaign } = useAsync(() => gameApi.getCampaign(), [])
+  const [masterOpen, setMasterOpen] = useState(false)
+  const taps = useRef({ count: 0, last: 0 })
   const unlocks = useMemo(() => classUnlocks(profile?.totalXp ?? 0, campaign ?? null), [profile?.totalXp, campaign])
 
   // Vista previa de la skin de la clase seleccionada; al salir vuelve la del perfil.
   const savedClass = profile?.rpgClass ?? null
   useEffect(() => applyClassTheme(classTheme(selected ?? savedClass)), [selected, savedClass])
   useEffect(() => () => applyClassTheme(classTheme(savedClass)), [savedClass])
+
+  // 5 toques seguidos al Brujo (sin tocar otra clase entre medio) piden la clave.
+  const onCardTap = (id: RpgClassId) => {
+    setSelected(id)
+    const now = Date.now()
+    const t = taps.current
+    t.count = id === 'brujo' && now - t.last < MASTER_TAP_WINDOW_MS ? t.count + 1 : id === 'brujo' ? 1 : 0
+    t.last = now
+    if (t.count >= MASTER_TAPS) {
+      t.count = 0
+      setMasterOpen(true)
+    }
+  }
 
   const confirm = async () => {
     if (!selected) return
@@ -52,23 +72,24 @@ export default function OnboardingPage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelected(c.id)}
+              onClick={() => onCardTap(c.id)}
               disabled={!unlock.selectable}
               aria-pressed={selected === c.id}
-              className={`panel text-left transition hover:border-moss disabled:cursor-not-allowed disabled:opacity-50 ${
-                selected === c.id ? 'border-moss ring-2 ring-moss/40' : ''
-              }`}
+              style={{ '--class-accent': c.theme.accent } as CSSProperties}
+              className="panel class-card text-left transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div
-                className="flex h-32 items-center justify-center rounded-lg bg-stone"
-                style={{ backgroundImage: `radial-gradient(circle at 50% 60%, ${c.theme.accent}26, transparent 70%)` }}
-              >
-                <ClassAvatar rpgClass={c.id} className="h-24 w-24" />
+              <div className="class-card__stage relative flex h-36 items-end justify-center rounded-lg pb-2">
+                <span
+                  className="pixel-title absolute left-2 top-2 rounded px-1.5 py-0.5 text-[8px]"
+                  style={{ background: c.theme.accentDim, color: c.theme.accent }}
+                >
+                  {c.specialty}
+                </span>
+                <ClassAvatar rpgClass={c.id} className="h-28 w-28" />
               </div>
-              <h2 className="pixel-title mt-4 text-[11px] text-bone">{c.name}</h2>
-              <p className="mt-2 text-xs font-semibold" style={{ color: c.theme.accent }}>
-                {c.specialty}
-              </p>
+              <h2 className="pixel-title mt-4 text-[11px]" style={{ color: c.theme.accent }}>
+                {c.name}
+              </h2>
               <p className="mt-2 text-sm text-mist">{c.description}</p>
               {unlock.requirement && (
                 <p className="mt-3 rounded-md bg-stone px-2 py-1 text-xs text-mist">
@@ -80,6 +101,8 @@ export default function OnboardingPage() {
           )
         })}
       </div>
+
+      {masterOpen && <MasterCodeModal onClose={() => setMasterOpen(false)} />}
 
       <div className="mt-6 flex items-center justify-end gap-4">
         {error && <p className="text-sm text-blood">{error}</p>}

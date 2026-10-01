@@ -3,6 +3,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../context/ProfileContext'
 import { levelFromXp } from '../../lib/game/level'
 import { ClassAvatar } from '../game/ClassAvatar'
+import { LivesHearts } from '../game/LivesHearts'
+import { useLives } from '../../context/LivesContext'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Mapa', end: true },
@@ -13,6 +15,7 @@ const NAV_ITEMS = [
 export function AppShell() {
   const { user, demoMode, signOut } = useAuth()
   const { profile } = useProfile()
+  const { lives } = useLives()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -48,6 +51,12 @@ export function AppShell() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {profile && <LivesHearts lives={lives} />}
+            {profile?.isTester && (
+              <span className="pixel-title hidden rounded bg-gold/15 px-2 py-1 text-[8px] text-gold sm:inline" title="Modo maestro activo">
+                Maestro
+              </span>
+            )}
             {profile && (
               <NavLink to="/perfil" className="flex items-center gap-2" aria-label="Mi perfil">
                 <div className="text-right leading-tight">
