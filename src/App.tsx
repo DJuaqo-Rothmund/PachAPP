@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext'
 import { LivesProvider } from './context/LivesContext'
 import { AppShell } from './components/layout/AppShell'
 import { ClassThemeController } from './components/layout/ClassThemeController'
+import { BootSplash } from './components/layout/BootSplash'
 import { RequireAdmin, RequireAuth, RequireClass } from './components/routing/RequireAuth'
 import { FullScreenLoader } from './components/ui/FullScreenLoader'
 
@@ -29,6 +30,7 @@ export default function App() {
         <LivesProvider>
           <ToastProvider>
             <ClassThemeController />
+            <BootSplash />
             <BrowserRouter>
               <Suspense fallback={<FullScreenLoader />}>
                 <Routes>

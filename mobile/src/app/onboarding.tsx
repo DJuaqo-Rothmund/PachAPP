@@ -60,6 +60,7 @@ export default function OnboardingScreen() {
         </Body>
         <Button label="Confirmar" onPress={() => void confirm()} disabled={!selected} loading={saving} />
       </View>
+      {error && <Body tone="blood">{error}</Body>}
       {selected && (
         <Body tone="mist" size={13} style={{ marginTop: -space.sm }}>
           Elegida: <Body size={13} style={{ color: RPG_CLASSES.find((c) => c.id === selected)?.theme.accent }}>{RPG_CLASSES.find((c) => c.id === selected)?.name}</Body>
@@ -111,8 +112,6 @@ export default function OnboardingScreen() {
       </View>
 
       <MasterCodeModal visible={masterOpen} onClose={() => setMasterOpen(false)} />
-      {error && <Body tone="blood">{error}</Body>}
-      <Button label="Confirmar clase" onPress={() => void confirm()} disabled={!selected} loading={saving} />
     </Screen>
   )
 }

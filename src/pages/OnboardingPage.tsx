@@ -119,11 +119,6 @@ export default function OnboardingPage() {
 
       {masterOpen && <MasterCodeModal onClose={() => setMasterOpen(false)} />}
 
-      <div className="mt-6 flex items-center justify-end gap-4">
-        <button type="button" className="btn-primary" disabled={!selected || saving} onClick={confirm}>
-          {saving ? 'Guardando…' : 'Confirmar clase'}
-        </button>
-      </div>
     </div>
   )
 }

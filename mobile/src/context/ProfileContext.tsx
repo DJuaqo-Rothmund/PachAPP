@@ -17,6 +17,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const canLoad = demoMode || Boolean(user)
+  // Cuenta para la que se cargó el perfil. Al restaurar la sesión hay un render en que ya
+  // hay usuario pero su perfil aún no se pide: sin esto la app creía que no tenía clase
+  // y lo mandaba a elegirla en cada inicio.
+  const accountKey = demoMode ? 'demo' : (user?.id ?? null)
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     if (!canLoad) {
@@ -30,16 +35,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       setError(e instanceof Error ? e : new Error(String(e)))
     } finally {
+      setLoadedFor(accountKey)
       setLoading(false)
     }
-  }, [canLoad])
+  }, [canLoad, accountKey])
 
   useEffect(() => {
     setLoading(true)
     void refresh()
   }, [refresh, user?.id])
 
-  return <ProfileContext.Provider value={{ profile, loading, error, refresh }}>{children}</ProfileContext.Provider>
+  const pending = accountKey !== null && loadedFor !== accountKey
+  return (
+    <ProfileContext.Provider value={{ profile, loading: loading || pending, error, refresh }}>{children}</ProfileContext.Provider>
+  )
 }
 
 export function useProfile(): ProfileContextValue {

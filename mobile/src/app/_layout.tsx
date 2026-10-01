@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p'
+import { VT323_400Regular } from '@expo-google-fonts/vt323'
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
 import { StyleSheet, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -12,11 +13,28 @@ import { LivesProvider } from '@/context/LivesContext'
 import { BootScreen } from '@/components/BootScreen'
 import { hydrateDemoStorage } from '@/lib/demoStorage'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { gameApi } from '@/lib/game'
 import { colors } from '@/theme'
+
+/** Tiempo mínimo que se ve el logo al abrir la app (se aprovecha para precargar). */
+const BOOT_MIN_MS = 2500
+const BOOT_STARTED = Date.now()
+
+/** true cuando ya pasó el tiempo mínimo de la pantalla de carga. */
+function useBootMinimum() {
+  const [done, setDone] = useState(() => Date.now() - BOOT_STARTED >= BOOT_MIN_MS)
+  useEffect(() => {
+    if (done) return
+    const t = setTimeout(() => setDone(true), BOOT_MIN_MS - (Date.now() - BOOT_STARTED))
+    return () => clearTimeout(t)
+  }, [done])
+  return done
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     PressStart2P_400Regular,
+    VT323_400Regular,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
@@ -51,6 +69,12 @@ export default function RootLayout() {
 function RootNavigator() {
   const { user, demoMode, loading: authLoading } = useAuth()
   const { profile, loading: profileLoading } = useProfile()
+  const bootMinimum = useBootMinimum()
+  // Con el perfil listo, se adelantan los datos del mapa mientras se ve el logo.
+  const profileId = profile?.id
+  useEffect(() => {
+    if (profileId) void gameApi.getCampaign().catch(() => undefined)
+  }, [profileId])
   const authed = demoMode || Boolean(user)
   const loading = authLoading || (authed && profileLoading)
   // Mientras carga el perfil no se sabe si tiene clase: se deja pasar y, si no
@@ -86,7 +110,7 @@ function RootNavigator() {
         </Stack.Protected>
         <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
       </Stack>
-      {loading && (
+      {(loading || !bootMinimum) && (
         <View style={StyleSheet.absoluteFill}>
           <BootScreen />
         </View>
