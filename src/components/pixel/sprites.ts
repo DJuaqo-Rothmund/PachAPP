@@ -307,8 +307,8 @@ export const CLASS_SPRITES: Record<string, string[]> = {
 
 /** Sprite propio de cada jefe de la campaña, por id. */
 export const BOSS_SPRITES: Record<string, string[]> = {
-  // Archimago de Terrones: hechicero de tierra con hombreras de roca, ojos de magma y terrón flotante
-  'boss-m0': [
+  // Gólem de Arcilla Compactada (provisorio: sprite del antiguo Archimago de Terrones): hechicero de tierra con hombreras de roca, ojos de magma y terrón flotante
+  'boss-edafologia': [
     '.....jj.........................',
     '....jJJj.......jj........j.jjj..',
     '....j9Jj......jnnj......jOjNNNj.',
@@ -343,7 +343,7 @@ export const BOSS_SPRITES: Record<string, string[]> = {
     '.........j.............K....jK..',
   ],
   // Deformidad de los Verticales: horror de la turbera con corona de brotes, ojos de arándano y floats
-  'boss-m1': [
+  'boss-cranberry': [
     '........uRu....uRu....uRu.......',
     '......u.hgh....hgh....hgh.u.....',
     '.....uRuhgh.u..hgh..u.hghuRu....',
@@ -378,7 +378,7 @@ export const BOSS_SPRITES: Record<string, string[]> = {
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
   ],
   // Señor de las Cañas: armadura helada, corona de cañas espinosas y capa frambuesa
-  'boss-m2': [
+  'boss-frambuesa': [
     '.............u.hhh.u.......t....',
     '......f.....urhgGguru.....tWt...',
     '.....fcf..uurruIVurru.u...tUt...',

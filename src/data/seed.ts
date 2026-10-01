@@ -1,6 +1,11 @@
-import type { Badge, Module, Question } from './types'
+import type { Badge, CodexSection, Module, Question, Submodule } from './types'
+import { EDAFOLOGIA_BOSS_FINAL, EDAFOLOGIA_SUBMODULES } from './campaign/m01-edafologia.ts'
 
-/** Crea una pregunta con id estable `m{módulo}-q{n}`. */
+/**
+ * Crea una pregunta con id estable `m{n}-q{k}`. Las de Cranberry y Frambuesa usan
+ * la numeración antigua (m1-, m2-) aunque hoy sean los módulos 7 y 8: así conservan
+ * su historial de respuestas.
+ */
 function q(
   moduleId: number,
   n: number,
@@ -14,84 +19,19 @@ function q(
 /** Id fijo de la pregunta final de cada jefe. */
 const BOSS_Q = 99
 
-// ---------------------------------------------------------------------------
-// MÓDULO 0 · Fundamentos y Diseño
-// ---------------------------------------------------------------------------
-
-const module0: Module = {
-  id: 0,
-  slug: 'fundamentos',
-  title: 'Fundamentos Agronómicos',
-  summary: 'Suelos de Chile, dinámica hídrica, MIP y diseño experimental.',
-  initiallyUnlocked: true,
-  codex: [
-    {
-      heading: 'Dinámica Hídrica y Suelos',
-      body: [
-        'El suelo dicta el potencial. En Chile, va desde Entisoles norteños hasta Andisoles (trumaos) del sur.',
-        'Los trumaos (dominados por arcillas alofana e imogolita) retienen mucha agua pero bloquean químicamente el Fósforo. La Capacidad de Intercambio Catiónico (CIC) depende de arcillas y materia orgánica.',
-        'El riego moderno usa el Déficit de Presión de Vapor (VPD); un VPD alto cierra estomas para evitar cavitación, deteniendo la fotosíntesis.',
-      ],
-    },
-    {
-      heading: 'Sanidad y Metodología',
-      body: [
-        'El MIP actúa sobre el Umbral de Daño Económico.',
-        'En terreno, rara vez se usa Diseño Completamente al Azar (DCA); se usa Bloques Completos al Azar (DBCA) para aislar gradientes topográficos.',
-      ],
-    },
-  ],
-  questions: [
-    q(0, 1, '¿Qué clase textural tiene la mayor Capacidad de Campo y el mayor Punto de Marchitez?', 'Arcillosa', ['Arenosa', 'Franca', 'Franco-limosa']),
-    q(0, 2, '¿Cuál es el reto principal al fertilizar suelos Trumaos?', 'Alta fijación de Fósforo', ['Alta salinidad', 'Exceso de carbonatos', 'pH alcalino']),
-    q(0, 3, '¿Cuándo alcanza su máximo el coeficiente de cultivo (Kc)?', 'Pleno verano con canopia completa', ['Receso invernal', 'Brotación', 'Caída de hojas']),
-    q(0, 4, '¿Qué caracteriza a una helada de radiación?', 'Noche despejada, pérdida de calor del suelo', ['Llegada de una masa polar', 'Lluvia congelada', 'Exceso de riego']),
-    q(0, 5, '¿Cuál es la macrozona primicia para cerezas en Chile?', 'Norte Chico/Coquimbo', ['Araucanía', 'Chiloé', "O'Higgins"]),
-    q(0, 6, 'En MIP, ¿cuándo corresponde aplicar un insecticida?', 'Cuando la plaga supera el Umbral de Daño Económico', ['Al ver el primer insecto', 'Por calendario cada 15 días', 'Cuando el daño ya es irreversible']),
-    q(0, 7, '¿Qué plantea la Ley de Liebig?', 'El rendimiento está limitado por el nutriente más escaso', ['Usar la menor cantidad de agua', 'Solo importa el nitrógeno', 'La planta crece hasta un tamaño mínimo']),
-    q(0, 8, '¿Qué malezas controla un herbicida graminicida?', 'Hoja angosta', ['Hoja ancha', 'Ciperáceas', 'Toda maleza']),
-    q(0, 9, '¿Qué rango de temperatura define una Hora Frío tradicional?', 'Entre 0 °C y 7,2 °C', ['Bajo 0 °C', 'Horas con neblina', 'Horas de sombra en verano']),
-    q(0, 10, '¿Qué componentes aportan principalmente a la CIC del suelo?', 'Arcilla y Materia Orgánica', ['Arena', 'Carbonatos', 'Fertilizantes']),
-    q(0, 11, '¿En qué se diferencian la densidad aparente y la densidad real del suelo?', 'La aparente incluye los poros; la real, solo los sólidos', ['La real cambia con la labranza', 'Ambas miden la materia orgánica', 'Son iguales']),
-    q(0, 12, '¿Qué es una inversión térmica?', 'Una capa fría asentada bajo una capa cálida en altura', ['El suelo más caliente que el aire', 'El choque de un frente polar', 'El congelamiento del agua de riego']),
-    q(0, 13, '¿Por qué tejido se transportan los fotoasimilados?', 'Floema', ['Xilema', 'Estomas', 'Cambium']),
-    q(0, 14, '¿En qué se diferencia un suelo salino de uno sódico?', 'Salino: alta CE; sódico: alto PSI que destruye la estructura', ['El salino retiene y el sódico repele agua', 'El sódico está en el sur y el salino en el norte', 'Son sinónimos']),
-    q(0, 15, 'En un test de Tukey, dos tratamientos con letras "a" y "ab" indican que…', 'No hay diferencia estadística significativa', ['Uno rinde el doble', 'Hay que eliminar un tratamiento', 'El tratamiento "a" es superior']),
-    q(0, 16, '¿Cuál es la eficiencia típica del riego por goteo?', '90% a 95%', ['50% a 60%', '70% a 75%', '100%']),
-    q(0, 17, '¿Qué deficiencia aparece primero en las hojas viejas?', 'Nitrógeno', ['Calcio', 'Boro', 'Hierro']),
-    q(0, 18, '¿Para qué se usan los Días Grado en MIP?', 'Predecir el desarrollo fenológico del insecto según el calor acumulado', ['Medir el daño en hojas', 'Estimar la degradación del pesticida', 'Fijar la fecha de cosecha']),
-    q(0, 19, '¿Qué es la capacidad tampón (buffer) del suelo?', 'Su resistencia a cambiar de pH', ['Su retención de agua', 'Su infiltración de lluvia', 'Su resistencia a la compactación']),
-    q(0, 20, '¿Qué consecuencia tiene el cierre estomático por un VPD alto?', 'Aumento de la temperatura foliar y cese de la asimilación de CO₂', ['La planta absorbe más nitrógeno', 'Se abren las acuaporinas', 'La fotosíntesis se duplica']),
-    q(0, 21, '¿Qué arcillas amorfas dominan en los Trumaos?', 'Alofana e Imogolita', ['Montmorillonita y Caolinita', 'Ilita y Vermiculita', 'Cuarzo']),
-    q(0, 22, '¿Qué indica un valor de NDVI de 0,2 (muy bajo)?', 'Baja densidad de biomasa o suelo desnudo', ['Exceso de clorofila', 'Deficiencia de Zinc', 'Alta humedad']),
-  ],
-  boss: {
-    id: 'boss-m0',
-    name: 'Archimago de Terrones',
-    title: 'Consultor de Panguipulli',
-    maxHp: 1000,
-    damagePerHit: 10,
-    finalQuestion: q(
-      0,
-      BOSS_Q,
-      'Proyecto en Panguipulli: suelo Andisol, pH 5,6 y agua justa para cubrir la ETc. ¿Por qué fracasará el Cranberry?',
-      'Déficit hídrico para la aspersión contra heladas',
-      ['pH tóxico', 'Asfixia por materia orgánica', 'Bloqueo de nitrógeno'],
-    ),
-    unlocksModuleId: 1,
-  },
-}
+/** HP de los jefes cooperativos semanales (5 veces el de la primera campaña). */
+export const COOP_BOSS_HP = 5000
 
 // ---------------------------------------------------------------------------
-// MÓDULO 1 · Manejo Especializado de Cranberry
+// MÓDULO 7 · Cranberry (antes módulo 1)
 // ---------------------------------------------------------------------------
 
-const module1: Module = {
-  id: 1,
+const cranberry: Module = {
+  id: 7,
   slug: 'cranberry',
   title: 'Cranberry',
   summary: 'Acidófila de raíz superficial, heladas por aspersión y cosecha en agua.',
-  initiallyUnlocked: false,
+  initiallyUnlocked: true,
   codex: [
     {
       heading: 'Manejo Especializado de Cranberry',
@@ -137,10 +77,10 @@ const module1: Module = {
     q(1, 25, '¿Cómo actúa el hongo Cottonball?', 'Infecta la flor y la baya se llena de una masa algodonosa', ['Destruye la raíz', 'Causa defoliación', 'Mancha la epidermis']),
   ],
   boss: {
-    id: 'boss-m1',
+    id: 'boss-cranberry',
     name: 'Deformidad de los Verticales',
     title: 'Señora de los Floats',
-    maxHp: 1000,
+    maxHp: COOP_BOSS_HP,
     damagePerHit: 10,
     finalQuestion: q(
       1,
@@ -149,20 +89,21 @@ const module1: Module = {
       'Polinización vibratoria (Buzz pollination)',
       ['Anemófila estricta', 'Nectarización', 'Autopolinización'],
     ),
-    unlocksModuleId: 2,
+    unlocksModuleId: 8,
   },
+  submodules: [],
 }
 
 // ---------------------------------------------------------------------------
-// MÓDULO 2 · Manejo Avanzado de Frambuesa
+// MÓDULO 8 · Frambuesa (antes módulo 2)
 // ---------------------------------------------------------------------------
 
-const module2: Module = {
-  id: 2,
+const frambuesa: Module = {
+  id: 8,
   slug: 'frambuesa',
   title: 'Frambuesa',
   summary: 'Primocane vs floricane, camellones, conducción en V y pre-frío.',
-  initiallyUnlocked: false,
+  initiallyUnlocked: true,
   codex: [
     {
       heading: 'Manejo Avanzado de Frambuesa',
@@ -207,10 +148,10 @@ const module2: Module = {
     q(2, 25, '¿Qué riesgo tiene un raleo de primocanes muy tardío?', 'El segundo flujo de cañas no alcanza vigor para el año siguiente', ['La fruta cuaja de color blanco', 'Mueren las raíces', 'Se compacta el suelo']),
   ],
   boss: {
-    id: 'boss-m2',
+    id: 'boss-frambuesa',
     name: 'Señor de las Cañas',
     title: 'Guardián del Pre-frío',
-    maxHp: 1000,
+    maxHp: COOP_BOSS_HP,
     damagePerHit: 10,
     finalQuestion: q(
       2,
@@ -219,11 +160,91 @@ const module2: Module = {
       'Muriato de Potasio (KCl)',
       ['Sulfato de Potasio', 'Nitrato de Potasio', 'Tiosulfato de Potasio'],
     ),
-    unlocksModuleId: null,
+    unlocksModuleId: 9,
   },
+  submodules: [],
 }
 
-export const MODULES: Module[] = [module0, module1, module2]
+// ---------------------------------------------------------------------------
+// Campaña de 13 módulos
+// ---------------------------------------------------------------------------
+
+/** Códice del módulo armado con los Códices de sus submódulos (para la vista actual). */
+function codexFromSubmodules(moduleId: number, submodules: Submodule[]): CodexSection[] {
+  return submodules.flatMap((sm) =>
+    sm.codex.sections.map((section) => ({ heading: `${moduleId}.${sm.order} · ${section.heading}`, body: section.body })),
+  )
+}
+
+interface ModuleSpec {
+  id: number
+  slug: string
+  title: string
+  summary: string
+  boss: { name: string; title: string }
+}
+
+const LAST_MODULE_ID = 13
+
+/** Módulo con submódulos: sus preguntas y su Códice salen de los submódulos. */
+function moduleWithSubmodules(spec: ModuleSpec, submodules: Submodule[], finalQuestion: Question | null): Module {
+  return {
+    ...spec,
+    initiallyUnlocked: spec.id === 1,
+    codex: codexFromSubmodules(spec.id, submodules),
+    questions: submodules.flatMap((sm) => sm.questions),
+    submodules,
+    boss: coopBoss(spec, finalQuestion),
+  }
+}
+
+/** Módulo cuyo contenido aún no se carga: bloqueado y con un aviso en su Códice. */
+function upcomingModule(spec: ModuleSpec): Module {
+  return {
+    ...spec,
+    initiallyUnlocked: false,
+    codex: [{ heading: 'En preparación', body: ['Los submódulos, Códices y subjefes de este módulo llegarán pronto.'] }],
+    questions: [],
+    submodules: [],
+    boss: coopBoss(spec, null),
+  }
+}
+
+function coopBoss(spec: ModuleSpec, finalQuestion: Question | null): Module['boss'] {
+  return {
+    id: `boss-${spec.slug}`,
+    name: spec.boss.name,
+    title: spec.boss.title,
+    maxHp: COOP_BOSS_HP,
+    damagePerHit: 10,
+    finalQuestion,
+    unlocksModuleId: spec.id < LAST_MODULE_ID ? spec.id + 1 : null,
+  }
+}
+
+const SPECS: ModuleSpec[] = [
+  { id: 1, slug: 'edafologia', title: 'Edafología y Física de Suelos', summary: 'Textura, estructura, agua del suelo, compactación, erosión y lectura de perfiles.', boss: { name: 'El Gólem de Arcilla Compactada', title: 'Señor del Pie de Arado' } },
+  { id: 2, slug: 'fertilidad', title: 'Fertilidad y Nutrición Vegetal', summary: 'CIC, pH, macro y micronutrientes, diagnóstico foliar y programas de fertilización.', boss: { name: 'El Titán de la Salinidad Residual', title: 'Señor de la Conductividad Eléctrica' } },
+  { id: 3, slug: 'agrometeorologia', title: 'Agrometeorología y Clima', summary: 'Balance de radiación, heladas, horas frío, grados día y evapotranspiración.', boss: { name: 'La Tempestad de Escarcha Negra', title: 'Heraldo de la Inversión Térmica' } },
+  { id: 4, slug: 'fisiologia', title: 'Fisiología Vegetal y Relaciones Hídricas', summary: 'Fotosíntesis, transpiración, potencial hídrico, hormonas y fenología.', boss: { name: 'La Raíz Senescente Ancestral', title: 'Devoradora de Turgencia' } },
+  { id: 5, slug: 'botanica', title: 'Botánica Agrícola y Silvestre', summary: 'Morfología, taxonomía, flora nativa y reconocimiento de malezas.', boss: { name: 'El Filotaxista Ancestral', title: 'Custodio del Herbario Prohibido' } },
+  { id: 6, slug: 'fruticultura', title: 'Fruticultura General', summary: 'Portainjertos, sistemas de conducción, poda, polinización y cuaja.', boss: { name: 'El Patriarca del Canopio Desbocado', title: 'Tirano del Vigor Excesivo' } },
+  { id: 9, slug: 'horticultura', title: 'Horticultura e Invernaderos', summary: 'Manejo de hortalizas, ambiente protegido, clima del invernadero y fertirriego.', boss: { name: 'El Climatizador Desbocado', title: 'Amo del Déficit de Presión de Vapor' } },
+  { id: 10, slug: 'aves', title: 'Reconocimiento de Aves', summary: 'Identificación de aves de Chile, su rol en el agroecosistema y el manejo de daños.', boss: { name: 'El Tirano de la Espiga', title: 'Rey de la Bandada Granívora' } },
+  { id: 11, slug: 'hongos', title: 'Reconocimiento y Biología de Hongos', summary: 'Morfología, ciclos de vida, hongos benéficos, fitopatógenos y setas silvestres.', boss: { name: 'El Micelio Nigromante', title: 'Tejedor de Hifas Oscuras' } },
+  { id: 12, slug: 'avicola', title: 'Producción Avícola', summary: 'Razas, nutrición, sanidad, bienestar y manejo de galpones.', boss: { name: 'El Barón de la Cresta Hipertrófica', title: 'Señor del Galpón sin Ventilar' } },
+  { id: 13, slug: 'caprinos', title: 'Producción Caprina y Rumiantes Menores', summary: 'Manejo reproductivo, alimentación en secano, sanidad y productos lácteos.', boss: { name: 'El Macho Cabrío del Rastrojo Salino', title: 'Rumiante del Secano Indómito' } },
+]
+
+const spec = (id: number) => SPECS.find((s) => s.id === id)!
+
+export const MODULES: Module[] = [
+  moduleWithSubmodules(spec(1), EDAFOLOGIA_SUBMODULES, EDAFOLOGIA_BOSS_FINAL),
+  ...[2, 3, 4, 5, 6].map((id) => upcomingModule(spec(id))),
+  cranberry,
+  frambuesa,
+  ...[9, 10, 11, 12, 13].map((id) => upcomingModule(spec(id))),
+]
 
 
 // ---------------------------------------------------------------------------
@@ -241,23 +262,23 @@ export const BADGES: Badge[] = [
   {
     id: 'sobreviviente-de-heladas',
     name: 'Sobreviviente de Heladas',
-    description: 'Participaste en la caída del Archimago de Terrones.',
+    description: 'Participaste en la caída de la Tempestad de Escarcha Negra.',
     icon: 'snowflake',
-    criterion: { type: 'boss_defeated', moduleId: 0 },
+    criterion: { type: 'boss_defeated', moduleId: 3 },
   },
   {
     id: 'senor-de-la-turbera',
     name: 'Señor de la Turbera',
     description: 'Completaste el módulo Cranberry.',
     icon: 'berry-red',
-    criterion: { type: 'module_completed', moduleId: 1 },
+    criterion: { type: 'module_completed', moduleId: 7 },
   },
   {
     id: 'cazador-de-suzukii',
     name: 'Cazador de Suzukii',
     description: 'Completaste el módulo Frambuesa.',
     icon: 'berry-pink',
-    criterion: { type: 'module_completed', moduleId: 2 },
+    criterion: { type: 'module_completed', moduleId: 8 },
   },
   {
     id: 'racha-perfecta',

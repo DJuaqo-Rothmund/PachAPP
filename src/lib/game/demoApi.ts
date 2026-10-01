@@ -19,7 +19,7 @@ import type {
 } from './types'
 import { RAID_QUESTION_LIMIT, nextRaidReset, raidWeekKey } from './raid'
 
-const STORAGE_KEY = 'pachapp-demo-v2'
+const STORAGE_KEY = 'pachapp-demo-v3'
 const DEMO_USER_ID = 'demo-user'
 
 /**
@@ -331,8 +331,8 @@ export function createDemoApi(): GameApi {
         const pool = moduleQuestions(s, moduleId)
         const final = pool.find((q) => q.isBossFinal)
         const regular = shuffle(pool.filter((q) => !q.isBossFinal)).slice(0, RAID_QUESTION_LIMIT - (final ? 1 : 0))
+        if (regular.length === 0) throw new Error('Este módulo aún no tiene preguntas')
         const questionIds = [...regular.map((q) => q.id), ...(final ? [final.id] : [])]
-        if (questionIds.length === 0) throw new Error('Este módulo no tiene preguntas')
         raid = {
           id: Math.max(0, ...s.raids.map((r) => r.id)) + 1,
           bossId: boss.id,

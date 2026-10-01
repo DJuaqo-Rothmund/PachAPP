@@ -8,7 +8,7 @@
  * ni el estado de derrota de los jefes.
  */
 import { BADGES, MODULES } from '../src/data/seed.ts'
-import type { Question } from '../src/data/types.ts'
+import type { Codex, Question } from '../src/data/types.ts'
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'joaquin.rothmund@gmail.com')
   .split(',')
@@ -51,21 +51,69 @@ for (const m of MODULES) {
 }
 emit()
 
-emit('-- Preguntas')
-const questionRow = (moduleId: number, q: Question, sortOrder: number, isBossFinal: boolean) =>
-  `  (${str(q.id)}, ${moduleId}, ${str(q.prompt)}, ${str(q.correct)}, ${textArray(q.distractors)}, ${isBossFinal}, ${sortOrder})`
+emit('-- Submódulos con su subjefe individual')
+for (const m of MODULES) {
+  for (const sm of m.submodules) {
+    const b = sm.subboss
+    emit(
+      `insert into public.submodules (id, module_id, sort_order, title, description, subboss_name, subboss_title, subboss_max_hp, subboss_damage_per_hit) values (` +
+        `${str(sm.id)}, ${m.id}, ${sm.order}, ${str(sm.title)}, ${str(sm.description)}, ${str(b.name)}, ${str(b.title)}, ${b.maxHp}, ${b.damagePerHit})`,
+    )
+    emit(
+      '  on conflict (id) do update set module_id = excluded.module_id, sort_order = excluded.sort_order, title = excluded.title,' +
+        ' description = excluded.description, subboss_name = excluded.subboss_name, subboss_title = excluded.subboss_title,' +
+        ' subboss_max_hp = excluded.subboss_max_hp, subboss_damage_per_hit = excluded.subboss_damage_per_hit;',
+    )
+  }
+}
+emit()
 
-const questionRows = MODULES.flatMap((m) => [
-  ...m.questions.map((q, i) => questionRow(m.id, q, i + 1, false)),
-  ...(m.boss.finalQuestion ? [questionRow(m.id, m.boss.finalQuestion, 999, true)] : []),
-])
-emit('insert into public.questions (id, module_id, prompt, correct_answer, distractors, is_boss_final, sort_order) values')
+emit('-- Códices de submódulo (texto, video opcional y checkpoints interactivos)')
+const checkpointsJson = (codex: Codex) =>
+  codex.checkpoints.map((cp) => ({
+    id: cp.id,
+    timestamp_seconds: cp.timestampSeconds,
+    prompt: cp.prompt,
+    options: cp.options,
+    correct_index: cp.correctIndex,
+    explanation: cp.explanation,
+  }))
+for (const m of MODULES) {
+  for (const sm of m.submodules) {
+    const c = sm.codex
+    emit(
+      `insert into public.codices (id, submodule_id, title, sections, video_url, video_duration_seconds, interactive_checkpoints) values (` +
+        `${str(c.id)}, ${str(sm.id)}, ${str(c.title)}, ${json(c.sections)}, ${nullable(c.videoUrl)}, ${nullable(c.videoDurationSeconds)}, ${json(checkpointsJson(c))})`,
+    )
+    emit(
+      '  on conflict (id) do update set submodule_id = excluded.submodule_id, title = excluded.title, sections = excluded.sections,' +
+        ' video_url = excluded.video_url, video_duration_seconds = excluded.video_duration_seconds,' +
+        ' interactive_checkpoints = excluded.interactive_checkpoints, updated_at = now();',
+    )
+  }
+}
+emit()
+
+emit('-- Preguntas')
+const questionRow = (moduleId: number, submoduleId: string | null, q: Question, sortOrder: number, isBossFinal: boolean) =>
+  `  (${str(q.id)}, ${moduleId}, ${nullable(submoduleId)}, ${str(q.prompt)}, ${str(q.correct)}, ${textArray(q.distractors)}, ${isBossFinal}, ${sortOrder})`
+
+const questionRows = MODULES.flatMap((m) => {
+  const submoduleOf = new Map(m.submodules.flatMap((sm) => sm.questions.map((q) => [q.id, sm.id] as const)))
+  return [
+    ...m.questions.map((q, i) => questionRow(m.id, submoduleOf.get(q.id) ?? null, q, i + 1, false)),
+    ...(m.boss.finalQuestion ? [questionRow(m.id, null, m.boss.finalQuestion, 999, true)] : []),
+  ]
+})
+emit('insert into public.questions (id, module_id, submodule_id, prompt, correct_answer, distractors, is_boss_final, sort_order) values')
 emit(questionRows.join(',\n'))
 emit(
-  'on conflict (id) do update set module_id = excluded.module_id, prompt = excluded.prompt,' +
+  'on conflict (id) do update set module_id = excluded.module_id, submodule_id = excluded.submodule_id, prompt = excluded.prompt,' +
     ' correct_answer = excluded.correct_answer, distractors = excluded.distractors,' +
     ' is_boss_final = excluded.is_boss_final, sort_order = excluded.sort_order;',
 )
+emit('-- Las respuestas siguen a su pregunta si esta cambió de módulo.')
+emit('update public.answers a set module_id = q.module_id from public.questions q where q.id = a.question_id and a.module_id <> q.module_id;')
 emit()
 
 emit('-- Jefes (el HP actual y la derrota se preservan al re-ejecutar)')
@@ -78,6 +126,10 @@ for (const m of MODULES) {
   )
   emit(
     '  on conflict (id) do update set module_id = excluded.module_id, name = excluded.name, title = excluded.title,' +
+      // Si cambia el HP máximo de un jefe vivo, su HP actual sube o baja en la misma cantidad.
+      ' current_hp = case when public.bosses.defeated_at is null' +
+      ' then greatest(1, least(excluded.max_hp, public.bosses.current_hp + excluded.max_hp - public.bosses.max_hp))' +
+      ' else public.bosses.current_hp end,' +
       ' max_hp = excluded.max_hp, damage_per_hit = excluded.damage_per_hit,' +
       ' final_question_id = excluded.final_question_id, unlocks_module_id = excluded.unlocks_module_id;',
   )

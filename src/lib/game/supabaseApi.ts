@@ -71,7 +71,7 @@ export function createSupabaseApi(sb: SupabaseClient): GameApi {
 
     async getCampaign() {
       const [modules, bosses, campaign] = await Promise.all([
-        sb.from('modules').select('id, title, summary, codex').order('id'),
+        sb.from('modules').select('id, title, summary, codex').eq('archived', false).order('id'),
         sb.from('bosses').select('*'),
         sb.rpc('get_campaign'),
       ])

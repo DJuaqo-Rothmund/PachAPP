@@ -142,6 +142,122 @@ create table if not exists public.user_badges (
 );
 
 -- -----------------------------------------------------------------------------
+-- Campaña de 13 módulos: submódulos con subjefe individual y Códices con video
+-- -----------------------------------------------------------------------------
+
+-- Módulos retirados (p. ej. el antiguo "Fundamentos"): se conservan con su
+-- historial pero no se muestran ni se pueden jugar.
+alter table public.modules add column if not exists archived boolean not null default false;
+
+-- Las FK hacia modules y bosses propagan cambios de id (renumeración segura).
+do $$
+declare
+  fk record;
+begin
+  for fk in
+    select * from (values
+      ('questions',     'module_id',         'modules', 'cascade'),
+      ('bosses',        'module_id',         'modules', 'cascade'),
+      ('bosses',        'unlocks_module_id', 'modules', 'set null'),
+      ('codex_reads',   'module_id',         'modules', 'cascade'),
+      ('raid_sessions', 'module_id',         'modules', 'cascade'),
+      ('raid_sessions', 'boss_id',           'bosses',  'cascade'),
+      ('answers',       'module_id',         'modules', 'cascade')
+    ) as t(tbl, col, ref, on_delete)
+  loop
+    execute format('alter table public.%I drop constraint if exists %I', fk.tbl, fk.tbl || '_' || fk.col || '_fkey');
+    execute format(
+      'alter table public.%I add constraint %I foreign key (%I) references public.%I (id) on update cascade on delete %s',
+      fk.tbl, fk.tbl || '_' || fk.col || '_fkey', fk.col, fk.ref, fk.on_delete
+    );
+  end loop;
+end $$;
+
+-- Migración desde la campaña de 3 módulos (0 Fundamentos, 1 Cranberry, 2 Frambuesa):
+-- Cranberry pasa a M7 y Frambuesa a M8 conservando preguntas, respuestas, lecturas,
+-- raids y el HP de sus jefes; Fundamentos queda archivado. Solo corre una vez.
+do $$
+begin
+  if exists (select 1 from public.modules where id = 1 and slug = 'cranberry')
+     and not exists (select 1 from public.modules where id in (7, 8)) then
+    update public.modules set id = 7 where id = 1;
+    update public.modules set id = 8 where id = 2 and slug = 'frambuesa';
+    update public.bosses set id = 'boss-cranberry' where id = 'boss-m1';
+    update public.bosses set id = 'boss-frambuesa' where id = 'boss-m2';
+    update public.modules set archived = true where id = 0;
+    update public.bosses set unlocks_module_id = null where module_id = 0;
+  end if;
+end $$;
+
+create table if not exists public.submodules (
+  id text primary key,
+  module_id integer not null references public.modules (id) on update cascade on delete cascade,
+  sort_order integer not null,
+  title text not null,
+  description text not null default '',
+  -- Subjefe individual: cada jugador lo enfrenta por su cuenta (ver submodule_progress).
+  subboss_name text not null,
+  subboss_title text not null default '',
+  subboss_max_hp integer not null default 40 check (subboss_max_hp > 0),
+  subboss_damage_per_hit integer not null default 10 check (subboss_damage_per_hit > 0),
+  created_at timestamptz not null default now(),
+  unique (module_id, sort_order)
+);
+create index if not exists submodules_module_idx on public.submodules (module_id, sort_order);
+
+-- Valida los checkpoints interactivos de un Códice:
+-- [{ "id", "timestamp_seconds", "prompt", "options": [...], "correct_index", "explanation" }]
+create or replace function public.codex_checkpoints_valid(p jsonb)
+returns boolean
+language sql
+immutable
+as $$
+  select jsonb_typeof(p) = 'array' and not exists (
+    select 1 from jsonb_array_elements(p) cp
+    where jsonb_typeof(cp -> 'id') is distinct from 'string'
+       or jsonb_typeof(cp -> 'timestamp_seconds') is distinct from 'number'
+       or (cp ->> 'timestamp_seconds')::numeric < 0
+       or jsonb_typeof(cp -> 'prompt') is distinct from 'string'
+       or jsonb_typeof(cp -> 'options') is distinct from 'array'
+       or jsonb_array_length(cp -> 'options') < 2
+       or jsonb_typeof(cp -> 'correct_index') is distinct from 'number'
+       or (cp ->> 'correct_index')::int not between 0 and jsonb_array_length(cp -> 'options') - 1
+  );
+$$;
+
+create table if not exists public.codices (
+  id text primary key,
+  submodule_id text not null unique references public.submodules (id) on delete cascade,
+  title text not null,
+  -- Texto estructurado: [{ "heading": "...", "body": ["párrafo", ...] }, ...]
+  sections jsonb not null default '[]'::jsonb check (jsonb_typeof(sections) = 'array'),
+  -- Video opcional; los checkpoints pausan el video en `timestamp_seconds`.
+  video_url text,
+  video_duration_seconds integer check (video_duration_seconds > 0),
+  interactive_checkpoints jsonb not null default '[]'::jsonb
+    check (public.codex_checkpoints_valid(interactive_checkpoints)),
+  updated_at timestamptz not null default now()
+);
+
+-- Las preguntas de un submódulo alimentan a su subjefe y al pool del jefe cooperativo.
+alter table public.questions
+  add column if not exists submodule_id text references public.submodules (id) on delete set null;
+create index if not exists questions_submodule_idx on public.questions (submodule_id);
+
+-- Progreso individual de cada jugador por submódulo (lo escriben solo funciones del servidor).
+create table if not exists public.submodule_progress (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  submodule_id text not null references public.submodules (id) on delete cascade,
+  codex_read_at timestamptz,
+  checkpoints_passed text[] not null default '{}',
+  subboss_damage integer not null default 0 check (subboss_damage >= 0),
+  subboss_defeated_at timestamptz,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, submodule_id)
+);
+create index if not exists submodule_progress_submodule_idx on public.submodule_progress (submodule_id);
+
+-- -----------------------------------------------------------------------------
 -- Helpers
 -- -----------------------------------------------------------------------------
 
@@ -167,7 +283,7 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.modules
-    where id = p_module_id and (initially_unlocked or unlocked_at is not null)
+    where id = p_module_id and not archived and (initially_unlocked or unlocked_at is not null)
   );
 $$;
 
@@ -206,7 +322,8 @@ as
 select
   m.id as module_id,
   (m.initially_unlocked or m.unlocked_at is not null) as unlocked
-from public.modules m;
+from public.modules m
+where not m.archived;
 
 -- -----------------------------------------------------------------------------
 -- Emblemas: evaluación
@@ -436,6 +553,9 @@ begin
   end if;
   if v_boss.defeated_at is not null then
     raise exception 'El jefe ya fue derrotado' using errcode = 'P0001';
+  end if;
+  if not exists (select 1 from public.questions where module_id = p_module_id and not is_boss_final) then
+    raise exception 'Este módulo aún no tiene preguntas' using errcode = 'P0001';
   end if;
 
   select * into v_session from public.raid_sessions
@@ -690,6 +810,7 @@ as $$
   left join public.bosses b on b.module_id = m.id
   left join public.raid_sessions s
     on s.boss_id = b.id and s.user_id = auth.uid() and s.week_start = public.current_raid_week()
+  where not m.archived
   order by m.id;
 $$;
 
@@ -814,6 +935,9 @@ alter table public.answers      enable row level security;
 alter table public.badges       enable row level security;
 alter table public.user_badges  enable row level security;
 alter table public.raid_sessions enable row level security;
+alter table public.submodules    enable row level security;
+alter table public.codices       enable row level security;
+alter table public.submodule_progress enable row level security;
 
 -- admin_emails: sin políticas → inaccesible desde el cliente.
 
@@ -836,7 +960,7 @@ grant update (display_name, avatar_url, rpg_class) on public.profiles to authent
 -- Contenido: lectura para usuarios autenticados, escritura solo admin.
 drop policy if exists modules_select on public.modules;
 create policy modules_select on public.modules
-  for select to authenticated using (true);
+  for select to authenticated using (not archived or public.is_admin());
 drop policy if exists modules_admin on public.modules;
 create policy modules_admin on public.modules
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
@@ -845,6 +969,35 @@ create policy modules_admin on public.modules
 drop policy if exists questions_admin on public.questions;
 create policy questions_admin on public.questions
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Submódulos y Códices: lectura para jugadores (solo de módulos vigentes), escritura solo admin.
+-- Los checkpoints incluyen su respuesta: son de práctica y no dan XP ni daño.
+drop policy if exists submodules_select on public.submodules;
+create policy submodules_select on public.submodules
+  for select to authenticated using (
+    public.is_admin() or exists (select 1 from public.modules m where m.id = module_id and not m.archived)
+  );
+drop policy if exists submodules_admin on public.submodules;
+create policy submodules_admin on public.submodules
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists codices_select on public.codices;
+create policy codices_select on public.codices
+  for select to authenticated using (
+    public.is_admin() or exists (
+      select 1 from public.submodules sm join public.modules m on m.id = sm.module_id
+      where sm.id = submodule_id and not m.archived
+    )
+  );
+drop policy if exists codices_admin on public.codices;
+create policy codices_admin on public.codices
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Progreso por submódulo: cada jugador ve el suyo (admin, todos). Sin políticas de
+-- escritura: solo lo modifican funciones security definer del servidor.
+drop policy if exists submodule_progress_select on public.submodule_progress;
+create policy submodule_progress_select on public.submodule_progress
+  for select to authenticated using (user_id = auth.uid() or public.is_admin());
 
 drop policy if exists bosses_select on public.bosses;
 create policy bosses_select on public.bosses

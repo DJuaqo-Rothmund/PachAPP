@@ -87,7 +87,7 @@ export const RPG_CLASSES: RpgClass[] = [
     specialty: 'Medio ambiente',
     description: 'Protege la biodiversidad, cuida el agua y reconoce aves y hongos a primera vista.',
     theme: { accent: '#2dd4bf', accentDim: '#134e4a', motifColor: '#10b981', motif: 'forest' },
-    unlock: { type: 'boss_defeated', bossId: 'boss-m1' },
+    unlock: { type: 'boss_defeated', bossId: 'boss-aves' },
   },
   {
     id: 'artifice',
@@ -103,7 +103,7 @@ export const RPG_CLASSES: RpgClass[] = [
     specialty: 'Fisiología y fenología',
     description: 'Destila hormonas, cuenta horas frío y lee la fenología de la planta como un grimorio vivo.',
     theme: { accent: '#fde047', accentDim: '#854d0e', motifColor: '#2dd4bf', motif: 'bubbles' },
-    unlock: { type: 'boss_defeated', bossId: 'boss-m0' },
+    unlock: { type: 'boss_defeated', bossId: 'boss-fisiologia' },
   },
 ]
 

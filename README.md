@@ -69,13 +69,31 @@ Si editas `src/data/seed.ts`, regenera el SQL con:
 npm run db:seed-sql            # usa ADMIN_EMAILS=correo1,correo2 para cambiar admins
 ```
 
+### Campaña de 13 módulos
+
+Módulo → submódulos (Códice + subjefe individual) → jefe cooperativo semanal de 5.000 HP. El contenido vive en
+`src/data/seed.ts` y `src/data/campaign/` (Módulo 1 · Edafología es el piloto con sus 5 submódulos); `seed.sql` se
+genera desde ahí. Los módulos sin contenido aparecen bloqueados con el Códice "En preparación".
+
+Al re-ejecutar `schema.sql` sobre una base de la campaña anterior, Cranberry pasa a ser el módulo 7 y Frambuesa el 8
+(con su progreso, raids y daño acumulado) y el antiguo módulo Fundamentos queda archivado.
+
+Checkpoint interactivo de un Códice (`codices.interactive_checkpoints`, validado por `codex_checkpoints_valid`):
+
+```json
+{ "id": "m1-s2-cp1", "timestamp_seconds": 140, "prompt": "…", "options": ["…", "…"], "correct_index": 0, "explanation": "…" }
+```
+
 ### Modelo
 
 | Tabla          | Contenido                                                           |
 | -------------- | ------------------------------------------------------------------- |
 | `profiles`     | Usuarios: nombre, avatar, clase RPG, XP total (se crea al registrarse) |
-| `modules`      | Módulos con el texto del Códice (`codex` en JSON)                   |
-| `questions`    | Preguntas con respuesta correcta y 3 falsas (**solo admin la lee**) |
+| `modules`      | Los 13 módulos de la campaña (`archived` oculta módulos retirados)  |
+| `submodules`   | Submódulos de cada módulo, con su subjefe individual (nombre, título, HP) |
+| `codices`      | Códice de cada submódulo: secciones de texto, `video_url` y `interactive_checkpoints` (JSONB) |
+| `submodule_progress` | Progreso individual por submódulo: Códice leído, checkpoints y daño al subjefe |
+| `questions`    | Preguntas con respuesta correcta y 3 falsas (**solo admin la lee**); `submodule_id` opcional |
 | `bosses`       | Jefe por módulo: HP actual/máximo, daño por acierto, módulo que desbloquea |
 | `codex_reads`  | Qué Códices leyó cada usuario                                       |
 | `answers`      | Historial de respuestas, XP y daño                                  |
