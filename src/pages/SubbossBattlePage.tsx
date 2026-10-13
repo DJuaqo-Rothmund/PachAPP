@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { FullScreenLoader } from '../components/ui/FullScreenLoader'
-import { HpBar } from '../components/game/HpBar'
-import { SubbossFrame } from '../components/game/BossFrames'
+import { BattleStage } from '../components/game/BattleStage'
+import { nextStageEvent, type StageEvent } from '../lib/game/stage'
+import { subbossSprite } from '../components/pixel/sprites'
+import { encounterForSubmodule } from '../data/encounters'
 import { AnswerOption, optionState } from '../components/game/AnswerOption'
 import { LivesHearts, OutOfLives } from '../components/game/LivesHearts'
 import { useLives } from '../context/LivesContext'
@@ -64,7 +66,7 @@ interface FightProps {
 }
 
 function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
-  const { refresh } = useProfile()
+  const { profile, refresh } = useProfile()
   const { lives, setLivesLeft, refresh: refreshLives } = useLives()
   const { announceBadges } = useToast()
   const back = `/modulos/${moduleId}`
@@ -76,8 +78,7 @@ function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
   const [submitting, setSubmitting] = useState(false)
   const [answerError, setAnswerError] = useState<string | null>(null)
   const [hp, setHp] = useState<number | null>(null)
-  const [hitKey, setHitKey] = useState(0)
-  const [lastDamage, setLastDamage] = useState(0)
+  const [stageEvent, setStageEvent] = useState<StageEvent | null>(null)
   const [over, setOver] = useState<SubbossAnswerResult | null>(null)
 
   const outOfLives = Boolean(lives && !lives.unlimited && lives.lives <= 0)
@@ -113,6 +114,8 @@ function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
   const current = questions[index]
   const currentHp = hp ?? fight.hp
   const questionNumber = fight.answered + index + 1
+  // El escenario muestra el desenlace apenas llega la última respuesta.
+  const ending = over ?? (result?.fightOver ? result : null)
 
   const submit = async (option: string) => {
     if (!current || result || submitting) return
@@ -124,10 +127,7 @@ function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
       setResult(r)
       setHp(r.subbossHp)
       setLivesLeft(r.livesLeft)
-      if (r.damageDealt > 0) {
-        setLastDamage(r.damageDealt)
-        setHitKey((k) => k + 1)
-      }
+      setStageEvent((e) => nextStageEvent(e, r.correct, r.damageDealt))
       announceBadges(r.newBadges)
       if (r.xpGained > 0) void refresh()
     } catch (e) {
@@ -151,85 +151,87 @@ function Fight({ moduleId, node, nextNode, onRetry }: FightProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      <section className="h-fit space-y-4">
-        <Link to={back} className="text-xs text-mist hover:text-bone">
-          ← Volver al módulo
-        </Link>
-        <SubbossFrame
-          submoduleId={node.id}
-          spriteUrl={node.spriteUrl}
+    <div className="space-y-4">
+      <Link to={back} className="text-xs text-mist hover:text-bone">
+        ← Volver al módulo
+      </Link>
+      <div className="sticky top-[61px] z-[5] lg:static">
+        <BattleStage
+          tier="subboss"
+          encounter={encounterForSubmodule(node.id)}
+          heroClass={profile?.rpgClass ?? null}
+          enemyName={node.subboss.name}
+          enemySprite={subbossSprite(node.id)}
+          enemyImage={node.spriteUrl}
           bgTheme={node.bgTheme}
-          name={node.subboss.name}
-          title={node.subboss.title}
-          defeated={Boolean(over?.subbossDefeated)}
-          hitKey={hitKey}
-          damage={lastDamage}
-          size="lg"
-        >
-          <div className="mt-3">
-            <HpBar current={currentHp} max={fight.maxHp} />
+          hp={currentHp}
+          maxHp={fight.maxHp}
+          event={stageEvent}
+          outcome={ending ? (ending.subbossDefeated ? 'victory' : 'defeat') : 'fighting'}
+        />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <section className="h-fit space-y-4">
+          <div className="panel flex items-center justify-between gap-3 py-3">
+            <span className="text-xs text-mist">Vidas de hoy</span>
+            <LivesHearts lives={lives} size="lg" />
           </div>
-        </SubbossFrame>
-        <div className="panel flex items-center justify-between gap-3 py-3">
-          <span className="text-xs text-mist">Vidas de hoy</span>
-          <LivesHearts lives={lives} size="lg" />
-        </div>
-        <p className="text-xs text-mist">
-          Duelo individual: solo tú dañas a este subjefe. Tienes {fight.total} preguntas para bajar su HP a 0; cada error gasta
-          una vida y las vidas vuelven a las 00:00.
-        </p>
-      </section>
+          <p className="text-xs text-mist">
+            Duelo individual: solo tú dañas a este subjefe. Tienes {fight.total} preguntas para bajar su HP a 0; cada error gasta
+            una vida y las vidas vuelven a las 00:00.
+          </p>
+        </section>
 
-      <section className="panel">
-        {over || (!current && questions.length === 0) ? (
-          <FightSummary
-            result={over}
-            node={node}
-            nextNode={nextNode}
-            moduleId={moduleId}
-            onRetry={onRetry}
-            canRetry={!lives || lives.unlimited || lives.lives > 0}
-          />
-        ) : current ? (
-          <div>
-            <div className="flex items-center justify-between gap-2 text-xs text-mist">
-              <span>
-                Pregunta {questionNumber} de {fight.total}
-              </span>
-              <span className="text-gold">
-                {currentHp}/{fight.maxHp} HP
-              </span>
-            </div>
-            <h2 className="mt-4 text-lg font-semibold leading-snug">{current.prompt}</h2>
-            <div className="mt-6 grid gap-3">
-              {current.options.map((option, i) => (
-                <AnswerOption
-                  key={option}
-                  label={option}
-                  letter={String.fromCharCode(65 + i)}
-                  state={optionState(option, picked, result)}
-                  disabled={Boolean(result) || submitting}
-                  onClick={() => void submit(option)}
-                />
-              ))}
-            </div>
-            {answerError && <p className="mt-4 text-sm text-blood">{answerError}</p>}
-            {result && (
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-                <p className={`text-sm ${result.correct ? 'text-moss' : 'text-blood'}`}>
-                  {result.correct
-                    ? `¡Golpe certero! −${result.damageDealt} HP${result.awarded ? ` · +${result.xpGained} XP` : ''}`
-                    : `Fallaste: pierdes una vida${lives?.unlimited ? ' (modo maestro: ∞)' : ''}.`}
-                </p>
-                <button type="button" onClick={next} className="btn-primary">
-                  {result.fightOver || index + 1 >= questions.length ? 'Ver resultado' : 'Siguiente'}
-                </button>
+        <section className="panel">
+          {over || (!current && questions.length === 0) ? (
+            <FightSummary
+              result={over}
+              node={node}
+              nextNode={nextNode}
+              moduleId={moduleId}
+              onRetry={onRetry}
+              canRetry={!lives || lives.unlimited || lives.lives > 0}
+            />
+          ) : current ? (
+            <div>
+              <div className="flex items-center justify-between gap-2 text-xs text-mist">
+                <span>
+                  Pregunta {questionNumber} de {fight.total}
+                </span>
+                <span className="text-gold">
+                  {currentHp}/{fight.maxHp} HP
+                </span>
               </div>
-            )}
-          </div>
-        ) : null}
-      </section>
+              <h2 className="mt-4 text-lg font-semibold leading-snug">{current.prompt}</h2>
+              <div className="mt-6 grid gap-3">
+                {current.options.map((option, i) => (
+                  <AnswerOption
+                    key={option}
+                    label={option}
+                    letter={String.fromCharCode(65 + i)}
+                    state={optionState(option, picked, result)}
+                    disabled={Boolean(result) || submitting}
+                    onClick={() => void submit(option)}
+                  />
+                ))}
+              </div>
+              {answerError && <p className="mt-4 text-sm text-blood">{answerError}</p>}
+              {result && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+                  <p className={`text-sm ${result.correct ? 'text-moss' : 'text-blood'}`}>
+                    {result.correct
+                      ? `¡Golpe certero! −${result.damageDealt} HP${result.awarded ? ` · +${result.xpGained} XP` : ''}`
+                      : `Fallaste: pierdes una vida${lives?.unlimited ? ' (modo maestro: ∞)' : ''}.`}
+                  </p>
+                  <button type="button" onClick={next} className="btn-primary">
+                    {result.fightOver || index + 1 >= questions.length ? 'Ver resultado' : 'Siguiente'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </section>
+      </div>
     </div>
   )
 }

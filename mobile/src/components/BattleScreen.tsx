@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Animated, Pressable, StyleSheet, View } from 'react-native'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { BossSprite, CoopBossFrame, EncounterPortrait, HpBar, LivesHearts, OutOfLives } from '@/components/game'
+import { LivesHearts, OutOfLives } from '@/components/game'
+import { BattleStage } from '@/components/BattleStage'
 import { Body, Button, ErrorPanel, Loader, Panel, PixelText, Screen } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -10,6 +11,9 @@ import { useToast } from '@/context/ToastContext'
 import { useAsync } from '@/hooks/useAsync'
 import { gameApi, type AnswerResult, type BossState, type CampaignModule, type PlayQuestion } from '@/lib/game'
 import { formatRaidReset } from '@shared/lib/game/raid'
+import { nextStageEvent, type StageEvent } from '@shared/lib/game/stage'
+import { bossSprite } from '@shared/components/pixel/sprites'
+import { encounterForBoss } from '@shared/data/encounters'
 import { colors, radius, space } from '@/theme'
 
 /** raid: batalla semanal (máx. 15 preguntas, daña al jefe). training: todas las preguntas, solo XP. */
@@ -89,7 +93,10 @@ export function BattleScreen({ mode }: { mode: BattleMode }) {
   }
   if (mode === 'raid' && module.raid.status === 'defeated') {
     return (
-      <Gate title="🏆 Jefe derrotado" text={`La comunidad ya derrotó a ${module.boss.name}. Puedes seguir entrenando este módulo para ganar XP.`}>
+      <Gate
+        title="🏆 Jefe derrotado"
+        text={`La comunidad ya derrotó a ${module.boss.name}. Puedes seguir entrenando este módulo para ganar XP.`}
+      >
         <Button label="Entrenar" onPress={() => router.replace(`/modulo/${module.id}/entrenar`)} />
       </Gate>
     )
@@ -132,7 +139,7 @@ function Raid({
   mode: BattleMode
 }) {
   const isRaid = mode === 'raid'
-  const { refresh } = useProfile()
+  const { profile, refresh } = useProfile()
   const { lives, setLivesLeft } = useLives()
   const { announceBadges } = useToast()
   const { demoMode } = useAuth()
@@ -140,7 +147,7 @@ function Raid({
   const [hp, setHp] = useState(boss.currentHp)
   const [defeated, setDefeated] = useState(boss.defeated)
   const [unlockedModuleId, setUnlockedModuleId] = useState<number | null>(null)
-  const { shakeStyle, damageStyle, damage, hit } = useHitAnimation()
+  const [stageEvent, setStageEvent] = useState<StageEvent | null>(null)
 
   // HP en vivo: los golpes de toda la comunidad llegan por Realtime.
   // El HP solo baja, así que un evento atrasado nunca "cura" al jefe.
@@ -191,10 +198,8 @@ function Raid({
         xp: s.xp + r.xpGained,
         damage: s.damage + r.damageDealt,
       }))
-      if (r.damageDealt > 0) {
-        setHp((h) => Math.min(h, r.bossHp))
-        hit(r.damageDealt)
-      }
+      if (r.damageDealt > 0) setHp((h) => Math.min(h, r.bossHp))
+      setStageEvent((e) => nextStageEvent(e, r.correct, r.damageDealt))
       if (r.bossDefeated) setDefeated(true)
       if (r.unlockedModuleId !== null) setUnlockedModuleId(r.unlockedModuleId)
       announceBadges(r.newBadges)
@@ -225,32 +230,27 @@ function Raid({
   const questionTotal = raid?.total ?? queue.length
 
   return (
-    <Screen>
+    <Screen
+      top={
+        <BattleStage
+          tier="boss"
+          encounter={encounterForBoss(boss.id)}
+          heroClass={profile?.rpgClass ?? null}
+          enemyName={boss.name}
+          enemySprite={bossSprite(boss.id)}
+          enemyImage={module.spriteUrl}
+          hp={hp}
+          maxHp={boss.maxHp}
+          event={stageEvent}
+          outcome={defeated ? 'victory' : isRaid && lives && !lives.unlimited && lives.lives <= 0 ? 'defeat' : 'fighting'}
+        />
+      }
+    >
       <Stack.Screen options={{ title: `${isRaid ? 'Raid' : 'Entrenar'} · ${module.title}` }} />
 
       {/* Jefe */}
       <Panel>
-        <CoopBossFrame
-          bossId={boss.id}
-          spriteUrl={module.spriteUrl}
-          name={boss.name}
-          title={boss.title}
-          sprite={
-            <View>
-              <Animated.View style={shakeStyle}>
-                <EncounterPortrait url={module.spriteUrl} size={72} fallback={<BossSprite bossId={boss.id} size={72} defeated={defeated} />} />
-              </Animated.View>
-              <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
-                <PixelText size={12} tone="gold">
-                  −{damage}
-                </PixelText>
-              </Animated.View>
-            </View>
-          }
-        />
-        <View style={{ marginTop: space.md }}>
-          <HpBar current={hp} max={boss.maxHp} />
-        </View>
+        <PixelText size={10}>{boss.title}</PixelText>
         {isRaid && (
           <View style={[styles.row, styles.livesRow]}>
             <Body tone="mist" size={12}>
@@ -361,38 +361,6 @@ function Raid({
       ) : null}
     </Screen>
   )
-}
-
-/** Sacudida del jefe y número de daño flotante en cada golpe. */
-export function useHitAnimation() {
-  const shake = useRef(new Animated.Value(0)).current
-  const float = useRef(new Animated.Value(1)).current
-  const [damage, setDamage] = useState(0)
-
-  const hit = (amount: number) => {
-    setDamage(amount)
-    shake.setValue(0)
-    float.setValue(0)
-    Animated.parallel([
-      Animated.sequence([
-        Animated.timing(shake, { toValue: 1, duration: 60, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: -1, duration: 80, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: 0.5, duration: 70, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: 0, duration: 60, useNativeDriver: true }),
-      ]),
-      Animated.timing(float, { toValue: 1, duration: 900, useNativeDriver: true }),
-    ]).start()
-  }
-
-  return {
-    hit,
-    damage,
-    shakeStyle: { transform: [{ translateX: shake.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }) }] },
-    damageStyle: {
-      opacity: float.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 0] }),
-      transform: [{ translateY: float.interpolate({ inputRange: [0, 1], outputRange: [0, -28] }) }],
-    },
-  }
 }
 
 export type OptionState = 'idle' | 'picked' | 'correct' | 'wrong' | 'dim'
@@ -536,8 +504,13 @@ function Summary({ stats, nothingPending, onPractice }: { stats: Stats; nothingP
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  damage: { position: 'absolute', top: 0, alignSelf: 'center' },
-  livesRow: { marginTop: space.md, backgroundColor: colors.stone, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.sm },
+  livesRow: {
+    marginTop: space.md,
+    backgroundColor: colors.stone,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
   defeated: {
     marginTop: space.md,
     borderWidth: 1,
@@ -574,4 +547,3 @@ const styles = StyleSheet.create({
   },
   stat: { flex: 1, backgroundColor: colors.stone, borderRadius: radius.md, padding: space.md, alignItems: 'center' },
 })
-

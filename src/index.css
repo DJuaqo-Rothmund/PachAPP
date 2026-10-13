@@ -727,3 +727,304 @@ html[data-motif='forest'] body::before {
     #17110b;
 }
 
+
+/* =============================================================================
+ * Escenario de batalla (tercio superior de los combates). El héroe camina sobre un
+ * suelo que avanza y lanza tajos; cada respuesta dispara una embestida o un contraataque.
+ * Los movimientos usan steps() para que se sientan cuadro a cuadro, como en 16 bits.
+ * ============================================================================= */
+.battle-stage__hills {
+  position: absolute;
+  inset: auto 0 14% 0;
+  height: 38%;
+  width: 200%;
+  opacity: 0.55;
+  background:
+    radial-gradient(ellipse 60px 46px at 40px 100%, var(--enc-frame-dark) 98%, transparent 100%) 0 100% / 120px 100% repeat-x,
+    radial-gradient(ellipse 34px 28px at 20px 100%, color-mix(in srgb, var(--enc-frame-dark) 70%, #000) 98%, transparent 100%) 50px 100% / 80px 100% repeat-x;
+  animation: battle-scroll 14s linear infinite;
+}
+.battle-stage__ground {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 16%;
+  border-top: 3px solid #000;
+  background:
+    linear-gradient(180deg, var(--enc-frame-light) 0 3px, transparent 3px),
+    repeating-linear-gradient(90deg, var(--enc-frame-dark) 0 16px, color-mix(in srgb, var(--enc-frame-dark) 75%, #000) 16px 32px);
+  background-size: auto, 32px 100%;
+  animation: battle-ground 0.8s steps(4) infinite;
+}
+@keyframes battle-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes battle-ground {
+  to {
+    background-position: 0 0, -32px 0;
+  }
+}
+
+.battle-stage__shadow {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: -4%;
+  height: 8%;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.45);
+  z-index: -1;
+}
+
+/* Héroe: paso de caminata y un tajo de ambiente cada pocos segundos */
+.battle-hero__body {
+  animation: battle-walk 3.2s steps(16) infinite;
+}
+@keyframes battle-walk {
+  0%, 12.5%, 25%, 37.5%, 50%, 62.5%, 75% {
+    transform: translate(0, 0);
+  }
+  6.25%, 18.75%, 31.25%, 43.75%, 56.25%, 68.75% {
+    transform: translate(0, -5%);
+  }
+  82% {
+    transform: translate(-6%, 0) rotate(-6deg);
+  }
+  88% {
+    transform: translate(22%, -4%) rotate(10deg);
+  }
+  94%, 100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Enemigo: respiración y un leve retroceso cuando llega el tajo de ambiente */
+.battle-enemy__body {
+  transform-origin: 50% 100%;
+  animation: battle-breathe 3.2s steps(16) infinite;
+}
+@keyframes battle-breathe {
+  0%, 50%, 100% {
+    transform: scale(1, 1);
+  }
+  25%, 75% {
+    transform: scale(1.03, 0.97);
+  }
+  88% {
+    transform: translateX(5%) scale(1, 1);
+    filter: brightness(1.6);
+  }
+  92% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+  }
+}
+
+/* Acierto: el héroe embiste y el enemigo recibe el tajo */
+.battle-hero--attack {
+  animation: battle-dash 900ms steps(10) both;
+}
+.battle-hero--attack .battle-hero__body,
+.battle-hero--hurt .battle-hero__body,
+.battle-enemy--hit .battle-enemy__body,
+.battle-enemy--lunge .battle-enemy__body {
+  animation: none;
+}
+@keyframes battle-dash {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-10%, 0);
+  }
+  50% {
+    transform: translate(105%, -12%) rotate(8deg);
+  }
+  65% {
+    transform: translate(95%, 0) rotate(-4deg);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.battle-enemy--hit {
+  animation: battle-enemy-hit 900ms steps(10) both;
+}
+@keyframes battle-enemy-hit {
+  0%, 40% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateX(8%);
+    filter: brightness(3) saturate(0);
+  }
+  60% {
+    transform: translateX(-5%);
+    filter: brightness(1.5);
+  }
+  75% {
+    transform: translateX(3%);
+  }
+  100% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+}
+.battle-slash {
+  position: absolute;
+  inset: 10% 15%;
+  border-radius: 50%;
+  border-top: 6px solid #fff;
+  border-right: 3px solid var(--enc-secondary);
+  opacity: 0;
+  transform: rotate(-35deg) scale(0.6);
+  filter: drop-shadow(0 0 6px var(--enc-glow));
+  animation: battle-slash 900ms steps(8) forwards;
+  z-index: 15;
+}
+@keyframes battle-slash {
+  0%, 40% {
+    opacity: 0;
+    transform: rotate(-35deg) scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(10deg) scale(1);
+  }
+  80%, 100% {
+    opacity: 0;
+    transform: rotate(40deg) scale(1.1);
+  }
+}
+.battle-damage {
+  opacity: 0;
+  animation: battle-damage 1100ms ease-out 300ms forwards;
+  z-index: 16;
+}
+@keyframes battle-damage {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1.4);
+  }
+  20% {
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+}
+
+/* Error: el enemigo se lanza contra el héroe */
+.battle-enemy--lunge {
+  animation: battle-lunge 900ms steps(10) both;
+}
+@keyframes battle-lunge {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(6%, -4%);
+  }
+  50% {
+    transform: translate(-70%, 0);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.battle-hero--hurt {
+  animation: battle-hurt 900ms steps(10) both;
+}
+@keyframes battle-hurt {
+  0%, 45% {
+    transform: translate(0, 0);
+    filter: none;
+  }
+  55% {
+    transform: translate(-25%, -6%) rotate(-12deg);
+    filter: brightness(1.4) sepia(1) saturate(6) hue-rotate(-30deg);
+  }
+  75% {
+    transform: translate(-12%, 0) rotate(-4deg);
+  }
+  100% {
+    transform: translate(0, 0);
+    filter: none;
+  }
+}
+.battle-stage__flash {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: rgb(220 38 38 / 0.35);
+  opacity: 0;
+  animation: battle-flash 900ms steps(6) forwards;
+}
+@keyframes battle-flash {
+  45% {
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Fin del combate: el suelo se detiene; el enemigo cae o el héroe queda tendido */
+.battle-stage[data-outcome='victory'] .battle-stage__ground,
+.battle-stage[data-outcome='victory'] .battle-stage__hills,
+.battle-stage[data-outcome='defeat'] .battle-stage__ground,
+.battle-stage[data-outcome='defeat'] .battle-stage__hills {
+  animation-play-state: paused;
+}
+.battle-stage[data-outcome='victory'] .battle-enemy__body {
+  animation: battle-fall 900ms steps(9) forwards;
+}
+@keyframes battle-fall {
+  0% {
+    transform: none;
+    filter: none;
+  }
+  30% {
+    transform: translateX(6%) rotate(6deg);
+    filter: brightness(3);
+  }
+  100% {
+    transform: translateY(20%) rotate(80deg) scale(0.9);
+    filter: grayscale(1) brightness(0.6);
+    opacity: 0.5;
+  }
+}
+.battle-stage[data-outcome='victory'] .battle-hero__body {
+  animation: battle-cheer 0.8s steps(4) infinite;
+}
+@keyframes battle-cheer {
+  50% {
+    transform: translateY(-14%);
+  }
+}
+.battle-stage[data-outcome='defeat'] .battle-hero__body {
+  transform-origin: 50% 100%;
+  animation: battle-ko 700ms steps(7) forwards;
+}
+@keyframes battle-ko {
+  to {
+    transform: rotate(-80deg) translateY(10%);
+    filter: grayscale(1) brightness(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-stage__hills,
+  .battle-stage__ground,
+  .battle-hero__body,
+  .battle-enemy__body {
+    animation: none !important;
+  }
+}

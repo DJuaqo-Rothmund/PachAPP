@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import { Animated, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { Gate, OptionButton, optionState, useHitAnimation } from '@/components/BattleScreen'
-import { EncounterPortrait, HpBar, LivesHearts, OutOfLives, SubbossFrame, SubbossSprite } from '@/components/game'
+import { Gate, OptionButton, optionState } from '@/components/BattleScreen'
+import { BattleStage } from '@/components/BattleStage'
+import { nextStageEvent, type StageEvent } from '@shared/lib/game/stage'
+import { subbossSprite } from '@shared/components/pixel/sprites'
+import { encounterForSubmodule } from '@shared/data/encounters'
+import { LivesHearts, OutOfLives } from '@/components/game'
 import { Body, Button, ErrorPanel, Loader, Panel, PixelText, Screen } from '@/components/ui'
 import { useLives } from '@/context/LivesContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -39,13 +43,24 @@ export default function SubbossScreen() {
   // En modo maestro se puede combatir sin leer el Códice.
   if (!node.unlocked || (!node.codexRead && !profile?.isTester)) {
     return (
-      <Gate title="📜 Primero, el Códice" text="Ningún aventurero enfrenta a un subjefe sin estudiar. Lee el Códice del submódulo.">
+      <Gate
+        title="📜 Primero, el Códice"
+        text="Ningún aventurero enfrenta a un subjefe sin estudiar. Lee el Códice del submódulo."
+      >
         <Button label="Leer el Códice" onPress={() => router.replace(`/modulo/${moduleId}/submodulo/${node.id}`)} />
       </Gate>
     )
   }
   const nextNode = tree.find((n) => n.order === node.order + 1) ?? null
-  return <Fight key={`${node.id}-${round}`} moduleId={moduleId} node={node} nextNode={nextNode} onRetry={() => setRound((r) => r + 1)} />
+  return (
+    <Fight
+      key={`${node.id}-${round}`}
+      moduleId={moduleId}
+      node={node}
+      nextNode={nextNode}
+      onRetry={() => setRound((r) => r + 1)}
+    />
+  )
 }
 
 function Fight({
@@ -59,10 +74,10 @@ function Fight({
   nextNode: SubmoduleNode | null
   onRetry: () => void
 }) {
-  const { refresh } = useProfile()
+  const { profile, refresh } = useProfile()
   const { lives, setLivesLeft, refresh: refreshLives } = useLives()
   const { announceBadges } = useToast()
-  const { shakeStyle, damageStyle, damage, hit } = useHitAnimation()
+  const [stageEvent, setStageEvent] = useState<StageEvent | null>(null)
 
   const { data: fight, error, loading, reload } = useAsync(() => gameApi.startSubboss(node.id), [node.id])
   const [index, setIndex] = useState(0)
@@ -98,6 +113,8 @@ function Fight({
   const current = fight.questions[index]
   const currentHp = hp ?? fight.hp
   const lastQuestion = index + 1 >= fight.questions.length
+  // El escenario muestra el desenlace apenas llega la última respuesta.
+  const ending = over ?? (result?.fightOver ? result : null)
 
   const submit = async (option: string) => {
     if (!current || result || submitting) return
@@ -109,7 +126,7 @@ function Fight({
       setResult(r)
       setHp(r.subbossHp)
       setLivesLeft(r.livesLeft)
-      if (r.damageDealt > 0) hit(r.damageDealt)
+      setStageEvent((e) => nextStageEvent(e, r.correct, r.damageDealt))
       announceBadges(r.newBadges)
       if (r.xpGained > 0) void refresh()
     } catch (e) {
@@ -132,30 +149,23 @@ function Fight({
   }
 
   return (
-    <Screen>
+    <Screen
+      top={
+        <BattleStage
+          tier="subboss"
+          encounter={encounterForSubmodule(node.id)}
+          heroClass={profile?.rpgClass ?? null}
+          enemyName={node.subboss.name}
+          enemySprite={subbossSprite(node.id)}
+          enemyImage={node.spriteUrl}
+          hp={currentHp}
+          maxHp={fight.maxHp}
+          event={stageEvent}
+          outcome={ending ? (ending.subbossDefeated ? 'victory' : 'defeat') : 'fighting'}
+        />
+      }
+    >
       <Stack.Screen options={{ title: node.subboss.name }} />
-      <SubbossFrame
-        submoduleId={node.id}
-        name={node.subboss.name}
-        title={node.subboss.title}
-        spriteSize={64}
-        sprite={
-          <View>
-            <Animated.View style={shakeStyle}>
-              <EncounterPortrait url={node.spriteUrl} size={64} fallback={<SubbossSprite submoduleId={node.id} size={64} defeated={Boolean(over?.subbossDefeated)} />} />
-            </Animated.View>
-            <Animated.View pointerEvents="none" style={[styles.damage, damageStyle]}>
-              <PixelText size={11} tone="gold">
-                −{damage}
-              </PixelText>
-            </Animated.View>
-          </View>
-        }
-      >
-        <View style={{ marginTop: space.sm }}>
-          <HpBar current={currentHp} max={fight.maxHp} />
-        </View>
-      </SubbossFrame>
       <View style={styles.livesRow}>
         <Body tone="mist" size={12}>
           Vidas de hoy
@@ -164,7 +174,14 @@ function Fight({
       </View>
 
       {over ? (
-        <Summary result={over} node={node} nextNode={nextNode} moduleId={moduleId} onRetry={onRetry} canRetry={!lives || lives.unlimited || lives.lives > 0} />
+        <Summary
+          result={over}
+          node={node}
+          nextNode={nextNode}
+          moduleId={moduleId}
+          onRetry={onRetry}
+          canRetry={!lives || lives.unlimited || lives.lives > 0}
+        />
       ) : current ? (
         <Panel>
           <View style={styles.row}>
@@ -234,7 +251,9 @@ function Summary({
         </PixelText>
         <Body tone="mist" style={{ textAlign: 'center' }}>
           {node.subboss.name} cae.{' '}
-          {nextNode ? `Se abre el submódulo ${nextNode.order}: ${nextNode.title}.` : 'Ya puedes unirte al Boss Raid cooperativo del módulo.'}
+          {nextNode
+            ? `Se abre el submódulo ${nextNode.order}: ${nextNode.title}.`
+            : 'Ya puedes unirte al Boss Raid cooperativo del módulo.'}
         </Body>
         <View style={{ alignSelf: 'stretch', gap: space.sm }}>
           {nextNode ? (
@@ -260,7 +279,11 @@ function Summary({
       </Body>
       <View style={{ alignSelf: 'stretch', gap: space.sm }}>
         {canRetry && <Button label="⚔ Reintentar" onPress={onRetry} />}
-        <Button label="Repasar Códice" variant="ghost" onPress={() => router.replace(`/modulo/${moduleId}/submodulo/${node.id}`)} />
+        <Button
+          label="Repasar Códice"
+          variant="ghost"
+          onPress={() => router.replace(`/modulo/${moduleId}/submodulo/${node.id}`)}
+        />
       </View>
     </Panel>
   )
@@ -268,7 +291,6 @@ function Summary({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  damage: { position: 'absolute', top: 0, alignSelf: 'center' },
   livesRow: {
     flexDirection: 'row',
     alignItems: 'center',

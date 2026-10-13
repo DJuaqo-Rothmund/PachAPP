@@ -16,8 +16,11 @@ import { useClassTheme } from '@/hooks/useClassTheme'
 import { ThemeBackdrop } from './ThemeBackdrop'
 import { colors, fonts, mix, radius, space } from '@/theme'
 
-/** Pantalla con fondo oscuro, scroll y aviso de modo demo. */
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+/**
+ * Pantalla con fondo oscuro, scroll y aviso de modo demo.
+ * `top` queda fijo arriba, fuera del scroll (por ejemplo, el escenario de batalla).
+ */
+export function Screen({ children, scroll = true, top }: { children: ReactNode; scroll?: boolean; top?: ReactNode }) {
   const { demoMode } = useAuth()
   const theme = useClassTheme()
   const body = scroll ? (
@@ -33,6 +36,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
           <Text style={styles.demoText}>Modo demo · progreso guardado en este teléfono</Text>
         </View>
       )}
+      {top && <View style={styles.top}>{top}</View>}
       {body}
     </SafeAreaView>
   )
@@ -51,13 +55,7 @@ export function Panel({
 }) {
   const { accentDim } = useClassTheme()
   return (
-    <View
-      style={[
-        styles.panel,
-        parchment ? styles.parchment : { borderColor: mix(accentDim, colors.rune, 0.55) },
-        style,
-      ]}
-    >
+    <View style={[styles.panel, parchment ? styles.parchment : { borderColor: mix(accentDim, colors.rune, 0.55) }, style]}>
       <View pointerEvents="none" style={styles.bevel} />
       {children}
     </View>
@@ -141,7 +139,9 @@ export function Button({
               <Text style={[styles.buttonLabel, { color: primary ? colors.ink : colors.bone }]}>{label}</Text>
             )}
           </View>
-          {!pressed && <View style={[styles.buttonDepth, { backgroundColor: primary ? mix(accent, colors.ink, 0.35) : colors.ink }]} />}
+          {!pressed && (
+            <View style={[styles.buttonDepth, { backgroundColor: primary ? mix(accent, colors.ink, 0.35) : colors.ink }]} />
+          )}
         </View>
       )}
     </Pressable>
@@ -170,6 +170,7 @@ export function ErrorPanel({ error, onRetry }: { error: Error; onRetry?: () => v
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.void },
   content: { padding: space.lg, gap: space.lg, paddingBottom: space.xl * 2 },
+  top: { paddingHorizontal: space.lg, paddingTop: space.md },
   demoBanner: { backgroundColor: 'rgba(250, 204, 21, 0.1)', paddingVertical: 6, paddingHorizontal: space.lg },
   demoText: { color: colors.gold, fontFamily: fonts.regular, fontSize: 12, textAlign: 'center' },
   panel: {

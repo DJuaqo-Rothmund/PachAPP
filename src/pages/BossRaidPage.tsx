@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ErrorPanel } from '../components/ui/ErrorPanel'
 import { FullScreenLoader } from '../components/ui/FullScreenLoader'
-import { HpBar } from '../components/game/HpBar'
 import { AnswerOption, optionState } from '../components/game/AnswerOption'
-import { CoopBossFrame } from '../components/game/BossFrames'
+import { BattleStage } from '../components/game/BattleStage'
+import { nextStageEvent, type StageEvent } from '../lib/game/stage'
+import { bossSprite } from '../components/pixel/sprites'
+import { encounterForBoss } from '../data/encounters'
 import { LivesHearts, OutOfLives } from '../components/game/LivesHearts'
 import { useLives } from '../context/LivesContext'
 import { useAuth } from '../context/AuthContext'
@@ -42,7 +44,10 @@ export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
 
   if (!module.codexRead && !profile?.isTester) {
     return (
-      <Gate title="📜 Primero, el Códice" text="Ningún aventurero enfrenta a un jefe sin estudiar. Lee el Códice del módulo para entrar a la batalla.">
+      <Gate
+        title="📜 Primero, el Códice"
+        text="Ningún aventurero enfrenta a un jefe sin estudiar. Lee el Códice del módulo para entrar a la batalla."
+      >
         <Link to={`/modulos/${module.id}/codice`} className="btn-primary">
           Leer el Códice
         </Link>
@@ -88,7 +93,10 @@ export default function BossRaidPage({ mode = 'raid' }: { mode?: Mode }) {
   if (mode === 'raid' && module.raid.status === 'defeated') {
     const next = campaign!.find((m) => m.id === module.boss!.unlocksModuleId)
     return (
-      <Gate title="🏆 Jefe derrotado" text={`La comunidad ya derrotó a ${module.boss.name}. Puedes seguir entrenando este módulo para ganar XP.`}>
+      <Gate
+        title="🏆 Jefe derrotado"
+        text={`La comunidad ya derrotó a ${module.boss.name}. Puedes seguir entrenando este módulo para ganar XP.`}
+      >
         <div className="flex flex-wrap justify-center gap-3">
           {next && (
             <Link to={`/modulos/${next.id}/codice`} className="btn-primary">
@@ -143,7 +151,7 @@ interface QuestionSet {
 }
 
 function Raid({ module, boss, campaign, mode }: RaidProps) {
-  const { refresh } = useProfile()
+  const { profile, refresh } = useProfile()
   const { lives, setLivesLeft } = useLives()
   const { demoMode } = useAuth()
   const { announceBadges } = useToast()
@@ -151,8 +159,7 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
 
   const [hp, setHp] = useState(boss.currentHp)
   const [defeated, setDefeated] = useState(boss.defeated)
-  const [hitKey, setHitKey] = useState(0)
-  const [lastDamage, setLastDamage] = useState(0)
+  const [stageEvent, setStageEvent] = useState<StageEvent | null>(null)
   const [unlockedModuleId, setUnlockedModuleId] = useState<number | null>(null)
 
   // HP en vivo: los golpes de toda la comunidad llegan por Realtime.
@@ -204,11 +211,8 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
         xp: s.xp + r.xpGained,
         damage: s.damage + r.damageDealt,
       }))
-      if (r.damageDealt > 0) {
-        setHp((h) => Math.min(h, r.bossHp))
-        setLastDamage(r.damageDealt)
-        setHitKey((k) => k + 1)
-      }
+      if (r.damageDealt > 0) setHp((h) => Math.min(h, r.bossHp))
+      setStageEvent((e) => nextStageEvent(e, r.correct, r.damageDealt))
       if (r.bossDefeated) setDefeated(true)
       if (r.unlockedModuleId !== null) setUnlockedModuleId(r.unlockedModuleId)
       announceBadges(r.newBadges)
@@ -239,115 +243,128 @@ function Raid({ module, boss, campaign, mode }: RaidProps) {
   const questionTotal = raid?.total ?? queue.length
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      {/* Jefe */}
-      <section className="panel h-fit">
-        <p className="text-xs text-mist">
-          {isRaid ? 'Boss Raid cooperativo semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
-        </p>
-        <div className="mt-5">
-          <CoopBossFrame bossId={boss.id} spriteUrl={module.spriteUrl} bgTheme={module.bgTheme} name={boss.name} title={boss.title} defeated={defeated} hitKey={hitKey} damage={lastDamage}>
-            <div className="mt-3">
-              <HpBar current={hp} max={boss.maxHp} />
+    <div className="space-y-4">
+      <p className="text-xs text-mist">
+        {isRaid ? 'Boss Raid cooperativo semanal' : 'Entrenamiento'} · Módulo {module.id} · {module.title}
+      </p>
+      <div className="sticky top-[61px] z-[5] lg:static">
+        <BattleStage
+          tier="boss"
+          encounter={encounterForBoss(boss.id)}
+          heroClass={profile?.rpgClass ?? null}
+          enemyName={boss.name}
+          enemySprite={bossSprite(boss.id)}
+          enemyImage={module.spriteUrl}
+          bgTheme={module.bgTheme}
+          hp={hp}
+          maxHp={boss.maxHp}
+          event={stageEvent}
+          outcome={defeated ? 'victory' : isRaid && lives && !lives.unlimited && lives.lives <= 0 ? 'defeat' : 'fighting'}
+        />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        {/* Jefe */}
+        <section className="panel h-fit">
+          <p className="title-pixel text-2xl text-bone">{boss.title}</p>
+          {isRaid && (
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-stone px-3 py-2">
+              <span className="text-xs text-mist">Vidas de hoy</span>
+              <LivesHearts lives={lives} size="lg" />
             </div>
-          </CoopBossFrame>
-        </div>
-        {isRaid && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-stone px-3 py-2">
-            <span className="text-xs text-mist">Vidas de hoy</span>
-            <LivesHearts lives={lives} size="lg" />
-          </div>
-        )}
-        <p className="mt-3 hidden text-center text-xs text-mist sm:block">
-          {isRaid
-            ? `Una batalla por semana de ${questionTotal} preguntas. Cada acierto de cualquier aventurero resta HP; si llega a 0, la comunidad desbloquea el siguiente módulo. Cada error gasta una vida.`
-            : 'El entrenamiento no daña al jefe ni gasta vidas, pero cada primer acierto suma XP. Tu batalla semanal está en Boss Raid.'}
-        </p>
-        {demoMode && isRaid && (
-          <p className="mt-2 text-center text-[11px] text-gold/80">
-            Demo: una comunidad simulada ya dejó al jefe malherido, así que puedes derrotarlo tú solo.
+          )}
+          <p className="mt-3 hidden text-center text-xs text-mist sm:block">
+            {isRaid
+              ? `Una batalla por semana de ${questionTotal} preguntas. Cada acierto de cualquier aventurero resta HP; si llega a 0, la comunidad desbloquea el siguiente módulo. Cada error gasta una vida.`
+              : 'El entrenamiento no daña al jefe ni gasta vidas, pero cada primer acierto suma XP. Tu batalla semanal está en Boss Raid.'}
           </p>
-        )}
+          {demoMode && isRaid && (
+            <p className="mt-2 text-center text-[11px] text-gold/80">
+              Demo: una comunidad simulada ya dejó al jefe malherido, así que puedes derrotarlo tú solo.
+            </p>
+          )}
 
-        {defeated && (
-          <div className="mt-4 rounded-lg border border-gold/50 bg-gold/10 p-4 text-center">
-            <p className="title-pixel text-3xl text-gold">¡Jefe derrotado!</p>
-            {unlockedModule ? (
-              <Link to={`/modulos/${unlockedModule.id}/codice`} className="btn-primary mt-3 text-sm">
-                Abrir Módulo {unlockedModule.id}: {unlockedModule.title}
-              </Link>
-            ) : (
-              <p className="mt-2 text-sm text-mist">Sigue respondiendo para ganar XP.</p>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* Preguntas */}
-      <section className="panel">
-        {error ? (
-          <ErrorPanel error={error} onRetry={reload} />
-        ) : loading || !data ? (
-          <p className="animate-pulse text-sm text-mist">Invocando preguntas…</p>
-        ) : isRaid && !finished && !result && lives && !lives.unlimited && lives.lives <= 0 ? (
-          <div>
-            <OutOfLives lives={lives} />
-            <p className="mt-3 text-center text-xs text-mist">Tu batalla semanal queda en pausa: retómala mañana donde la dejaste.</p>
-            <div className="mt-6">
-              <TrainingLinks moduleId={module.id} />
+          {defeated && (
+            <div className="mt-4 rounded-lg border border-gold/50 bg-gold/10 p-4 text-center">
+              <p className="title-pixel text-3xl text-gold">¡Jefe derrotado!</p>
+              {unlockedModule ? (
+                <Link to={`/modulos/${unlockedModule.id}/codice`} className="btn-primary mt-3 text-sm">
+                  Abrir Módulo {unlockedModule.id}: {unlockedModule.title}
+                </Link>
+              ) : (
+                <p className="mt-2 text-sm text-mist">Sigue respondiendo para ganar XP.</p>
+              )}
             </div>
-          </div>
-        ) : finished ? (
-          isRaid ? (
-            <RaidSummary stats={stats} moduleId={module.id} nextResetAt={module.raid.nextResetAt} />
-          ) : (
-            <TrainingSummary stats={stats} nothingPending={stats.answered === 0 && !practice} onPractice={startPractice} />
-          )
-        ) : current ? (
-          <div>
-            <div className="flex items-center justify-between gap-2 text-xs text-mist">
-              <span>
-                Pregunta {questionNumber} de {questionTotal}
-                {practice && ' · práctica'}
-              </span>
-              <span className="text-gold">
-                +{stats.xp} XP{isRaid && ` · −${stats.damage} HP`}
-              </span>
-            </div>
+          )}
+        </section>
 
-            {current.isBossFinal && (
-              <p className="pixel-title mt-4 inline-block rounded bg-blood/15 px-2 py-1 text-[9px] text-blood">
-                ⚔ Ataque especial del jefe
+        {/* Preguntas */}
+        <section className="panel">
+          {error ? (
+            <ErrorPanel error={error} onRetry={reload} />
+          ) : loading || !data ? (
+            <p className="animate-pulse text-sm text-mist">Invocando preguntas…</p>
+          ) : isRaid && !finished && !result && lives && !lives.unlimited && lives.lives <= 0 ? (
+            <div>
+              <OutOfLives lives={lives} />
+              <p className="mt-3 text-center text-xs text-mist">
+                Tu batalla semanal queda en pausa: retómala mañana donde la dejaste.
               </p>
-            )}
-            <h2 className="mt-4 text-lg font-semibold leading-snug">{current.prompt}</h2>
-
-            <div className="mt-6 grid gap-3">
-              {current.options.map((option, i) => (
-                <AnswerOption
-                  key={option}
-                  label={option}
-                  letter={String.fromCharCode(65 + i)}
-                  state={optionState(option, picked, result)}
-                  disabled={Boolean(result) || submitting}
-                  onClick={() => void submit(option)}
-                />
-              ))}
-            </div>
-
-            {answerError && <p className="mt-4 text-sm text-blood">{answerError}</p>}
-
-            {result && (
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-                <Feedback result={result} bossName={boss.name} isRaid={isRaid} />
-                <button type="button" onClick={next} className="btn-primary">
-                  {index + 1 < queue.length ? 'Siguiente' : 'Ver resultado'}
-                </button>
+              <div className="mt-6">
+                <TrainingLinks moduleId={module.id} />
               </div>
-            )}
-          </div>
-        ) : null}
-      </section>
+            </div>
+          ) : finished ? (
+            isRaid ? (
+              <RaidSummary stats={stats} moduleId={module.id} nextResetAt={module.raid.nextResetAt} />
+            ) : (
+              <TrainingSummary stats={stats} nothingPending={stats.answered === 0 && !practice} onPractice={startPractice} />
+            )
+          ) : current ? (
+            <div>
+              <div className="flex items-center justify-between gap-2 text-xs text-mist">
+                <span>
+                  Pregunta {questionNumber} de {questionTotal}
+                  {practice && ' · práctica'}
+                </span>
+                <span className="text-gold">
+                  +{stats.xp} XP{isRaid && ` · −${stats.damage} HP`}
+                </span>
+              </div>
+
+              {current.isBossFinal && (
+                <p className="pixel-title mt-4 inline-block rounded bg-blood/15 px-2 py-1 text-[9px] text-blood">
+                  ⚔ Ataque especial del jefe
+                </p>
+              )}
+              <h2 className="mt-4 text-lg font-semibold leading-snug">{current.prompt}</h2>
+
+              <div className="mt-6 grid gap-3">
+                {current.options.map((option, i) => (
+                  <AnswerOption
+                    key={option}
+                    label={option}
+                    letter={String.fromCharCode(65 + i)}
+                    state={optionState(option, picked, result)}
+                    disabled={Boolean(result) || submitting}
+                    onClick={() => void submit(option)}
+                  />
+                ))}
+              </div>
+
+              {answerError && <p className="mt-4 text-sm text-blood">{answerError}</p>}
+
+              {result && (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+                  <Feedback result={result} bossName={boss.name} isRaid={isRaid} />
+                  <button type="button" onClick={next} className="btn-primary">
+                    {index + 1 < queue.length ? 'Siguiente' : 'Ver resultado'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </section>
+      </div>
     </div>
   )
 }
@@ -413,7 +430,15 @@ function RaidSummary({ stats, moduleId, nextResetAt }: { stats: Stats; moduleId:
   )
 }
 
-function TrainingSummary({ stats, nothingPending, onPractice }: { stats: Stats; nothingPending: boolean; onPractice: () => void }) {
+function TrainingSummary({
+  stats,
+  nothingPending,
+  onPractice,
+}: {
+  stats: Stats
+  nothingPending: boolean
+  onPractice: () => void
+}) {
   return (
     <div className="text-center">
       <p className="title-pixel text-3xl text-moss">{nothingPending ? 'Módulo dominado' : 'Entrenamiento terminado'}</p>
